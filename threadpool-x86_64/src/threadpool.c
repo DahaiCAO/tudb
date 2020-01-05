@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "threadpool.h"
 
 /*
- * threadpool.h
+ * threadpool.c
  *
- * Created on: 2020-01-03 23:22:19
+ * Created on: 2020年1月4日 上午11:21:47
  * Author: Dahai CAO 
  */
 
-#ifndef THREADPOOL_H_
-#define THREADPOOL_H_
+int dll_int_square(int i) {
+	return i * i;
+}
 
-
-
-#endif /* THREADPOOL_H_ */

@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef UNICODE
-
-#include <stdio.h>
-#include <stdlib.h>
+#include "test.h"
 /*
- * cmdparser.c
+ * test.c
  *
- * Created on: 2020-01-03 17:50:17
+ * Created on: 2020-01-05 13:24:23
  * Author: Dahai CAO 
  */
 
-char *parseCommand(char * cmd, int cmd_len) {
-	if (cmd_len > 0) {
-		printf(">>>>>>>>>%c\n", cmd[0]);
-	}
-	//printf("%d Bytes received-------------- : %s\n", cmd_len, cmd);
-	char *respbuf = "200";
-	return respbuf;
+int sum(int a, int b) {
+	return a + b;
 }
 
-
+int square(int i) {
+	return i * i;
+}

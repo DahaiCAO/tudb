@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef UNICODE
 
-#include <stdio.h>
-#include <stdlib.h>
 /*
- * threadpool.c
+ * threadpools.h
  *
- * Created on: 2020年1月4日 上午11:21:47
+ * Created on: 2020年1月4日 上午11:54:36
  * Author: Dahai CAO 
  */
 
-int getKey(void) {
-	return 100;
-}
+#ifndef THREADPOOL_H_
+#define THREADPOOL_H_
 
+extern int dll_int_square (int) ;
 
-
+#endif /* EXAMPLEDLL_H_ */

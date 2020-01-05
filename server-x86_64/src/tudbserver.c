@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+//#include <pthread.h>
+//#include <windows.h>
 
-#include "tudbserversock.h"
+
+
+//#include "tudbserversock.h"
+#include "threadpool.h"
+
+//#pragma comment(lib,"threadpool.dll")
 /*
  * tudbserver.c
  *
@@ -38,15 +46,27 @@ void printWelcomeMesssage() {
 
 int main(int argc, char *argv[]) {
 	printWelcomeMesssage();
-	SOCKET svr_socket = createServerSocket();
-	if (bindIpandPort(svr_socket)) {
-		if (listenPort(svr_socket)) {
-			SOCKET clt_socket;
-			if ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
-				handleRequest(clt_socket);
-			}
-		}
-	}
+//	SOCKET svr_socket = createServerSocket();
+//	if (bindIpandPort(svr_socket)) {
+//		if (listenPort(svr_socket)) {
+//			SOCKET clt_socket;
+//			if ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
+//				handleRequest(clt_socket);
+//			}
+//		}
+//	}
+//	typedef int (*FunSUM)(int, int);
+//	HMODULE DLL = LoadLibraryA("threadpool");
+//	//printf("%d\n", getKey());
+//	FunSUM sum = (FunSUM)GetProcAddress(DLL,"sum");
+//	printf("%s\n", "KKKKKKKKKKKKKK");
+//	int c = sum(100, 444);
+
+//	printf("%d\n", c);
+
+
+//	hello("World");
+	printf("%d\n", dll_int_square(3));
 
 
 	/*pthread_t thid;

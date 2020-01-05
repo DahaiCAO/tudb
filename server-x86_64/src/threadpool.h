@@ -15,10 +15,15 @@
  */
 
 /*
- * threadpool.c
+ * threadpools.h
  *
- * Created on: 2020年1月3日 下午11:21:54
+ * Created on: 2020年1月4日 上午11:54:36
  * Author: Dahai CAO 
  */
 
+#ifndef THREADPOOL_H_
+#define THREADPOOL_H_
 
+extern int dll_int_square (int) ;
+
+#endif /* EXAMPLEDLL_H_ */

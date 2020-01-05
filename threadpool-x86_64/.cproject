@@ -18,34 +18,38 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="dll" artifactName="threadpool" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.sharedLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.sharedLib,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.config.gnu.mingw.so.debug.2051047883" name="Debug" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.enablement=null,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.image=null,org.eclipse.cdt.docker.launcher.containerbuild.property.connection=null" parent="cdt.managedbuild.config.gnu.mingw.so.debug">
+				<configuration artifactExtension="dll" artifactName="threadpool" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.sharedLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.sharedLib,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.mingw.so.debug.2051047883" name="Debug" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.enablement=false,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.image=null,org.eclipse.cdt.docker.launcher.containerbuild.property.connection=https://192.168.99.100:2376" parent="cdt.managedbuild.config.gnu.mingw.so.debug">
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.2051047883." name="/" resourcePath="">
-						<toolChain id="cdt.managedbuild.toolchain.gnu.mingw.so.debug.259395567" name="MinGW GCC" superClass="cdt.managedbuild.toolchain.gnu.mingw.so.debug">
-							<targetPlatform binaryParser="org.eclipse.cdt.core.PE64" id="cdt.managedbuild.target.gnu.platform.mingw.so.debug.1832982847" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.mingw.so.debug"/>
-							<builder buildPath="${workspace_loc:/tudb-threadpool-x86_64}/Debug" id="cdt.managedbuild.tool.gnu.builder.mingw.base.1530881442" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CDT Internal Builder" superClass="cdt.managedbuild.tool.gnu.builder.mingw.base"/>
-							<tool id="cdt.managedbuild.tool.gnu.assembler.mingw.so.debug.2023565699" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.mingw.so.debug">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.571011407" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+						<toolChain id="cdt.managedbuild.toolchain.gnu.mingw.base.1314329390" name="MinGW GCC" superClass="cdt.managedbuild.toolchain.gnu.mingw.base">
+							<targetPlatform archList="all" id="cdt.managedbuild.target.gnu.platform.mingw.base.2145808113" name="Debug Platform" osList="win32" superClass="cdt.managedbuild.target.gnu.platform.mingw.base"/>
+							<builder buildPath="${workspace_loc:/tudb-threadpool-x86_64}/Debug" id="cdt.managedbuild.tool.gnu.builder.mingw.base.630960306" keepEnvironmentInBuildfile="false" name="CDT Internal Builder" superClass="cdt.managedbuild.tool.gnu.builder.mingw.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.mingw.base.1052214708" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.mingw.base">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.31887106" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.archiver.mingw.base.768384033" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.mingw.base"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.682086542" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug">
-								<option id="gnu.cpp.compiler.mingw.so.debug.option.optimization.level.1880541841" name="Optimization Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
-								<option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.13888018" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.mingw.base.1518199139" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.mingw.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base.842622602" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base">
+								<option id="gnu.cpp.compiler.option.optimization.level.1540552934" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.more" valueType="enumerated"/>
+								<option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.option.debugging.level.1031709553" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
 							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.c.compiler.mingw.so.debug.1108719801" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.mingw.so.debug">
-								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.mingw.so.debug.option.optimization.level.703532966" name="Optimization Level" superClass="gnu.c.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
-								<option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.mingw.so.debug.option.debugging.level.11553620" name="Debug Level" superClass="gnu.c.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.misc.pic.1208327093" superClass="gnu.c.compiler.option.misc.pic" value="true" valueType="boolean"/>
-								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1205890449" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.mingw.base.1406963513" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.mingw.base">
+								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.1372820977" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.option.debugging.level.1853637708" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.dialect.std.578570166" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.873859660" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.so.debug.1505397497" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.so.debug">
-								<option defaultValue="true" id="gnu.c.link.mingw.so.debug.option.shared.463157994" name="Shared (-shared)" superClass="gnu.c.link.mingw.so.debug.option.shared" valueType="boolean"/>
-								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1311758198" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
+							<tool command="gcc" id="cdt.managedbuild.tool.gnu.c.linker.mingw.base.1937555349" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.base">
+								<option defaultValue="true" id="gnu.c.link.option.shared.1061715087" name="Shared (-shared)" superClass="gnu.c.link.option.shared" useByScannerDiscovery="false" valueType="boolean"/>
+								<option id="gnu.c.link.option.ldflags.815292551" name="Linker flags" superClass="gnu.c.link.option.ldflags" useByScannerDiscovery="false" value="" valueType="string"/>
+								<option id="gnu.c.link.option.defname.151116903" name="DEF file name (-Wl,--output-def=)" superClass="gnu.c.link.option.defname" useByScannerDiscovery="false" value="" valueType="string"/>
+								<option id="gnu.c.link.option.implname.749771938" name="Import Library name (-Wl,--out-implib=)" superClass="gnu.c.link.option.implname" useByScannerDiscovery="false" value="" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.2133535710" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
+								<outputType id="cdt.managedbuild.tool.gnu.c.linker.mingw.so.output.base.539021556" outputPrefix="lib" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.so.output.base"/>
 							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.so.debug.1386605737" name="MinGW C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.so.debug">
-								<option defaultValue="true" id="gnu.cpp.link.mingw.so.debug.option.shared.883777778" name="Shared (-shared)" superClass="gnu.cpp.link.mingw.so.debug.option.shared" valueType="boolean"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.base.273865101" name="MinGW C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.base">
+								<option defaultValue="true" id="gnu.cpp.link.option.shared.672107411" name="Shared (-shared)" superClass="gnu.cpp.link.option.shared" valueType="boolean"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
@@ -134,4 +138,6 @@
 			<resource resourceType="PROJECT" workspacePath="/tudb-threadpool-x86_64"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
