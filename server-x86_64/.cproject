@@ -37,10 +37,12 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.exe.debug.462573514" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.exe.debug">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.libs.1499951912" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="libthreadpool"/>
+									<listOptionValue builtIn="false" value="tudblog"/>
 									<listOptionValue builtIn="false" value="wsock32"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.paths.248572502" name="Library search path (-L)" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;D:\tudbprojects\tudb\threadpool-x86_64\Debug&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;D:\tudbprojects\tudb\log-x86_64\Debug&quot;"/>
 								</option>
 								<option id="gnu.c.link.option.ldflags.1567516770" name="Linker flags" superClass="gnu.c.link.option.ldflags" useByScannerDiscovery="false" value="" valueType="string"/>
 								<option id="gnu.c.link.option.implname.1501942715" name="Import Library name (-Wl,--out-implib=)" superClass="gnu.c.link.option.implname" useByScannerDiscovery="false" value="" valueType="string"/>

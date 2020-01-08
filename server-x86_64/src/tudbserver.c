@@ -44,8 +44,8 @@ void printWelcomeMesssage() {
 //	return NULL;
 //}
 
-int main(int argc, char *argv[]) {
-	printWelcomeMesssage();
+//int main1(int argc, char *argv[]) {
+//	printWelcomeMesssage();
 //	SOCKET svr_socket = createServerSocket();
 //	if (bindIpandPort(svr_socket)) {
 //		if (listenPort(svr_socket)) {
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
 
 //	hello("World");
-	printf("%d\n", dll_int_square(3));
+//	printf("%d\n", dll_int_square(3));
 
 
 	/*pthread_t thid;
@@ -77,5 +77,5 @@ int main(int argc, char *argv[]) {
 	}*/
 
 
-}
+//}
 

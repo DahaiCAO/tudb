@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "test.h"
+
 /*
  * test.c
  *
- * Created on: 2020-01-05 13:24:23
+ * Created on: 2020年1月7日 下午6:33:57
  * Author: Dahai CAO 
  */
 
-int sum(int a, int b) {
-	return a + b;
-}
-
-int square(int i) {
-	return i * i;
+#include "stdio.h"
+#include "stdlib.h"
+#include "log.h"
+int main(int argv, char **argc) {
+	printf("%s\n", argc[0]);
+	logwrite("log", INFO, "%s", "Hello World!");
+	logwrite("APP", DEBUG, "%s", "H.e.l.l.o W.o.r.l.d!");
+	logwrite("SVR", WARN, "%s", "H e l l o W o r l d!");
+	logwrite("ERR", ERROR, "%s", "Hallo World!");
+	return 0;
 }
