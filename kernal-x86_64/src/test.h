@@ -15,15 +15,19 @@
  */
 
 /*
- * threadpools.h
+ * test.h
  *
- * Created on: 2020年1月4日 上午11:54:36
+ * Created on: 2020年1月8日 下午9:38:36
  * Author: Dahai CAO 
  */
 
-#ifndef THREADPOOL_H_
-#define THREADPOOL_H_
+#ifndef TEST_H_
+#define TEST_H_
 
-extern int dll_int_square (int) ;
+typedef struct stuff {
+	char job[20];
+	int age;
+	float height;
+} stuff_t;
 
-#endif /* EXAMPLEDLL_H_ */
+#endif /* TEST_H_ */

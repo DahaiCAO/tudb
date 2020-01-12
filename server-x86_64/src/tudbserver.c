@@ -16,36 +16,37 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <pthread.h>
-//#include <windows.h>
+#include <unistd.h>
+#include <time.h>
 
+#include "tudbserversock.h"
+#include "mythreadpool.h"
+#include "confutil.h"
 
-
-//#include "tudbserversock.h"
-#include "threadpool.h"
-
-//#pragma comment(lib,"threadpool.dll")
 /*
  * tudbserver.c
  *
  * Created on: 2020-01-02 22:57:37
  * Author: Dahai CAO 
  */
+char *maximum_task_queue_size;
+char *normal_task_queue_size;
+char *maximum_thread_number;
+char *minimum_thread_number;
+char *normal_thread_number;
 
 void printWelcomeMesssage() {
 	printf("%s\n", "Starting TuDB server .....");
 }
 
-//int* thread(void *arg) {
-//	pthread_t newthid;
-//
-//	newthid = pthread_self();
-//	printf("this is a new thread, thread ID = %d\n", newthid);
+//void* myprocess(void *arg) {
+//	printf("thread id is 0x%x, working on task %d\n",
+//			(unsigned int) pthread_self(), *(int*) arg);
+//	sleep(1);/*休息一秒，延长任务的执行时间*/
 //	return NULL;
 //}
 
-//int main1(int argc, char *argv[]) {
-//	printWelcomeMesssage();
+//int createsocket() {
 //	SOCKET svr_socket = createServerSocket();
 //	if (bindIpandPort(svr_socket)) {
 //		if (listenPort(svr_socket)) {
@@ -55,27 +56,48 @@ void printWelcomeMesssage() {
 //			}
 //		}
 //	}
-//	typedef int (*FunSUM)(int, int);
-//	HMODULE DLL = LoadLibraryA("threadpool");
-//	//printf("%d\n", getKey());
-//	FunSUM sum = (FunSUM)GetProcAddress(DLL,"sum");
-//	printf("%s\n", "KKKKKKKKKKKKKK");
-//	int c = sum(100, 444);
-
-//	printf("%d\n", c);
-
-
-//	hello("World");
-//	printf("%d\n", dll_int_square(3));
-
-
-	/*pthread_t thid;
- 	printf("main thread ,ID is %d\n",pthread_self());
-	if(pthread_create(&thid, NULL, (void *)thread, NULL) != 0) {
-		printf("thread creation failed\n");
-		exit(1);
-	}*/
-
-
 //}
 
+int main(int argc, char **argv) {
+	printWelcomeMesssage();
+
+	// read configuration info
+	maximum_task_queue_size = getconfentry("maximum_task_queue_size");
+	normal_task_queue_size = getconfentry("normal_task_queue_size");
+	maximum_thread_number = getconfentry("maximum_thread_number");
+	minimum_thread_number = getconfentry("minimum_thread_number");
+	normal_thread_number = getconfentry("normal_thread_number");
+
+	int a = atoi(maximum_task_queue_size);
+	int b = atoi(normal_task_queue_size);
+	int c = atoi(maximum_thread_number);
+	int d = atoi(minimum_thread_number);
+	int e = atoi(normal_thread_number);
+
+	thread_pool_t *pool = createthreadpool(c, d, e, b, a);
+	if (pool != NULL) {
+		SOCKET svr_socket = createServerSocket();
+		if (bindIpandPort(svr_socket)) {
+			if (listenPort(svr_socket)) {
+				SOCKET clt_socket;
+				if ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
+					addtask(pool, handleRequest, &clt_socket);
+				}
+			}
+		}
+
+//		int *workingnum = (int*) malloc(sizeof(int) * 10);
+//		int i;
+//		for (i = 0; i < 10; i++) {
+//			workingnum[i] = i;
+//			addtask(pool, myprocess, &workingnum[i]);
+//		}
+		/*等待所有任务完成*/
+		//sleep(5);  //这句可能出问题，偷懒写法。
+		/*销毁线程池*/
+		destroythreadpool(pool);
+		//free(workingnum);
+	}
+	return 0;
+
+}

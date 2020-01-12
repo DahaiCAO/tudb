@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "threadpool.h"
 
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "threadpool.h"
 /*
  * threadpool.c
  *
- * Created on: 2020年1月4日 上午11:21:47
+ * Created on: 2020-01-04 11:21:47
  * Author: Dahai CAO 
  */
 
-int dll_int_square(int i) {
-	return i * i;
-}
 

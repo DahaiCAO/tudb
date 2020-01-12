@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include "test.h";
 
 jmp_buf mark;
 

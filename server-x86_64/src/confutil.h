@@ -15,25 +15,26 @@
  */
 
 /*
- * test.c
+ * Configuration utility is used to get the entries in configuration file. The
+ * file is always read by program and not written, so we don't provide the write
+ * functionality.
  *
- * Created on: 2020-01-07 18:33:57
+ * Created on: 2020-01-08 16:33:28
  * Author: Dahai CAO 
  */
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "log.h"
-#include "confutil.h"
-/*
-int main(int argv, char **argc) {
-	char * val = getconfentry("a");
-	printf("%s\n", val);
-//	printf("%s\n", argc[0]);
-//	logwrite("log", INFO, "%s", "Hello World!");
-//	logwrite("APP", DEBUG, "%s", "H.e.l.l.o W.o.r.l.d!");
-//	logwrite("SVR", WARN, "%s", "H e l l o W o r l d!");
-//	logwrite("ERR", ERROR, "%s", "Hallo World!");
-//	return 0;
+#ifndef CONFUTIL_H_
+#define CONFUTIL_H_
 
-}*/
+#define filename "./conf/tudb.conf"
+
+void trim(char *strIn, char *strOut);
+
+void getValue(char *keyAndValue, const char *key, char *value);
+
+void readconfigfile(const char *fname/*in*/, const char *key/*in*/,
+		char **value/*out*/);
+
+char* getconfentry(const char *key);
+
+#endif /* CONFUTIL_H_ */
