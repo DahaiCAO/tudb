@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 /*
  * cmdparser.c
  *
@@ -26,13 +25,12 @@
  * Author: Dahai CAO 
  */
 
-char *parseCommand(char * cmd, int cmd_len) {
+char* parseCommand(char *cmd, int cmd_len) {
 	if (cmd_len > 0) {
-		printf(">>>>>>>>>%c\n", cmd[0]);
+		//printf(">>>>>>>>>%c\n", cmd[0]);
 	}
 	//printf("%d Bytes received-------------- : %s\n", cmd_len, cmd);
 	char *respbuf = "200";
 	return respbuf;
 }
-
 

@@ -21,11 +21,7 @@
 #include <stdlib.h>
 
 //#include "log.h"
-
-#define DEFAULT_BUFLEN 1024
-#define DEFAULT_PORT 9088           // REMOTE PORT
-#define DEFAULT_ADDR "127.0.0.1"    // server address
-char recvbuf[DEFAULT_BUFLEN];
+#include "tudbclientsock.h"
 
 /**
  * tudbclt.c
@@ -90,7 +86,7 @@ int connectServer(SOCKET conn_sock) {
 int sendRequest(SOCKET conn_sock, char *sendbuf) {
 	int status;
 	// send data to server
-	status = send(conn_sock, sendbuf, (int) strlen(sendbuf), 0);
+	status = send(conn_sock, sendbuf, sizeof(sendbuf), 0);
 	if (status == SOCKET_ERROR) {
 //		logwrite("CLT", ERROR, "%s",
 //				getMsg("Fails sending, error:", WSAGetLastError()));
@@ -109,7 +105,7 @@ int sendRequest(SOCKET conn_sock, char *sendbuf) {
 int receiveResponse(SOCKET conn_sock, char * recvbuf) {
 	int recv_size = -1;
 	while (1) {
-		recv_size = recv(conn_sock, recvbuf, DEFAULT_BUFLEN, 0);
+		recv_size = recv(conn_sock, recvbuf, sizeof(recvbuf), 0);
 		if (recv_size > 0) {
 			printf("%d Bytes received : %s\n", recv_size, recvbuf);
 			break;// needs to update.

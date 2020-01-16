@@ -31,6 +31,10 @@
 #ifndef TUDBCLIENTSOCK_H_
 #define TUDBCLIENTSOCK_H_
 
+
+#define DEFAULT_PORT 9088           // REMOTE PORT
+#define DEFAULT_ADDR "127.0.0.1"    // server address
+
 SOCKET createConnection();
 
 int connectServer(SOCKET conn_sock);

@@ -23,6 +23,18 @@
 #include "log.h"
 #include "tudbclientsock.h"
 
+char *error_msg = "Correct command: tudbconsole [-u root] [-p password]\n";
+char *user = "user:";
+char *pass = "password:";
+char *user_opt = "-u";
+char *password_opt = "-p";
+char username[50] = { '\0' };
+char password[50] = { '\0' };
+char *promptStr = "tudb>";
+
+/**
+ * Output the welcome message.
+ */
 void printWelcomeMesssage() {
 	printf("%s\n",
 			"/+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++/");
@@ -69,97 +81,92 @@ void printWelcomeMesssage() {
 //}
 
 /*
- * tudbconsole is Tu DB's console of client program to connect local TuDB system.
- * The format of the command line is tudbconsole [-u root] [-p password], that is:
- * $>tudbconsole [-u root] [-p password]
- * or
- * $>tudbconsole [-u root]
- * password:
- * or
- * $>tudbconsole
- * user:
- * password:
- *
- * Created on: 2020-01-01 17:24:40
- * Author: Dahai CAO
+ * Parse input command parameters such as user
+ * name and password for login
  */
-int main(int argc, char *argv[]) {
-	setvbuf(stdout, NULL, _IONBF, 0);
-//	printWelcomeMesssage();
-//	// parse command line:
-//	char *error_msg = "Correct command: tudbconsole [-u root] [-p password]\n";
-//	char *user = "User login:";
-//	char *pass = "Password:";
-//	char *user_opt = "-u";
-//	char *password_opt = "-p";
-//	char username[50] = { '\0' };
-//	char password[50] = { '\0' };
-//	memset(username, '\0', sizeof(username));
-//	memset(password, '\0', sizeof(password));
-//	// verify the user name and password
-//	if (argc == 1) {
-//		printf("%s", user);
-//		//fflush(stdout);
-//		gets(username);
-//		printf("%s", pass);
-//		//fflush(stdout);
-//		char ch;
-//		int i = 0;
-//		while ((ch = getch()) != 13) {
-//			password[i] = ch;
-//			i = i + 1;
-//		}
-//		// Note:it is strange: if input 2 characters, it will incorrect chars
-//		// if input 4 characters, it will correct.
-//	} else if (argc == 3) {
-//		if (strcmp(argv[1], user_opt) == 0) {
-//			if (strcmp(argv[2], password_opt) != 0) {
-//				strcpy(username, argv[2]);
-//				printf("%s", pass);
-//				char ch;
-//				int i = 0;
-//				while ((ch = getch()) != 13) {
-//					password[i] = ch;
-//					i = i + 1;
-//				}
-//				// Note: it is strange: if input 2 characters, it will incorrect chars
-//				// if input 4 characters, it will correct.
-//			} else {
-//				printf(error_msg);
-//				return EXIT_SUCCESS;
-//			}
-//		} else {
-//			printf(error_msg);
-//			return EXIT_SUCCESS;
-//		}
-//	} else if (argc == 5) {
-//		strcpy(username, argv[2]);
-//		if (strcmp(argv[3], password_opt) == 0) {
-//			strcpy(password, argv[4]);
-//		} else {
-//			printf(error_msg);
-//			return EXIT_SUCCESS;
-//		}
-//	} else {
-//		printf(error_msg);
-//		return EXIT_SUCCESS;
-//	}
-	char *promptStr = "tudb>";
-//	char *bye = "bye";
-//	char *quit = "quit";
-//	char *exit = "exit";
+int parseLoginInput(int argc, char *argv[]) {
+	memset(username, '\0', sizeof(username));
+	memset(password, '\0', sizeof(password));
+	// verify the user name and password
+	if (argc == 1) {
+		printf("%s", user);
+		gets(username);
+		printf("%s", pass);
+		char ch;
+		int i = 0;
+		while ((ch = getch()) != 13) {
+			password[i] = ch;
+			i = i + 1;
+		}
+		// Note:it is strange: if input 2 characters, it will incorrect chars
+		// if input 4 characters, it will correct.
+	} else if (argc == 3) {
+		if (strcmp(argv[1], user_opt) == 0) {
+			if (strcmp(argv[2], password_opt) != 0) {
+				strcpy(username, argv[2]);
+				printf("%s", pass);
+				char ch;
+				int i = 0;
+				while ((ch = getch()) != 13) {
+					password[i] = ch;
+					i = i + 1;
+				}
+				// Note: it is strange: if input 2 characters, it will incorrect chars
+				// if input 4 characters, it will correct.
+			} else {
+				printf(error_msg);
+			}
+		} else {
+			printf(error_msg);
+		}
+	} else if (argc == 5) {
+		strcpy(username, argv[2]);
+		if (strcmp(argv[3], password_opt) == 0) {
+			strcpy(password, argv[4]);
+		} else {
+			printf(error_msg);
+		}
+	} else {
+		printf(error_msg);
+	}
+	return 0;
+}
+
+/**
+ * Constructs a login command. The command is protocol on TCP.
+ * We use plain code to construct it due to this client runs
+ * with server.
+ *
+ * The request protocol is:
+ * length|request|request content
+ *
+ * The response protocol is:
+ * length|response|response content
+ *
+ */
+void contructLoginCmd(char *username, char *password, char* cmd) {
+	strcpy(cmd, "1 ");	// 1: login command
+	strcat(cmd, username);
+	strcat(cmd, " ");
+	strcat(cmd, password);
+}
+
+/**
+ *
+ */
+int doConsole() {
 	SOCKET conn_sock = createConnection();
 	if (conn_sock != 0) {
+		char recv[10240] = { 0 }; // 10K
+		char recvbuf[512] = { 0 };
+		char send[2048] = { 0 }; // 2K
+		char sendbuf[512] = { 0 }; //
 		if (connectServer(conn_sock)) {
+			// login command:
 			char *login = "1 uuuuuu pppppppp";
-			//memset(login, 0, sizeof(login));
-			//strcpy(login, "1 ");	// 1: login command
-			//strcat(login, username);
-			//strcat(login, " ");
-			//strcat(login, password);
+			//contructLoginCmd(username, password, login);
 			int r = sendRequest(conn_sock, login);
 			if (r != -1) { // send request successfully
-				char recvbuf[1024] = { 0 };
 				int rsp0 = receiveResponse(conn_sock, recvbuf);
 				if (rsp0 > 0) {
 					//printf("%s\n", recvbuf);
@@ -172,42 +179,48 @@ int main(int argc, char *argv[]) {
 						gets(cmd_in);
 						int r = sendRequest(conn_sock, cmd_in);
 						if (r != -1) {
-
 							int rsp = receiveResponse(conn_sock, recvbuf);
 							if (rsp <= 0) {
-								printf("%s\n", "Connection has error.");
 								break;
 							}
 							printf("%s\n", recvbuf);
 							printf("%s", promptStr);
+						} else {
+							break;
 						}
-//						while (strcmp(cmd_in, bye) != 0
-//								&& strcmp(cmd_in, quit) != 0
-//								&& strcmp(cmd_in, exit) != 0) {
-//							char p[5] = { 0 }, cmd[512] = { 0 };
-//							strcpy(p, promptStr);
-//							strcpy(cmd, cmd_in);
-//							strcat(p, cmd);
-//							//printf("%s\n", p);
-//							printf("%s", promptStr);
-//							gets(cmd_in);
-//							int r = sendRequest(conn_sock, cmd_in);
-//							if (r == 0) {
-//								char *recvbuf = receiveResponse(conn_sock);
-//								printf("%s", recvbuf);
-//							}
-//						}
 					}
-				} else {
-					closeConnection(conn_sock);
-					printf("%s\n", "TuDb client exited");
 				}
 			}
-
 		}
-
+		// close client socket
+		closeConnection(conn_sock);
 	}
+	return 0;
+}
 
+/*
+ * tudbclient is Tu DB's client program to connect local TuDB system.
+ * The format of the command line is tudbclient [-u root] [-p password], that is:
+ * $>tudbclient [-u root] [-p password]
+ * or
+ * $>tudbclient [-u root]
+ * password:
+ * or
+ * $>tudbclient
+ * user:
+ * password:
+ *
+ * Created on: 2020-01-01 17:24:40
+ * Author: Dahai CAO
+ */
+int main(int argc, char *argv[]) {
+	setvbuf(stdout, NULL, _IONBF, 0);
+    //printWelcomeMesssage();
+	// parse command line:
+	//int r = parseLoginCmd(argc, argv);
+	//if (r != 0)
+	//	return 0;
+	doConsole();
 	return 0;
 }
 
