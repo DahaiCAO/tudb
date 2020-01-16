@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include "test.h";
+#include "test.h"
 
 jmp_buf mark;
 
@@ -48,17 +48,30 @@ int main(){
 //    }
 //    return 0;
 
-	errno = 0;
-	if (NULL == fopen("d:\\tudata\\d.txt", "a+"))
-	{
-	printf("----Msg:%s\n", strerror(errno));
-	perror("----msg");
-	}
-	else
-	{
-	 printf("Msg:%s\n", strerror(errno));
-	 perror("msg");
-	}
+//	errno = 0;
+//	if (NULL == fopen("d:\\tudata\\d.txt", "a+"))
+//	{
+//	printf("----Msg:%s\n", strerror(errno));
+//	perror("----msg");
+//	}
+//	else
+//	{
+//	 printf("Msg:%s\n", strerror(errno));
+//	 perror("msg");
+//	}
+	//setvbuf(stdout, NULL, _IOLBF, 0);
+	//setvbuf(stdout, NULL, _IONBF, 0);
+    char age[5] = {0};
+    printf("Hello, please enter your age:\n");
+    fflush(stdout);
+    fflush(stdin);
+    rewind(stdin);
+    scanf("%1s", age);
+    printf("Your age is %s\n", age);
+    // elegant ?
+    fflush(stdout);
+    printf("%s\n", "The end.");
+    fflush(stdout);
 	return 0;
 
 

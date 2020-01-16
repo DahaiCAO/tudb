@@ -33,14 +33,16 @@
 
 SOCKET createServerSocket();
 
-int bindIpandPort(SOCKET srv_socket);
+int bindIpandPort(SOCKET srv_socket, const char * ip, const int port);
 
 int listenPort(SOCKET srv_socket);
 
-SOCKET acceptRequest(SOCKET srv_socket);
-
-int handleRequest(SOCKET clt_socket);
+int closeClientSocket(SOCKET clt_socket);
 
 int closeServerSocket(SOCKET clt_socket);
+
+int acceptRequest(SOCKET srv_socket);
+
+int handleRequest(SOCKET clt_socket);
 
 #endif /* TUDBSERVERSOCK_H_ */

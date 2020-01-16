@@ -34,6 +34,9 @@ char *normal_task_queue_size;
 char *maximum_thread_number;
 char *minimum_thread_number;
 char *normal_thread_number;
+char *adminport;
+char *serverport;
+char *serverip;
 
 void printWelcomeMesssage() {
 	printf("%s\n", "Starting TuDB server .....");
@@ -59,6 +62,10 @@ void printWelcomeMesssage() {
 //}
 
 int main(int argc, char **argv) {
+	//setvbuf(stdout, NULL, _IOLBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
+	//setvbuf(stdout, NULL, _IOLBF, 0);
+	//setvbuf(stdout, NULL, _IONBF, 0);
 	printWelcomeMesssage();
 
 	// read configuration info
@@ -67,36 +74,37 @@ int main(int argc, char **argv) {
 	maximum_thread_number = getconfentry("maximum_thread_number");
 	minimum_thread_number = getconfentry("minimum_thread_number");
 	normal_thread_number = getconfentry("normal_thread_number");
+	adminport = getconfentry("adminport");
+	serverport = getconfentry("serverport");
+	serverip = getconfentry("serverip");
 
 	int a = atoi(maximum_task_queue_size);
 	int b = atoi(normal_task_queue_size);
 	int c = atoi(maximum_thread_number);
 	int d = atoi(minimum_thread_number);
 	int e = atoi(normal_thread_number);
+	int sport = atoi(serverport);
+	int aport = atoi(adminport);
 
 	thread_pool_t *pool = createthreadpool(c, d, e, b, a);
 	if (pool != NULL) {
 		SOCKET svr_socket = createServerSocket();
-		if (bindIpandPort(svr_socket)) {
+		if (bindIpandPort(svr_socket, serverip, sport)) {
 			if (listenPort(svr_socket)) {
+				printf("%s\n", "listening......");
 				SOCKET clt_socket;
-				if ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
-					addtask(pool, handleRequest, &clt_socket);
+				while ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
+					printf("%s\n", "get one connect");
+					addtask(pool, (void*) handleRequest, (void*) clt_socket);
 				}
 			}
 		}
-
-//		int *workingnum = (int*) malloc(sizeof(int) * 10);
-//		int i;
-//		for (i = 0; i < 10; i++) {
-//			workingnum[i] = i;
-//			addtask(pool, myprocess, &workingnum[i]);
-//		}
 		/*等待所有任务完成*/
 		//sleep(5);  //这句可能出问题，偷懒写法。
 		/*销毁线程池*/
+
 		destroythreadpool(pool);
-		//free(workingnum);
+		printf("%s\n", "TuDB shutdown.");
 	}
 	return 0;
 

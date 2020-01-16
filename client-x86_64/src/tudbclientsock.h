@@ -37,7 +37,7 @@ int connectServer(SOCKET conn_sock);
 
 int sendRequest(SOCKET conn_sock, char *sendbuf);
 
-char* receiveResponse(SOCKET conn_sock);
+int receiveResponse(SOCKET conn_sock, char * recvbuf);
 
 int closeConnection(SOCKET conn_sock);
 

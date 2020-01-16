@@ -40,7 +40,7 @@ typedef enum {
 } ERROR0;
 
 typedef enum {
-	NONE = 0, INFO = 1, DEBUG = 2, WARN = 3, ERROR = 4, ALL = 255
+	NONE = 0, INFO = 1, DEBUG = 2, WARN = 3, ERR = 4, ALL = 255
 } LOGLEVEL;
 
 typedef struct log {

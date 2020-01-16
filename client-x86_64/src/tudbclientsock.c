@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//#include "log.h"
+
 #define DEFAULT_BUFLEN 1024
 #define DEFAULT_PORT 9088           // REMOTE PORT
 #define DEFAULT_ADDR "127.0.0.1"    // server address
@@ -39,6 +41,8 @@ SOCKET createConnection() {
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	iErrorMsg = WSAStartup(wVersionRequested, &wsaData);
 	if (iErrorMsg != NO_ERROR) {
+//		logwrite("CLT", ERROR, "%s",
+//				getMsg("WSAStartup fault, error: ", iErrorMsg));
 		printf("WSAStartup fault, error: %d\n", iErrorMsg);
 		return FALSE;
 	}
@@ -46,6 +50,8 @@ SOCKET createConnection() {
 	// create a socket
 	SOCKET conn_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (conn_sock == INVALID_SOCKET) {
+//		logwrite("CLT", ERROR, "%s",
+//				getMsg("Socket fault, error: ", WSAGetLastError()));
 		printf("Socket fault, error: %d\n", WSAGetLastError());
 		WSACleanup();
 		return FALSE;
@@ -69,6 +75,8 @@ int connectServer(SOCKET conn_sock) {
 	iErrorMsg = connect(conn_sock, (struct sockaddr*) &addrClient,
 			sizeof(struct sockaddr));
 	if (iErrorMsg == SOCKET_ERROR) {
+//		logwrite("CLT", ERROR, "%s",
+//				getMsg("Fails connect the server, error: ", WSAGetLastError()));
 		printf("Fails connect the server, error: %d\n", WSAGetLastError());
 		closesocket(conn_sock);
 		conn_sock = INVALID_SOCKET;
@@ -80,16 +88,16 @@ int connectServer(SOCKET conn_sock) {
  *
  */
 int sendRequest(SOCKET conn_sock, char *sendbuf) {
-	int iErrorMsg;
+	int status;
 	// send data to server
-	iErrorMsg = send(conn_sock, sendbuf, (int) strlen(sendbuf), 0);
-	if (iErrorMsg == SOCKET_ERROR) {
+	status = send(conn_sock, sendbuf, (int) strlen(sendbuf), 0);
+	if (status == SOCKET_ERROR) {
+//		logwrite("CLT", ERROR, "%s",
+//				getMsg("Fails sending, error:", WSAGetLastError()));
 		printf("Fails sending, error: %d\n", WSAGetLastError());
 		closesocket(conn_sock);
-		WSACleanup();
-		return FALSE;
 	}
-	return EXIT_SUCCESS;
+	return 0;
 }
 
 /**
@@ -98,21 +106,18 @@ int sendRequest(SOCKET conn_sock, char *sendbuf) {
  * receive bytes from server continuously.
  *
  */
-char* receiveResponse(SOCKET conn_sock) {
-	int iErrorMsg;
-	do {
-		iErrorMsg = recv(conn_sock, recvbuf, DEFAULT_BUFLEN, 0);
-		if (iErrorMsg > 0) {
-			printf("%d Bytes received : %s\n", iErrorMsg, recvbuf);
-			return recvbuf;
-		} else if (iErrorMsg == 0) {
-			printf("No bytes received\n");
-		} else {
-			printf("Received faults, error: %d\n", WSAGetLastError());
+int receiveResponse(SOCKET conn_sock, char * recvbuf) {
+	int recv_size = -1;
+	while (1) {
+		recv_size = recv(conn_sock, recvbuf, DEFAULT_BUFLEN, 0);
+		if (recv_size > 0) {
+			printf("%d Bytes received : %s\n", recv_size, recvbuf);
+			break;// needs to update.
+		} else if (recv_size <= 0) {
+			break;
 		}
-	} while (iErrorMsg > 0);
-
-	return EXIT_SUCCESS;
+	};
+	return recv_size;
 }
 
 int closeConnection(SOCKET conn_sock) {
@@ -121,3 +126,5 @@ int closeConnection(SOCKET conn_sock) {
 	WSACleanup();
 	return EXIT_SUCCESS;
 }
+
+

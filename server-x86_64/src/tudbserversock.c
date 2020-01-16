@@ -19,14 +19,17 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <error.h>
+#include <string.h>
+#include <conio.h>
 
 #include "cmdparser.h"
 
-#define DEFAULT_BUFLEN 4096
-#define DEFAULT_PORT 9088
-#define DEFAULT_ADDR "127.0.0.1"
+#define BUFFER_SIZE  4096 // 4K buffer for receiving client requests
+#define DEFAULT_PORT    9088
+#define DEFAULT_ADDR    "127.0.0.1"
 
-char recvbuf[DEFAULT_BUFLEN];
+char recvbuf[BUFFER_SIZE];
 /*
  * tudbserver.c
  *
@@ -39,6 +42,7 @@ SOCKET createServerSocket() {
 	WSADATA wsaData;
 	SOCKET srv_socket = INVALID_SOCKET;
 	// initialize win sock
+
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	int iErrorMsg = WSAStartup(wVersionRequested, &wsaData);
 	if (iErrorMsg != NO_ERROR) {
@@ -56,13 +60,36 @@ SOCKET createServerSocket() {
 	return srv_socket;
 }
 
-int bindIpandPort(SOCKET srv_socket) {
+int closeClientSocket(SOCKET clt_socket) {
+	int iErrorMsg = shutdown(clt_socket, SD_BOTH);
+	if (iErrorMsg == SOCKET_ERROR) {
+		printf("Shutdown fault, error: %d\n", WSAGetLastError());
+		closesocket(clt_socket);
+	}
+	return EXIT_SUCCESS;
+}
+
+int closeServerSocket(SOCKET srv_socket) {
+	closesocket(srv_socket);
+	WSACleanup();
+	return EXIT_SUCCESS;
+}
+
+int bindIpandPort(SOCKET srv_socket, char *ip, int port) {
 	// prepare communication network address
+	char *bip = DEFAULT_ADDR;
+	if (ip != NULL) {
+		bip = ip;
+	}
+	int bport = DEFAULT_PORT;
+	if (port > 0) {
+		bport = port;
+	}
 	struct sockaddr_in addrServer;
 	memset(&addrServer, 0, sizeof(struct sockaddr));
 	addrServer.sin_family = AF_INET;
-	addrServer.sin_port = htons(DEFAULT_PORT);
-	addrServer.sin_addr.s_addr = inet_addr(DEFAULT_ADDR);
+	addrServer.sin_port = htons(bport);
+	addrServer.sin_addr.s_addr = inet_addr(bip);
 
 	// bind socket to loop back IP
 	int iErrorMsg = bind(srv_socket, (const struct sockaddr*) &addrServer,
@@ -96,65 +123,40 @@ SOCKET acceptRequest(SOCKET srv_socket) {
 			&addrClientLen);
 	if (INVALID_SOCKET == clt_socket) {
 		printf("Failed to accept a client, error: %d\n", WSAGetLastError());
-		closesocket(srv_socket);
 		closesocket(clt_socket);
-		WSACleanup();
 		return FALSE;
 	}
 	return clt_socket;
 }
 
+/*
+ * recv一般是读完就进入阻塞状态，因此需要一次就把所有的字节都读完。
+ */
 int handleRequest(SOCKET clt_socket) {
-	int recv_len;
-	do {
-		recv_len = recv(clt_socket, recvbuf, sizeof(recvbuf), 0);
-		if (recv_len > 0) {
-			char *respbuf = parseCommand(recvbuf, recv_len);
-			// printf("%d Bytes received : %s\n", recv_len, recvbuf);
-			//char *respbuf = "Send data from server: hello CAODAHAI client! Happy new year 2020 to you!";
-			int sent_len = send(clt_socket, respbuf, (int) strlen(respbuf), 0);
+	int nbytes;
+	while (1) {
+		memset(recvbuf, 0, sizeof(recvbuf));
+		nbytes = recv(clt_socket, recvbuf, sizeof(recvbuf), 0);
+		if (nbytes > 0) {
+			if (strcmp(recvbuf, "quit") == 0 || strcmp(recvbuf, "exit") == 0
+					|| strcmp(recvbuf, "bye") == 0) {
+				printf("%s\n", "close one client connection");
+				closeClientSocket(clt_socket);
+				break;
+			}
+			printf("%s\n", recvbuf);
+			char *respbuf = parseCommand(recvbuf, sizeof(recvbuf));
+
+			int sent_len = send(clt_socket, respbuf, sizeof(respbuf), 0);
 			if (sent_len == SOCKET_ERROR) {
 				printf("send error, error: %d\n", WSAGetLastError());
-				closesocket(clt_socket);
-				WSACleanup();
-				return FALSE;
-			} else {
-			    printf("Bytes sent: %d\n", sent_len);
+				closeClientSocket(clt_socket);
+				break;
 			}
-		} else if (recv_len == 0) {
-			printf("receive no data ...\n");
-		} else {
-			printf("Fault to receive data, error: %d\n", WSAGetLastError());
-			closesocket(clt_socket);
-			WSACleanup();
-			return FALSE;
+		} else if (nbytes <= 0) { // client socket has been normally closed
+			closeClientSocket(clt_socket);
+			break;
 		}
-	} while (recv_len > 0);
-
-	//#define EXIT_SUCCESS 0
-	return EXIT_SUCCESS; // return 0;
-}
-
-int closeClientSocket(SOCKET clt_socket) {
-	// shutdown socket send buffer
-	int iErrorMsg = shutdown(clt_socket, SD_SEND);
-	if (iErrorMsg == SOCKET_ERROR) {
-		printf("Shutdown fault, error: %d\n", WSAGetLastError());
-		closesocket(clt_socket);
-		WSACleanup();
-		return FALSE;
-	} else {
-		closesocket(clt_socket);
-		WSACleanup();
-		printf("Shutdown completed: %d\n", WSAGetLastError());
-		return FALSE;
 	}
-	return EXIT_SUCCESS;
+	return 0;
 }
-
-int closeServerSocket(SOCKET srv_socket) {
-	closesocket(srv_socket);
-	WSACleanup();
-	return EXIT_SUCCESS;
-}
-

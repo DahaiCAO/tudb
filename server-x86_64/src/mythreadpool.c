@@ -31,7 +31,7 @@ thread_pool_t* createthreadpool(int max_thread_num,
 		int queue_max_size) {
 	thread_pool_t *pool = (thread_pool_t*) malloc(sizeof(thread_pool_t));
 	if (pool == NULL) {
-		logwrite(THP, ERROR, "%s", "Create thread pool failed");
+		logwrite(THP, ERR, "%s", "Create thread pool failed");
 		return NULL;
 	} else {
 		logwrite(THP, INFO, "%s", "Create thread pool successfully");
