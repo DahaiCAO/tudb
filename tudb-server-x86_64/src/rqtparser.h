@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-#include "base64util.h"
-#include "numberutils.h"
+#undef UNICODE
+
+#include <stdio.h>
+#include <stdlib.h>
+//#include <winsock2.h>
 
 /*
- * utillib.h
+ * cmdparser.h
  *
- * Created on: 2020Äê1ÔÂ18ÈÕ ÉÏÎç10:08:15
+ * Created on: 2020å¹´1æœˆ3æ—¥ ä¸‹åˆ5:51:25
  * Author: Dahai CAO 
  */
 
-#ifndef UTILLIB_H_
-#define UTILLIB_H_
+#ifndef RQTPARSER_H_
+#define RQTPARSER_H_
 
+long htoi(char *s, size_t size);
 
+char* handleMsg(char *msghead, char *msgbody);
 
-#endif /* UTILLIB_H_ */
+#endif /* CMDPARSER_H_ */

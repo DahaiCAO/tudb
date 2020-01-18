@@ -15,27 +15,21 @@
  */
 #undef UNICODE
 
-#include <winsock2.h>
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <error.h>
-#include <string.h>
-#include <conio.h>
+#include "tudbserversock.h"
 
-#include "cmdparser.h"
-
-#define BUFFER_SIZE  4096 // 4K buffer for receiving client requests
+#define RECV_SIZE     4096 // 4K receive size for receiving client requests
+#define BUF_SIZE        15 // 512 buffer size
 #define DEFAULT_PORT    9088
 #define DEFAULT_ADDR    "127.0.0.1"
 
-char recvbuf[BUFFER_SIZE];
+char recv_dat[RECV_SIZE];
+char buf[BUF_SIZE];
 /*
  * tudbserver.c
  *
  *  Created on: 2019-12-29 20:48
  *  Last updated at: 2020-01-01 12:21 at Beijing home. It works now!
- *      Author: Dahai Cao
+ *  Author: Dahai Cao
  */
 
 SOCKET createServerSocket() {
@@ -129,27 +123,98 @@ SOCKET acceptRequest(SOCKET srv_socket) {
 	return clt_socket;
 }
 
+int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize) {
+	int nbytes;
+	char buf[bufsize];
+	memset(buf, 0, sizeof(buf)); // clean receive buffer
+	//char rqname[4] = { 0 }; // request name, like http request, get/post
+	char rqlen[8] = { 0 }; // request length
+	nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+	if (nbytes <= 0) {
+		closesocket(clt_socket);
+		WSACleanup();
+		return nbytes;
+	}
+	// ----- parse message header
+	strncpy(rqname, buf, 4);
+	if (strcmp(rqname, "0002") == 0) { // recognize request name: 0002: logout
+		printf("%s\n", "client request to close client connection");
+		closesocket(clt_socket);
+		WSACleanup();
+		return nbytes;
+	}
+	strncpy(rqlen, &buf[4], 8); // &buf[4] is the pointer of fourth element
+	//memcpy(rqlen, &buf[4], 4);// another method
+	long msglen = htoi(rqlen, sizeof(rqlen));
+	printf("%ld\n", msglen);
+	// ----- parse message header
+	if (nbytes > 12) {
+		strncpy(reqbody, &buf[12], (nbytes - 12));
+	}
+	if (bufsize < msglen) {
+		int c = 2;
+		while ((c * bufsize) < msglen) {
+			memset(buf, 0, sizeof(buf));
+			nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+			strcat(reqbody, buf);
+			c++;
+		}
+		memset(buf, 0, sizeof(buf));
+		nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+		if (nbytes <= 0) {
+			closesocket(clt_socket);
+			WSACleanup();
+			return nbytes;
+		}
+		strcat(reqbody, buf);
+	}
+	return nbytes;
+}
+
 /*
  * recv一般是读完就进入阻塞状态，因此需要一次就把所有的字节都读完。
  */
 int handleRequest(SOCKET clt_socket) {
 	int nbytes;
 	while (1) {
-		memset(recvbuf, 0, sizeof(recvbuf)); // clean receive buffer
-		char rqname[4] = "";
-		char rqlen[8] = "";
-		parseCommandHeader(recvbuf, rqname, rqlen);
+		char rqname[4] = { 0 }; // request name, like http request, get/post
+		nbytes = receiveMsg(clt_socket, rqname, recv_dat, BUF_SIZE);
+//		memset(buf, 0, sizeof(buf)); // clean receive buffer
+//
+//		char rqlen[8] = { 0 }; // request length
+//		nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+//		strncpy(rqname, buf, 4);
+//		if (strcmp(rqname, "0002") == 0) { // recognize request name: 0002: logout
+//			printf("%s\n", "close one client connection");
+//			closeClientSocket(clt_socket);
+//			break;
+//		}
+//
+//		strncpy(rqlen, &buf[4], 8); // &buf[4] is the pointer of fourth element
+//		//memcpy(rqlen, &buf[4], 4);// another method
+//		long msglen = htoi(rqlen, sizeof(rqlen));
+//		printf("%ld\n", msglen);
+//		if (nbytes > 12) {
+//			strncpy(recv_dat, &buf[12], (nbytes - 12));
+//		}
+//		if (BUF_SIZE < msglen) {
+//			int d = msglen / BUF_SIZE;
+//			int s = msglen % BUF_SIZE;
+//			int c = 2;
+//			while ((c * BUF_SIZE) < msglen) {
+//				memset(buf, 0, sizeof(buf));
+//				nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+//				strcat(recv_dat, buf);
+//				c++;
+//			}
+//			memset(buf, 0, sizeof(buf));
+//			nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+//			strcat(recv_dat, buf);
+//		}
 
-		nbytes = recv(clt_socket, recvbuf, sizeof(recvbuf), 0);//
 		if (nbytes > 0) {
-			if (strcmp(recvbuf, "quit") == 0 || strcmp(recvbuf, "exit") == 0
-					|| strcmp(recvbuf, "bye") == 0) {
-				printf("%s\n", "close one client connection");
-				closeClientSocket(clt_socket);
-				break;
-			}
-			printf("%s\n", recvbuf);
-			char *respbuf = parseCommand(recvbuf, sizeof(recvbuf));
+			printf("%s\n", recv_dat);
+			char *respbuf = handleMsg(rqname, recv_dat);
 
 			int sent_len = send(clt_socket, respbuf, strlen(respbuf), 0);
 			if (sent_len == SOCKET_ERROR) {

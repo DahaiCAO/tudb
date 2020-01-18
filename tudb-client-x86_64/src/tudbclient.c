@@ -192,7 +192,7 @@ void hexconcat(char *buf,  char *t) {
  *
  */
 void contructLoginCmd(char *username, char *password, char *cmd) {
-	strcpy(cmd, "0001");	// 0001: login command
+	strcpy(cmd, "0001"); // 0001: login command， 4 Bytes length
 
 	int usrlen = strlen(username);
 	char mm[10] = { 0 };
@@ -202,10 +202,10 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
 	char nn[10] = { 0 };
 	itoa(pwdlen, nn, 10);
 
-	int lensum = usrlen + pwdlen + 4;
+	int lensum = 12 + usrlen + pwdlen + 1; // " " is one byte
 
 	itoa(lensum, nn, 16); // convert to hexdecimal number
-	char h[8] = { 0 };
+	char h[8] = { 0 }; // 8 Bytes length
 	hexconcat(nn, h);
 	strcat(cmd, h);
 	strcat(cmd, username);
@@ -226,7 +226,7 @@ int doClient() {
 		char send[2048] = { 0 }; // 2K
 		char sendbuf[512] = { 0 }; //
 		if (connectServer(conn_sock)) {
-			contructLoginCmd("root", "passwd", sendbuf);
+			contructLoginCmd("root_uri_url_microsoft", "password_passport_key_log_server", sendbuf);
 			int r = sendRequest(conn_sock, sendbuf);
 			memset(sendbuf, 0, sizeof(sendbuf));
 			if (r != -1) { // send request successfully

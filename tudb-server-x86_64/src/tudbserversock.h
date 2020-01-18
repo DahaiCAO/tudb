@@ -20,6 +20,13 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <error.h>
+#include <string.h>
+#include <conio.h>
+
+#include "rqtparser.h"
+//#include "base64util.h"
+//#include "numberutils.h"
 
 /*
  * tudbserversock.h
@@ -33,7 +40,7 @@
 
 SOCKET createServerSocket();
 
-int bindIpandPort(SOCKET srv_socket, const char * ip, const int port);
+int bindIpandPort(SOCKET srv_socket, char *ip, int port);
 
 int listenPort(SOCKET srv_socket);
 
@@ -41,8 +48,10 @@ int closeClientSocket(SOCKET clt_socket);
 
 int closeServerSocket(SOCKET clt_socket);
 
-int acceptRequest(SOCKET srv_socket);
+SOCKET acceptRequest(SOCKET srv_socket);
 
 int handleRequest(SOCKET clt_socket);
+
+int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize);
 
 #endif /* TUDBSERVERSOCK_H_ */

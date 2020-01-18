@@ -17,7 +17,7 @@
 /*
  * numberutils.c
  *
- * Created on: 2020年1月18日 上午10:03:09
+ * Created on: 2020-01-18 10:03:09
  * Author: Dahai CAO 
  */
 

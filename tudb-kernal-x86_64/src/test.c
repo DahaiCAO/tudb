@@ -28,25 +28,28 @@
 #include <stdlib.h>
 #include "test.h"
 
-
-int htoi(char s[]) {
+/**
+ * this function convert the hex decimal string to decimal integer.
+ * The format of parameter is '0000000c' convert to 12,
+ * '0000000e' -> 14. But, the convert may have some issues for the big number.
+ * You need to test this algorithm.
+ *
+ * @author Dahai Cao created at 13:50 on 2020-01-18
+ */
+int htoi(char *s) {
 	int n = 0;
 	int i = 0;
-	while (s[i] != '\0' && s[i] != '\n') {
-		if (s[i] == '0') {
-			if (s[i + 1] == 'x' || s[i + 1] == 'X')
-				i += 2;
+	while (s[i] != '\0') {
+		if (s[i] != '0') {
+			if (s[i] >= '0' && s[i] <= '9') {
+				n = n * 16 + (s[i] - '0');
+			} else if (s[i] >= 'a' && s[i] <= 'f') {
+				n = n * 16 + (s[i] - 'a') + 10;
+			} else if (s[i] >= 'A' && s[i] <= 'F') {
+				n = n * 16 + (s[i] - 'A') + 10;
+			}
 		}
-		if (s[i] >= '0' && s[i] <= '9') {
-			n = n * 16 + (s[i] - '0');
-		} else if (s[i] >= 'a' && s[i] <= 'f') {
-			n = n * 16 + (s[i] - 'a') + 10;
-		} else if (s[i] >= 'A' && s[i] <= 'F') {
-			n = n * 16 + (s[i] - 'A') + 10;
-		} else
-			return -1;
-		++i;
-
+		i++;
 	}
 	return n;
 }
@@ -64,7 +67,7 @@ int htoi(char s[]) {
 //	}
 //}
 
-void hexconcat(char *buf,  char *t) {
+void hexconcat(char *buf, char *t) {
 	if (strlen(buf) == 1) {
 		strcat(t, "0000000");
 	} else if (strlen(buf) == 2) {
@@ -107,7 +110,7 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
 
 }
 
-	int main() {
+int main() {
 //    int State = setjmp(mark);
 //    if(State==0){
 //        Div(4,0);
@@ -131,8 +134,8 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
 //	 perror("msg");
 //	}
 
-		//setvbuf(stdout, NULL, _IOLBF, 0);
-		//setvbuf(stdout, NULL, _IONBF, 0);
+	//setvbuf(stdout, NULL, _IOLBF, 0);
+	//setvbuf(stdout, NULL, _IONBF, 0);
 
 //    char age[5] = {0};
 //    printf("Hello, please enter your age:\n");
@@ -152,8 +155,8 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
 //	char *ch = itoa(l, mm, 10);
 //	printf("%s\n", ch);
 
-		//char sendbuf[512] = { 0 }; //
-		//contructLoginCmd("uuu", "ppp", sendbuf);
+	//char sendbuf[512] = { 0 }; //
+	//contructLoginCmd("uuu", "ppp", sendbuf);
 
 //	int iiii = 42;
 //	char buf[8] = { 0 };
@@ -161,11 +164,13 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
 //	//decimal_to_hexadecimal
 //	printf("%s\n", buf);
 
-//		int a = htoi("9FA8C");
-//		printf("%d\n", a);
+//	int a = htoi("9FA8C");
+//	printf("%d\n", a);
+		int a = htoi("000fA1");
+		printf("%d\n", a);
 
-		//char str[255];
-		//sprintf(str, "%x", 100); //将100转为16进制表示的字符串。
+	//char str[255];
+	//sprintf(str, "%x", 100); //将100转为16进制表示的字符串。
 
 //			long iiii = 42949;
 //			char buf[8] = { 0 };
@@ -173,10 +178,9 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
 //			//decimal_to_hexadecimal
 //			printf("%s\n", buf);
 
-		//char buf[512] = { 0 };
-		//contructLoginCmd("root", "passwd", buf);
+	//char buf[512] = { 0 };
+	//contructLoginCmd("root", "passwd", buf);
 
+	return 0;
 
-		return 0;
-
-	}
+}
