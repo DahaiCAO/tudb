@@ -157,7 +157,7 @@ int parseLoginInput(int argc, char *argv[]) {
 	return 0;
 }
 
-void hexconcat(char *buf,  char *t) {
+void hexconcat(char *buf, char *t) {
 	if (strlen(buf) == 1) {
 		strcat(t, "0000000");
 	} else if (strlen(buf) == 2) {
@@ -226,34 +226,37 @@ int doClient() {
 		char send[4096] = { 0 }; // 4K
 		char sendbuf[512] = { 0 }; //
 		if (connectServer(conn_sock, serverip, sport)) {
-			contructLoginCmd("root", "passwd", sendbuf);
-			//contructLoginCmd(username, password, sendbuf);
+			//contructLoginCmd("root", "password", sendbuf);
+			contructLoginCmd(username, password, sendbuf);
 			int r = sendRequest(conn_sock, sendbuf);
 			memset(sendbuf, 0, sizeof(sendbuf));
 			if (r != -1) { // send request successfully
 				// receive login response
 				int rsp0 = receiveResponse(conn_sock, recv_data, BUF_SIZE);
 				if (rsp0 > 0) {
-					//printf("%s\n", recvbuf);
-					printf("%s", promptStr);
-					printf("%s\n", recv_data);
-					logwrite("CLT", INFO, "%s", recv_data);
-					printf("%s", promptStr);
-					while (1) {
-						gets(send);
-						int r = sendRequest(conn_sock, send);
-						memset(send, 0, sizeof(send));
-						if (r != -1) {
-							// receive other command response after login
-							memset(recv_data, 0, sizeof(recv_data));
-							int rsp = receiveResponse(conn_sock, recv_data, BUF_SIZE);
-							if (rsp <= 0) {
+					if (strcmp(recv_data, "200") == 0) { // login successfully
+						printWelcomeMesssage();
+						printf("%s", promptStr);
+						printf("%s\n", "Login successfully");
+						logwrite("CLT", INFO, "%s", recv_data);
+						printf("%s", promptStr);
+						while (1) {
+							gets(send);
+							int r = sendRequest(conn_sock, send);
+							memset(send, 0, sizeof(send));
+							if (r != -1) {
+								// receive other command response after login
+								memset(recv_data, 0, sizeof(recv_data));
+								int rsp = receiveResponse(conn_sock, recv_data,
+										BUF_SIZE);
+								if (rsp <= 0) {
+									break;
+								}
+								printf("%s\n", recv_data);
+								printf("%s", promptStr);
+							} else {
 								break;
 							}
-							printf("%s\n", recv_data);
-							printf("%s", promptStr);
-						} else {
-							break;
 						}
 					}
 				}
@@ -282,11 +285,10 @@ int doClient() {
  */
 int main(int argc, char *argv[]) {
 	setvbuf(stdout, NULL, _IONBF, 0);
-	printWelcomeMesssage();
 	// parse command line:
-	//int r = parseLoginInput(argc, argv);
-	//if (r != 0)
-	//	return 0;
+	int r = parseLoginInput(argc, argv);
+	if (r != 0)
+		return 0;
 	doClient();
 	return 0;
 }

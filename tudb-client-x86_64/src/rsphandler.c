@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 /*
- * numberutils.h
+ * rsphandler.c
  *
- * Created on: 2020-01-18 10:40:19
- * Author: Dahai CAO 
+ *  Created on: 2020年1月19日
+ *      Author: great
  */
 
-#ifndef NUMBERUTILS_H_
-#define NUMBERUTILS_H_
 
-long htoi(char *s, size_t size);
-
-#endif /* NUMBERUTILS_H_ */

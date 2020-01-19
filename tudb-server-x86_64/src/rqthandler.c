@@ -85,13 +85,15 @@ char* handleMsg(char* msg, char *msghead, char *msgbody) {
 		char *pwd = strtok(NULL, " ");
 		// verify user name and password in memory
 		if (strcmp(usr, root) == 0 && strcmp(pwd, password) == 0) {
-			rsp = "1234567890_login_califnia_melbourne_sydney_queenland_china_airfare_arline_hot_fire";
+			rsp = "200"; // status code:login successfully
 			createReponse(msg, "0002", rsp); // 0002: login response
 		} else {
-			rsp = "1234567890_login_failed";
+			rsp = "400"; // status code:login failed
 			createReponse(msg, "0002", rsp);
 		}
-		return msg;
+	} else if (strcmp(msghead, "0003") == 0) { // 0003: other requests, it is temporary name
+		rsp = "201"; // status code: other status
+		createReponse(msg, "0004", rsp); // 0004: other responses
 	}
 	return msg;
 }

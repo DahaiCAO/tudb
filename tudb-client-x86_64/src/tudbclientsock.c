@@ -97,19 +97,17 @@ int sendRequest(SOCKET conn_sock, char *sendbuf) {
 int receiveMsg(SOCKET clt_socket, char *req_name, char *reqbody, const int buf_size) {
 	int nbytes;
 	char buf[buf_size];
+	char req_len[9]; // request length, it is hex decimal number
 	memset(buf, 0, sizeof(buf)); // clean receive buffer
-	char req_len[9] = { 0 }; // request length
+	memset(req_len, 0, sizeof(req_len)); // clean receive buffer
 	nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
 	if (nbytes <= 0) {
 		return nbytes;
 	}
-	// ----- parse message header
 	strncpy(req_name, &buf[0], 4);
 	strncpy(req_len, &buf[4], 8); // &buf[4] is the pointer of fourth element
 	//memcpy(req_len, &buf[4], 4);// another method
 	long msg_len = htoi(req_len, sizeof(req_len));
-	//printf("%ld\n", msglen);
-	// ----- parse message header
 	if (nbytes > 12) {
 		strncpy(reqbody, &buf[12], (nbytes - 12));
 	}
@@ -141,7 +139,6 @@ int receiveMsg(SOCKET clt_socket, char *req_name, char *reqbody, const int buf_s
 int receiveResponse(SOCKET clt_socket, char * recv_buf, const int buf_size) {
 	int nbytes = -1;
 	while (1) {
-		//nbytes = recv(conn_sock, recvbuf, sizeof(recv_buf), 0);
 		char req_name[5] = { 0 }; // request name, like http request, get/post
 		nbytes = receiveMsg(clt_socket, req_name, recv_buf, buf_size);
 		if (nbytes > 0) {

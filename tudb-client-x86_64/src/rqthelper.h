@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 /*
- * numberutils.h
+ * rqthelper.h
  *
- * Created on: 2020-01-18 10:40:19
- * Author: Dahai CAO 
+ * Created on: 2020年1月20日
+ * Author: great
  */
 
-#ifndef NUMBERUTILS_H_
-#define NUMBERUTILS_H_
+#ifndef RQTHELPER_H_
+#define RQTHELPER_H_
 
-long htoi(char *s, size_t size);
 
-#endif /* NUMBERUTILS_H_ */
+
+#endif /* RQTHELPER_H_ */

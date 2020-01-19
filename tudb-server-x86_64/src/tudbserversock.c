@@ -123,7 +123,8 @@ SOCKET acceptRequest(SOCKET srv_socket) {
 	return clt_socket;
 }
 
-int receiveMsg(SOCKET clt_socket, char *req_name, char *req_body, const int buf_size) {
+int receiveMsg(SOCKET clt_socket, char *req_name,
+		char *req_body, const int buf_size) {
 	int nbytes;
 	char buf[buf_size];
 	char req_len[9] = { 0 }; // request length
@@ -144,7 +145,6 @@ int receiveMsg(SOCKET clt_socket, char *req_name, char *req_body, const int buf_
 	strncpy(req_len, &buf[4], 8); // &buf[4] is the pointer of fourth element
 	//memcpy(req_len, &buf[4], 4);// another method
 	long msg_len = htoi(req_len, sizeof(req_len));
-	//printf("%ld\n", msglen);
 	// ----- parse message header
 	if (nbytes > 12) {
 		strncpy(req_body, &buf[12], (nbytes - 12));
@@ -178,39 +178,6 @@ int handleRequest(SOCKET clt_socket) {
 		char req_name[5]; // request name, like http request, get/post
 		memset(req_name, 0, sizeof(req_name));
 		nbytes = receiveMsg(clt_socket, req_name, recv_dat, BUF_SIZE);
-//		memset(buf, 0, sizeof(buf)); // clean receive buffer
-//
-//		char rqlen[8] = { 0 }; // request length
-//		nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
-//		strncpy(rqname, buf, 4);
-//		if (strcmp(rqname, "0002") == 0) { // recognize request name: 0002: logout
-//			printf("%s\n", "close one client connection");
-//			closeClientSocket(clt_socket);
-//			break;
-//		}
-//
-//		strncpy(rqlen, &buf[4], 8); // &buf[4] is the pointer of fourth element
-//		//memcpy(rqlen, &buf[4], 4);// another method
-//		long msglen = htoi(rqlen, sizeof(rqlen));
-//		printf("%ld\n", msglen);
-//		if (nbytes > 12) {
-//			strncpy(recv_dat, &buf[12], (nbytes - 12));
-//		}
-//		if (BUF_SIZE < msglen) {
-//			int d = msglen / BUF_SIZE;
-//			int s = msglen % BUF_SIZE;
-//			int c = 2;
-//			while ((c * BUF_SIZE) < msglen) {
-//				memset(buf, 0, sizeof(buf));
-//				nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
-//				strcat(recv_dat, buf);
-//				c++;
-//			}
-//			memset(buf, 0, sizeof(buf));
-//			nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
-//			strcat(recv_dat, buf);
-//		}
-
 		if (nbytes > 0) {
 			printf("%s\n", recv_dat);
 			char resp_buf[10240] = {0};
