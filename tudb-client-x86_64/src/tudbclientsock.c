@@ -15,12 +15,6 @@
  */
 #undef UNICODE
 
-#include <winsock2.h>
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-//#include "log.h"
 #include "tudbclientsock.h"
 
 /**
@@ -37,8 +31,7 @@ SOCKET createConnection() {
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	iErrorMsg = WSAStartup(wVersionRequested, &wsaData);
 	if (iErrorMsg != NO_ERROR) {
-//		logwrite("CLT", ERROR, "%s",
-//				getMsg("WSAStartup fault, error: ", iErrorMsg));
+		logwrite("CLT", ERROR, "%s","WSAStartup fault, error 1");
 		printf("WSAStartup fault, error: %d\n", iErrorMsg);
 		return FALSE;
 	}
@@ -46,8 +39,7 @@ SOCKET createConnection() {
 	// create a socket
 	SOCKET conn_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (conn_sock == INVALID_SOCKET) {
-//		logwrite("CLT", ERROR, "%s",
-//				getMsg("Socket fault, error: ", WSAGetLastError()));
+		logwrite("CLT", ERROR, "%s","Socket fault, error 2");
 		printf("Socket fault, error: %d\n", WSAGetLastError());
 		WSACleanup();
 		return FALSE;
@@ -58,21 +50,28 @@ SOCKET createConnection() {
 /**
  *
  */
-int connectServer(SOCKET conn_sock) {
+int connectServer(SOCKET conn_sock, char *ip, int port) {
+	char *bip = DEFAULT_ADDR;
+	if (ip != NULL) {
+		bip = ip;
+	}
+	int bport = DEFAULT_PORT;
+	if (port > 0) {
+		bport = port;
+	}
 	int iErrorMsg;
 	// prepare network communication address
 	struct sockaddr_in addrClient;
 	memset(&addrClient, 0, sizeof(struct sockaddr_in));
 	addrClient.sin_family = AF_INET;
-	addrClient.sin_port = htons(DEFAULT_PORT);
-	addrClient.sin_addr.s_addr = inet_addr(DEFAULT_ADDR);
+	addrClient.sin_port = htons(bport);
+	addrClient.sin_addr.s_addr = inet_addr(bip);
 
 	// connect to server
 	iErrorMsg = connect(conn_sock, (struct sockaddr*) &addrClient,
 			sizeof(struct sockaddr));
 	if (iErrorMsg == SOCKET_ERROR) {
-//		logwrite("CLT", ERROR, "%s",
-//				getMsg("Fails connect the server, error: ", WSAGetLastError()));
+		logwrite("CLT", ERROR, "%s","Fails connect the server, error 3");
 		printf("Fails connect the server, error: %d\n", WSAGetLastError());
 		closesocket(conn_sock);
 		conn_sock = INVALID_SOCKET;
@@ -88,13 +87,50 @@ int sendRequest(SOCKET conn_sock, char *sendbuf) {
 	// send data to server
 	status = send(conn_sock, sendbuf, strlen(sendbuf), 0);
 	if (status == SOCKET_ERROR) {
-//		logwrite("CLT", ERROR, "%s",
-//				getMsg("Fails sending, error:", WSAGetLastError()));
+		logwrite("CLT", ERROR, "%s","Fails sending, error 4");
 		printf("Fails sending, error: %d\n", WSAGetLastError());
 		closesocket(conn_sock);
 	}
 	return 0;
 }
+
+int receiveMsg(SOCKET clt_socket, char *req_name, char *reqbody, const int buf_size) {
+	int nbytes;
+	char buf[buf_size];
+	memset(buf, 0, sizeof(buf)); // clean receive buffer
+	char req_len[9] = { 0 }; // request length
+	nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+	if (nbytes <= 0) {
+		return nbytes;
+	}
+	// ----- parse message header
+	strncpy(req_name, &buf[0], 4);
+	strncpy(req_len, &buf[4], 8); // &buf[4] is the pointer of fourth element
+	//memcpy(req_len, &buf[4], 4);// another method
+	long msg_len = htoi(req_len, sizeof(req_len));
+	//printf("%ld\n", msglen);
+	// ----- parse message header
+	if (nbytes > 12) {
+		strncpy(reqbody, &buf[12], (nbytes - 12));
+	}
+	if (buf_size < msg_len) {
+		int c = 2;
+		while ((c * buf_size) < msg_len) {
+			memset(buf, 0, sizeof(buf));
+			nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+			strcat(reqbody, buf);
+			c++;
+		}
+		memset(buf, 0, sizeof(buf));
+		nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
+		if (nbytes <= 0) {
+			return nbytes;
+		}
+		strcat(reqbody, buf);
+	}
+	return nbytes;
+}
+
 
 /**
  * Receive data from server,
@@ -102,18 +138,21 @@ int sendRequest(SOCKET conn_sock, char *sendbuf) {
  * receive bytes from server continuously.
  *
  */
-int receiveResponse(SOCKET conn_sock, char * recvbuf) {
-	int recv_size = -1;
+int receiveResponse(SOCKET clt_socket, char * recv_buf, const int buf_size) {
+	int nbytes = -1;
 	while (1) {
-		recv_size = recv(conn_sock, recvbuf, sizeof(recvbuf), 0);
-		if (recv_size > 0) {
-			printf("%d Bytes received : %s\n", recv_size, recvbuf);
+		//nbytes = recv(conn_sock, recvbuf, sizeof(recv_buf), 0);
+		char req_name[5] = { 0 }; // request name, like http request, get/post
+		nbytes = receiveMsg(clt_socket, req_name, recv_buf, buf_size);
+		if (nbytes > 0) {
+			//printf("%d Bytes received : %s\n", bufsize, recvbuf);
 			break;// needs to update.
-		} else if (recv_size <= 0) {
+		} else if (nbytes <= 0) {
+			closeConnection(clt_socket);
 			break;
 		}
-	};
-	return recv_size;
+	}
+	return nbytes;
 }
 
 int closeConnection(SOCKET conn_sock) {

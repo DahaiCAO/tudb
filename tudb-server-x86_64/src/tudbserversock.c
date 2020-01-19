@@ -123,12 +123,12 @@ SOCKET acceptRequest(SOCKET srv_socket) {
 	return clt_socket;
 }
 
-int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize) {
+int receiveMsg(SOCKET clt_socket, char *req_name, char *req_body, const int buf_size) {
 	int nbytes;
-	char buf[bufsize];
+	char buf[buf_size];
+	char req_len[9] = { 0 }; // request length
 	memset(buf, 0, sizeof(buf)); // clean receive buffer
-	//char rqname[4] = { 0 }; // request name, like http request, get/post
-	char rqlen[8] = { 0 }; // request length
+	memset(req_len, 0, sizeof(req_len)); // clean receive buffer
 	nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
 	if (nbytes <= 0) {
 		closesocket(clt_socket);
@@ -136,27 +136,25 @@ int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize
 		return nbytes;
 	}
 	// ----- parse message header
-	strncpy(rqname, buf, 4);
-	if (strcmp(rqname, "0002") == 0) { // recognize request name: 0002: logout
+	strncpy(req_name, &buf[0], 4);
+	if (strcmp(req_name, "0003") == 0) { // recognize request name: 0003: logout
 		printf("%s\n", "client request to close client connection");
-		closesocket(clt_socket);
-		WSACleanup();
-		return nbytes;
+		return -1; // log out
 	}
-	strncpy(rqlen, &buf[4], 8); // &buf[4] is the pointer of fourth element
-	//memcpy(rqlen, &buf[4], 4);// another method
-	long msglen = htoi(rqlen, sizeof(rqlen));
-	printf("%ld\n", msglen);
+	strncpy(req_len, &buf[4], 8); // &buf[4] is the pointer of fourth element
+	//memcpy(req_len, &buf[4], 4);// another method
+	long msg_len = htoi(req_len, sizeof(req_len));
+	//printf("%ld\n", msglen);
 	// ----- parse message header
 	if (nbytes > 12) {
-		strncpy(reqbody, &buf[12], (nbytes - 12));
+		strncpy(req_body, &buf[12], (nbytes - 12));
 	}
-	if (bufsize < msglen) {
+	if (buf_size < msg_len) {
 		int c = 2;
-		while ((c * bufsize) < msglen) {
+		while ((c * buf_size) < msg_len) {
 			memset(buf, 0, sizeof(buf));
 			nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
-			strcat(reqbody, buf);
+			strcat(req_body, buf);
 			c++;
 		}
 		memset(buf, 0, sizeof(buf));
@@ -166,7 +164,7 @@ int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize
 			WSACleanup();
 			return nbytes;
 		}
-		strcat(reqbody, buf);
+		strcat(req_body, buf);
 	}
 	return nbytes;
 }
@@ -177,8 +175,9 @@ int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize
 int handleRequest(SOCKET clt_socket) {
 	int nbytes;
 	while (1) {
-		char rqname[4] = { 0 }; // request name, like http request, get/post
-		nbytes = receiveMsg(clt_socket, rqname, recv_dat, BUF_SIZE);
+		char req_name[5]; // request name, like http request, get/post
+		memset(req_name, 0, sizeof(req_name));
+		nbytes = receiveMsg(clt_socket, req_name, recv_dat, BUF_SIZE);
 //		memset(buf, 0, sizeof(buf)); // clean receive buffer
 //
 //		char rqlen[8] = { 0 }; // request length
@@ -214,9 +213,9 @@ int handleRequest(SOCKET clt_socket) {
 
 		if (nbytes > 0) {
 			printf("%s\n", recv_dat);
-			char *respbuf = handleMsg(rqname, recv_dat);
-
-			int sent_len = send(clt_socket, respbuf, strlen(respbuf), 0);
+			char resp_buf[10240] = {0};
+			handleMsg(resp_buf, req_name, recv_dat);
+			int sent_len = send(clt_socket, resp_buf, strlen(resp_buf), 0);
 			if (sent_len == SOCKET_ERROR) {
 				printf("send error, error: %d\n", WSAGetLastError());
 				closeClientSocket(clt_socket);

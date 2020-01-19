@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-#undef UNICODE
-
-#include <stdio.h>
-#include <stdlib.h>
-//#include <winsock2.h>
-
 /*
- * cmdparser.h
+ * Configuration utility is used to get the entries in configuration file. The
+ * file is always read by program and not written, so we don't provide the write
+ * functionality.
  *
- * Created on: 2020年1月3日 下午5:51:25
+ * Created on: 2020-01-08 16:33:28
  * Author: Dahai CAO 
  */
 
-#ifndef RQTPARSER_H_
-#define RQTPARSER_H_
+#ifndef CONFUTIL_H_
+#define CONFUTIL_H_
 
-long htoi(char *s, size_t size);
+#define filename "./conf/tudb.conf"
 
-char* handleMsg(char *msghead, char *msgbody);
+void trim(char *strIn, char *strOut);
 
-#endif /* CMDPARSER_H_ */
+void getValue(char *keyAndValue, const char *key, char *value);
+
+void readconfigfile(const char *fname/*in*/, const char *key/*in*/,
+		char **value/*out*/);
+
+char* getconfentry(const char *key);
+
+#endif /* CONFUTIL_H_ */

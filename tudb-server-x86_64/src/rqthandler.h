@@ -16,42 +16,24 @@
 
 #undef UNICODE
 
-#include <winsock2.h>
-#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <error.h>
-#include <string.h>
-#include <conio.h>
-
-#include "rqthandler.h"
-//#include "base64util.h"
-//#include "numberutils.h"
+//#include <winsock2.h>
 
 /*
- * tudbserversock.h
+ * cmdparser.h
  *
- * Created on: 2020-01-02 22:55:46
+ * Created on: 2020年1月3日 下午5:51:25
  * Author: Dahai CAO 
  */
 
-#ifndef TUDBSERVERSOCK_H_
-#define TUDBSERVERSOCK_H_
+#ifndef RQTHANDLER_H_
+#define RQTHANDLER_H_
 
-SOCKET createServerSocket();
+long htoi(char *s, size_t size);
 
-int bindIpandPort(SOCKET srv_socket, char *ip, int port);
+char* handleMsg(char* respbuf, char *msghead, char *msgbody);
 
-int listenPort(SOCKET srv_socket);
+void createReponse(char *msg, char *msghead, char *msgbody);
 
-int closeClientSocket(SOCKET clt_socket);
-
-int closeServerSocket(SOCKET clt_socket);
-
-SOCKET acceptRequest(SOCKET srv_socket);
-
-int handleRequest(SOCKET clt_socket);
-
-int receiveMsg(SOCKET clt_socket, char *rqname, char *reqbody, const int bufsize);
-
-#endif /* TUDBSERVERSOCK_H_ */
+#endif /* CMDPARSER_H_ */

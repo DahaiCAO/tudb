@@ -14,38 +14,27 @@
  * limitations under the License.
  */
 
-#undef UNICODE
-
-#include <winsock2.h>
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "log.h"
-#include "numberutils.h"
-
 /*
- * tudbclient.h
+ * Configuration utility is used to get the entries in configuration file. The
+ * file is always read by program and not written, so we don't provide the write
+ * functionality.
  *
- * Created on: 2020-01-02 22:34:00
+ * Created on: 2020-01-08 16:33:28
  * Author: Dahai CAO 
  */
 
-#ifndef TUDBCLIENTSOCK_H_
-#define TUDBCLIENTSOCK_H_
+#ifndef CONFUTIL_H_
+#define CONFUTIL_H_
 
+#define filename "./conf/tudb.conf"
 
-#define DEFAULT_PORT 9088           // REMOTE PORT
-#define DEFAULT_ADDR "127.0.0.1"    // server address
+void trim(char *strIn, char *strOut);
 
-SOCKET createConnection();
+void getValue(char *keyAndValue, const char *key, char *value);
 
-int connectServer(SOCKET conn_sock, char *ip, int port);
+void readconfigfile(const char *fname/*in*/, const char *key/*in*/,
+		char **value/*out*/);
 
-int sendRequest(SOCKET conn_sock, char *sendbuf);
+char* getconfentry(const char *key);
 
-int receiveResponse(SOCKET conn_sock, char * recvbuf, const int bufsize);
-
-int closeConnection(SOCKET conn_sock);
-
-#endif /* TUDBCLIENTSOCK_H_ */
+#endif /* CONFUTIL_H_ */

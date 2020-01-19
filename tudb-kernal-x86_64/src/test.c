@@ -22,52 +22,24 @@
  */
 
 #include<stdio.h>
-#include<setjmp.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "test.h"
 
-/**
- * this function convert the hex decimal string to decimal integer.
- * The format of parameter is '0000000c' convert to 12,
- * '0000000e' -> 14. But, the convert may have some issues for the big number.
- * You need to test this algorithm.
- *
- * @author Dahai Cao created at 13:50 on 2020-01-18
- */
-int htoi(char *s) {
-	int n = 0;
-	int i = 0;
-	while (s[i] != '\0') {
-		if (s[i] != '0') {
-			if (s[i] >= '0' && s[i] <= '9') {
-				n = n * 16 + (s[i] - '0');
-			} else if (s[i] >= 'a' && s[i] <= 'f') {
-				n = n * 16 + (s[i] - 'a') + 10;
-			} else if (s[i] >= 'A' && s[i] <= 'F') {
-				n = n * 16 + (s[i] - 'A') + 10;
-			}
-		}
-		i++;
-	}
-	return n;
+// 在C语言中，数组作为参数，进行传递时，
+// 传递的是指针 ，换句话说，字符数组作为参数，
+// 进行传递时，传递的是字符数组的起始地址，
+// 相当于一个字符指针，两者没有区别。比如下面的代码：
+void f1(char *s) {
+	printf("%s\n", s);
+}
+void f2(char sa[]) {
+	printf("%s\n", sa);
 }
 
-//void itoh(int integer) {
-//	int c;
-//	int i, j, digit;
-//	for (i = 7, j = 0; i >= 0; i--, j++) {
-//		digit = (integer >> (i * 4)) & 0xf;
-//		if (digit < 10) {
-//			c = digit + 0x30;
-//		} else {
-//			c = digit + 0x37;
-//		}
-//	}
-//}
-
-void hexconcat(char *buf, char *t) {
+void hexconcat(char *buf,  char *t) {
 	if (strlen(buf) == 1) {
 		strcat(t, "0000000");
 	} else if (strlen(buf) == 2) {
@@ -86,100 +58,81 @@ void hexconcat(char *buf, char *t) {
 	strcat(t, buf);
 }
 
-void contructLoginCmd(char *username, char *password, char *cmd) {
-	strcpy(cmd, "0001");	// 0001: login command
 
-	int usrlen = strlen(username);
-	char mm[10] = { 0 };
-	itoa(usrlen, mm, 10);
+void createReponse(char *msg, char *msghead, char *msgbody) {
+	strcpy(msg, msghead); // 4 Bytes length
 
-	int pwdlen = strlen(password);
-	char nn[10] = { 0 };
-	itoa(pwdlen, nn, 10);
+	int rsplen = 12 + strlen(msgbody);
+	char len[8] = { 0 };
+	itoa(rsplen, len, 16);
 
-	int lensum = usrlen + pwdlen + 4;
-
-	itoa(lensum, nn, 16); // convert to hexdecimal number
-	char h[8] = { 0 };
-	hexconcat(nn, h);
-	strcat(cmd, h);
-	strcat(cmd, username);
-	strcat(cmd, " ");
-	strcat(cmd, password);
-	printf("%s\n", cmd);
-
+	char h[8] = { 0 }; // 8 Bytes length for store the hex number
+	hexconcat(len, h);
+	strcat(msg, h);
+	strcat(msg, msgbody);
+	printf("%s\n", msg);
 }
 
 int main() {
-//    int State = setjmp(mark);
-//    if(State==0){
-//        Div(4,0);
-//    }else{
-//        switch(State){
-//            case 1:
-//                printf("除0异常!\n");
-//        }
-//    }
-//    return 0;
+	setvbuf(stdout, NULL, _IONBF, 0);
+//	char rsa[] = "world hello";
+//	f1(rsa); // 效果一样
+//	f2(rsa); // 效果一样
 
-//	errno = 0;
-//	if (NULL == fopen("d:\\tudata\\d.txt", "a+"))
-//	{
-//	printf("----Msg:%s\n", strerror(errno));
-//	perror("----msg");
+	/*char c[8] = { 0 };
+	 itoa(999, c, 10);// for windows platform
+	 char msg1[] = "uuuuuuuuuuuuuuuu";
+	 strcat(msg1, "jjj");
+	 strcat(msg1, c);
+	 printf("%s\n", msg1);*/
+	// printf("EACCES:%s\n", strerror(EACCES));//打印没有权限错误信息
+	// errno = EHOSTDOWN;//EHOSTDOWN 服务器关闭
+	// perror("Error:");
+//	char str[] = "我,是,中国,程序员";
+//	char *ptr;
+//	//char *p;
+//	printf("开始前:  str=%s\n", str);
+//	printf("开始分割:\n");
+//	ptr = strtok(str, ",");
+//	while (ptr != NULL) {
+//		printf("ptr=%s\n", ptr);
+//		ptr = strtok(NULL, ",");
 //	}
-//	else
-//	{
-//	 printf("Msg:%s\n", strerror(errno));
-//	 perror("msg");
-//	}
 
-	//setvbuf(stdout, NULL, _IOLBF, 0);
-	//setvbuf(stdout, NULL, _IONBF, 0);
 
-//    char age[5] = {0};
-//    printf("Hello, please enter your age:\n");
-//    fflush(stdout);
-//    fflush(stdin);
-//    rewind(stdin);
-//    scanf("%1s", age);
-//    printf("Your age is %s\n", age);
-//    // elegant ?
-//    fflush(stdout);
-//    printf("%s\n", "The end.");
-//    fflush(stdout);
+	//int i;// 数组和指针的相互转化
+	//char a[10];
+	//char *b = "abcdefghi";
+	//for (i = 0; i < 10; i++) {
+	//	a[i] = b[i];
+	//}
+	//printf("%s", a);
 
-//	char *c  = "lllll";
-//    char mm[10];
-//	int l = strlen(c);
-//	char *ch = itoa(l, mm, 10);
-//	printf("%s\n", ch);
+	// 数组可以在栈上分配，也可以在堆上分配，但必须指定大小。
+//	char str0[] = "root password"; //在栈上分配
+	//char a1[100]; //在栈上分配
+	// char* pa = new char[100];// 在堆上分配，返回首元素的地址
+//	char *str = str0;	// 在堆上分配，返回首元素的地址
+//	printf("ptr=%s\n", str);
+//
+//	char *ptr = strtok(str, " ");
+//	printf("ptr=%s\n", ptr);
+//	printf("str=%s\n", str);
+//	char *ptr1 = strtok(NULL, " ");
+//	printf("str=%s\n", ptr1);
 
-	//char sendbuf[512] = { 0 }; //
-	//contructLoginCmd("uuu", "ppp", sendbuf);
+//	char rsp[] = "1234567890_login_califnia_melbourne_sydney_queenland_china_airfare_arline_hot_fire";
+//	char msg[1024];
+//	createReponse(msg, "0003", rsp);
 
-//	int iiii = 42;
-//	char buf[8] = { 0 };
-//	itoa(iiii, buf, 16);
-//	//decimal_to_hexadecimal
-//	printf("%s\n", buf);
+	   char src[40];
+	   char dest[12];
 
-//	int a = htoi("9FA8C");
-//	printf("%d\n", a);
-		int a = htoi("000fA1");
-		printf("%d\n", a);
+	   memset(dest, '\0', sizeof(dest));
+	   strcpy(src, "This is tutorialspoint.com");
+	   strncpy(dest, src, 10);
 
-	//char str[255];
-	//sprintf(str, "%x", 100); //将100转为16进制表示的字符串。
-
-//			long iiii = 42949;
-//			char buf[8] = { 0 };
-//			ltoa(iiii, buf, 16);
-//			//decimal_to_hexadecimal
-//			printf("%s\n", buf);
-
-	//char buf[512] = { 0 };
-	//contructLoginCmd("root", "passwd", buf);
+	   printf("Final copied string : %s\n", dest);
 
 	return 0;
 

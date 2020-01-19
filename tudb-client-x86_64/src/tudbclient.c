@@ -21,7 +21,11 @@
 #include <conio.h>
 
 #include "log.h"
+#include "confutil.h"
 #include "tudbclientsock.h"
+
+#define RECV_SIZE  10240 // 4K receive size for receiving client requests
+#define BUF_SIZE   15 // 512 buffer size
 
 char *user = "user:";
 char *pass = "password:";
@@ -30,6 +34,9 @@ char *password_opt = "-p";
 char username[64] = { '\0' }; // maximum length of user name is 64 Bytes.
 char password[64] = { '\0' }; // maximum length of password is 64 Bytes.
 char *promptStr = "tudb>";
+
+char *serverport;
+char *serverip;
 
 /**
  * Output the welcome message.
@@ -68,16 +75,6 @@ void printWelcomeMesssage() {
 	printf("%s\n",
 			"/++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++/");
 }
-//
-//char* getMsg(const char *msg, int error) {
-//	char c[10] = { 0 };
-//	//sprintf(c, "%d", error); // for cross platform
-//	itoa(error, c, 10);// for windows platform
-//	char *m = "";
-//	m = strcat(m, msg);
-//	m = strcat(m, c);
-//	return m;
-//}
 
 /*
  * Parse input command parameters such as user
@@ -219,24 +216,28 @@ void contructLoginCmd(char *username, char *password, char *cmd) {
  *
  */
 int doClient() {
+	serverport = getconfentry("serverport");
+	serverip = getconfentry("serverip");
+	int sport = atoi(serverport);
+
 	SOCKET conn_sock = createConnection();
 	if (conn_sock != 0) {
-		char recv[10240] = { 0 }; // 10K
-		char recvbuf[512] = { 0 };
-		char send[2048] = { 0 }; // 2K
+		char recv_data[RECV_SIZE] = { 0 }; // 10K
+		char send[4096] = { 0 }; // 4K
 		char sendbuf[512] = { 0 }; //
-		if (connectServer(conn_sock)) {
-			contructLoginCmd("root_uri_url_microsoft", "password_passport_key_log_server", sendbuf);
+		if (connectServer(conn_sock, serverip, sport)) {
+			contructLoginCmd("root", "passwd", sendbuf);
+			//contructLoginCmd(username, password, sendbuf);
 			int r = sendRequest(conn_sock, sendbuf);
 			memset(sendbuf, 0, sizeof(sendbuf));
 			if (r != -1) { // send request successfully
 				// receive login response
-				int rsp0 = receiveResponse(conn_sock, recvbuf);
+				int rsp0 = receiveResponse(conn_sock, recv_data, BUF_SIZE);
 				if (rsp0 > 0) {
 					//printf("%s\n", recvbuf);
 					printf("%s", promptStr);
-					printf("%s\n", "Login successfully");
-					//logwrite("CLT", INFO, "%s","kkkkkkkkkkkkk");
+					printf("%s\n", recv_data);
+					logwrite("CLT", INFO, "%s", recv_data);
 					printf("%s", promptStr);
 					while (1) {
 						gets(send);
@@ -244,12 +245,12 @@ int doClient() {
 						memset(send, 0, sizeof(send));
 						if (r != -1) {
 							// receive other command response after login
-							memset(recv, 0, sizeof(recv));
-							int rsp = receiveResponse(conn_sock, recv);
+							memset(recv_data, 0, sizeof(recv_data));
+							int rsp = receiveResponse(conn_sock, recv_data, BUF_SIZE);
 							if (rsp <= 0) {
 								break;
 							}
-							printf("%s\n", recv);
+							printf("%s\n", recv_data);
 							printf("%s", promptStr);
 						} else {
 							break;
