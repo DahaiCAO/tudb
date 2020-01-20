@@ -58,8 +58,8 @@ int closeClientSocket(SOCKET clt_socket) {
 	int iErrorMsg = shutdown(clt_socket, SD_BOTH);
 	if (iErrorMsg == SOCKET_ERROR) {
 		printf("Shutdown fault, error: %d\n", WSAGetLastError());
-		closesocket(clt_socket);
 	}
+	closesocket(clt_socket);
 	return EXIT_SUCCESS;
 }
 
@@ -179,10 +179,11 @@ int handleRequest(SOCKET clt_socket) {
 		memset(req_name, 0, sizeof(req_name));
 		nbytes = receiveMsg(clt_socket, req_name, recv_dat, BUF_SIZE);
 		if (nbytes > 0) {
-			printf("%s\n", recv_dat);
 			char resp_buf[10240] = {0};
 			handleMsg(resp_buf, req_name, recv_dat);
 			int sent_len = send(clt_socket, resp_buf, strlen(resp_buf), 0);
+			memset(resp_buf, 0, sizeof(resp_buf)); // clean the response buffer
+			memset(recv_dat, 0, sizeof(recv_dat)); // clean the request buffer
 			if (sent_len == SOCKET_ERROR) {
 				printf("send error, error: %d\n", WSAGetLastError());
 				closeClientSocket(clt_socket);

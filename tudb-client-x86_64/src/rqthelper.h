@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 /*
  * rqthelper.h
  *
@@ -24,6 +26,10 @@
 #ifndef RQTHELPER_H_
 #define RQTHELPER_H_
 
+void hexconcat(char *buf, char *t);
 
+void createRequest(char * sd_buf);
+
+void createLoginRequest(char *username, char *password, char *sd_buf);
 
 #endif /* RQTHELPER_H_ */

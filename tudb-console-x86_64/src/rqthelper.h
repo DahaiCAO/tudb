@@ -15,25 +15,19 @@
  */
 
 /*
- * test.c
+ * rqthelper.h
  *
- * Created on: 2020-01-07 18:33:57
- * Author: Dahai CAO 
+ * Created on: 2020年1月20日
+ * Author: great
  */
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "log.h"
-#include "confutil.h"
-/*
-int main(int argv, char **argc) {
-	char * val = getconfentry("a");
-	printf("%s\n", val);
-//	printf("%s\n", argc[0]);
-//	logwrite("log", INFO, "%s", "Hello World!");
-//	logwrite("APP", DEBUG, "%s", "H.e.l.l.o W.o.r.l.d!");
-//	logwrite("SVR", WARN, "%s", "H e l l o W o r l d!");
-//	logwrite("ERR", ERROR, "%s", "Hallo World!");
-//	return 0;
+#ifndef RQTHELPER_H_
+#define RQTHELPER_H_
 
-}*/
+void hexconcat(char *buf, char *t);
+
+void createRequest(char * sd_buf);
+
+void createLoginRequest(char *username, char *password, char *sd_buf);
+
+#endif /* RQTHELPER_H_ */

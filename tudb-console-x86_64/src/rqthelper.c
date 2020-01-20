@@ -89,16 +89,14 @@ void hexconcat(char *buf, char *t) {
 void createRequest(char *sd_buf) {
 	if (strcmp(sd_buf, "bye") == 0 || strcmp(sd_buf, "quit") == 0
 			|| strcmp(sd_buf, "exit") == 0) { // 0003: logout
-		char buf[12 + sizeof(sd_buf)];
-		memset(buf, 0, sizeof(buf));
+		char buf[sizeof(sd_buf)];
 		strcat(buf, "0003");
-		char nn[2] = { 0 };
+		char nn[2] = {0};
 		itoa(1, nn, 16); // convert to hexdecimal number
 		char h[8] = { 0 }; // 8 Bytes length
 		hexconcat(nn, h);
 		strcat(buf, h);
-		strcat(buf, "X");
-		strcpy(sd_buf, buf);
+		strcpy(buf, "X", 12);
 	} else if (strcmp(sd_buf, "show ") == 0) { //
 	}
 }

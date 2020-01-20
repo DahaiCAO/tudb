@@ -20,9 +20,9 @@
 /**
  * tudbclt.c
  *
- *  Created on: 2019-12-30 18:33
- *  Last updated at: 2020-01-01 12:21 at Beijing home. It works now!
- *      Author: Dahai Cao
+ * Created on: 2019-12-30 18:33
+ * Last updated at: 2020-01-01 12:21 at Beijing home. It works now!
+ * Author: Dahai Cao
  */
 SOCKET createConnection() {
 	int iErrorMsg;
