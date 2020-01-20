@@ -16,14 +16,16 @@
 #undef UNICODE
 
 #include "tudbserversock.h"
+#include "tudbserver.h"
 
 #define RECV_SIZE     4096 // 4K receive size for receiving client requests
-#define BUF_SIZE        15 // 512 buffer size
-#define DEFAULT_PORT    9088
-#define DEFAULT_ADDR    "127.0.0.1"
+#define BUF_SIZE      15   // 512 buffer size
+#define DEFAULT_PORT  9088
+#define DEFAULT_ADDR  "127.0.0.1"
 
 char recv_dat[RECV_SIZE];
 char buf[BUF_SIZE];
+
 /*
  * tudbserver.c
  *
@@ -31,7 +33,6 @@ char buf[BUF_SIZE];
  *  Last updated at: 2020-01-01 12:21 at Beijing home. It works now!
  *  Author: Dahai Cao
  */
-
 SOCKET createServerSocket() {
 	WSADATA wsaData;
 	SOCKET srv_socket = INVALID_SOCKET;
@@ -90,8 +91,7 @@ int bindIpandPort(SOCKET srv_socket, char *ip, int port) {
 			sizeof(struct sockaddr));
 	if (iErrorMsg == SOCKET_ERROR) {
 		printf("Fault to bind interface, error: %d\n", WSAGetLastError());
-		closesocket(srv_socket);
-		WSACleanup();
+		closeServerSocket(srv_socket);
 		return FALSE;
 	}
 	return TRUE;
@@ -102,8 +102,7 @@ int listenPort(SOCKET srv_socket) {
 	int iErrorMsg = listen(srv_socket, SOMAXCONN);
 	if (iErrorMsg == SOCKET_ERROR) {
 		printf("listen fault, error: %d\n", WSAGetLastError());
-		closesocket(srv_socket);
-		WSACleanup();
+		closeServerSocket(srv_socket);
 		return FALSE;
 	}
 	return TRUE;
@@ -117,7 +116,7 @@ SOCKET acceptRequest(SOCKET srv_socket) {
 			&addrClientLen);
 	if (INVALID_SOCKET == clt_socket) {
 		printf("Failed to accept a client, error: %d\n", WSAGetLastError());
-		closesocket(clt_socket);
+		closeClientSocket(clt_socket);
 		return FALSE;
 	}
 	return clt_socket;
@@ -132,8 +131,6 @@ int receiveMsg(SOCKET clt_socket, char *req_name,
 	memset(req_len, 0, sizeof(req_len)); // clean receive buffer
 	nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
 	if (nbytes <= 0) {
-		closesocket(clt_socket);
-		WSACleanup();
 		return nbytes;
 	}
 	// ----- parse message header
@@ -160,8 +157,6 @@ int receiveMsg(SOCKET clt_socket, char *req_name,
 		memset(buf, 0, sizeof(buf));
 		nbytes = recv(clt_socket, buf, sizeof(buf), 0); //
 		if (nbytes <= 0) {
-			closesocket(clt_socket);
-			WSACleanup();
 			return nbytes;
 		}
 		strcat(req_body, buf);

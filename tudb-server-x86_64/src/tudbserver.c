@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-#include "tudbserversock.h"
-#include "mythreadpool.h"
-#include "confutil.h"
+#include "tudbserver.h"
 
 /*
- * tudbserver.c
+ * This program is Tu DB server main program. Tu DB
  *
  * Created on: 2020-01-02 22:57:37
  * Author: Dahai CAO 
  */
-char *maximum_task_queue_size;
-char *normal_task_queue_size;
-char *maximum_thread_number;
-char *minimum_thread_number;
-char *normal_thread_number;
-char *adminport;
-char *serverport;
-char *serverip;
 
+/*
+ * Outputs welcome message to console.
+ */
 void printWelcomeMesssage() {
 	printf("%s\n", "Starting TuDB server .....");
+}
+
+int createServer(tudbserver_t *svr) {
+	SOCKET svr_socket = createServerSocket();
+	if (bindIpandPort(svr_socket, svr->ip, svr->port)) {
+		if (listenPort(svr_socket)) {
+			printf("%s\n", "listening......");
+			SOCKET clt_socket;
+			while ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
+				printf("%s\n", "get one connect");
+				addtask(svr->pool, (void*) handleRequest, (void *)clt_socket);
+			}
+		}
+	}
+	return 0;
 }
 
 int main(int argc, char **argv) {
@@ -52,7 +56,6 @@ int main(int argc, char **argv) {
 	maximum_thread_number = getconfentry("maximum_thread_number");
 	minimum_thread_number = getconfentry("minimum_thread_number");
 	normal_thread_number = getconfentry("normal_thread_number");
-	adminport = getconfentry("adminport");
 	serverport = getconfentry("serverport");
 	serverip = getconfentry("serverip");
 
@@ -62,28 +65,29 @@ int main(int argc, char **argv) {
 	int d = atoi(minimum_thread_number);
 	int e = atoi(normal_thread_number);
 	int sport = atoi(serverport);
-	int aport = atoi(adminport);
 
-	thread_pool_t *pool = createthreadpool(c, d, e, b, a);
-	if (pool != NULL) {
-		SOCKET svr_socket = createServerSocket();
-		if (bindIpandPort(svr_socket, serverip, sport)) {
-			if (listenPort(svr_socket)) {
-				printf("%s\n", "listening......");
-				SOCKET clt_socket;
-				while ((clt_socket = acceptRequest(svr_socket)) != FALSE) {
-					printf("%s\n", "get one connect");
-					addtask(pool, (void*) handleRequest, (void*) clt_socket);
-				}
-			}
+	tudbserver_t *svr = (tudbserver_t*) malloc(sizeof(tudbserver_t));
+	pthread_mutex_init(&(svr->svr_stat_lock), NULL);
+	svr->ip = serverip;
+	svr->port = sport;
+	svr->pool = createthreadpool(c, d, e, b, a);
+	if (svr->pool != NULL) {
+		//addtask(svr->pool, (void*) createServer, &svr);
+		while (1) {
+			createServer(svr);
+//			pthread_mutex_lock(&(svr->svr_stat_lock));
+//			if (svr->svr_stat == 0) {
+//				destroythreadpool(svr->pool);
+//				printf("%s\n", "TuDB server shutdown.");
+//				break;
+//			}
+//			pthread_mutex_unlock(&(svr->svr_stat_lock));
 		}
-		/*等待所有任务完成*/
-		//sleep(5);  //这句可能出问题，偷懒写法。
-		/*销毁线程池*/
-
-		destroythreadpool(pool);
-		printf("%s\n", "TuDB server shutdown.");
 	}
+	destroythreadpool(svr->pool);
+	pthread_mutex_lock(&(svr->svr_stat_lock));
+	pthread_mutex_destroy(&(svr->svr_stat_lock));
+	free(svr);
+	printf("%s\n", "TuDB server shutdown.");
 	return 0;
-
 }

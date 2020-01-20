@@ -100,5 +100,17 @@ void createRequest(char *sd_buf) {
 		strcat(buf, "X");
 		strcpy(sd_buf, buf);
 	} else if (strcmp(sd_buf, "show ") == 0) { //
+
+	} else { // other any message to server
+		char buf[12 + sizeof(sd_buf)];
+		memset(buf, 0, sizeof(buf));
+		char nn[8] = { 0 };
+		itoa((12 + strlen(buf)), nn, 16); // convert to hexdecimal number
+		char hex[8] = { 0 }; // 8 Bytes length
+		hexconcat(nn, hex);
+		strcat(buf, "0005");
+		strcat(buf, hex);
+		strcat(buf, sd_buf);
+		strcpy(sd_buf, buf);
 	}
 }

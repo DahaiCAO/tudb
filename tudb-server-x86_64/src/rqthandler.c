@@ -47,16 +47,14 @@ void hexconcat(char *buf,  char *t) {
 }
 
 void createReponse(char *msg, char *msghead, char *msgbody) {
-	strcpy(msg, msghead); // 4 Bytes length
-
 	int rsplen = 12 + strlen(msgbody);
 	char len[8] = { 0 };
 	itoa(rsplen, len, 16);
-
-	char h[8] = { 0 }; // 8 Bytes length for store the hex number
-	hexconcat(len, h);
-	strcat(msg, h);
-	strcat(msg, msgbody);
+	char hex[8] = { 0 }; // 8 Bytes length for store the hex number
+	hexconcat(len, hex);
+	strcpy(msg, msghead); // 4 Bytes length
+	strcat(msg, hex);// 8 Bytes length
+	strcat(msg, msgbody);// 10 KBytes length
 	//printf("%s\n", msg);
 }
 
@@ -94,6 +92,12 @@ char* handleMsg(char* msg, char *msghead, char *msgbody) {
 	} else if (strcmp(msghead, "0003") == 0) { // 0003: other requests, it is temporary name
 		rsp = "201"; // status code: other status
 		createReponse(msg, "0004", rsp); // 0004: other responses
+	} else if (strcmp(msghead, "0005") == 0) { // 0005: stop server
+		rsp = msgbody; // status code: other status
+		createReponse(msg, "0006", rsp); // 0006: other responses
+		//pthread_mutex_lock(&(svr->svr_stat_lock));
+		//svr->svr_stat = 1;
+		//pthread_mutex_unlock(&(svr->svr_stat_lock));
 	}
 	return msg;
 }

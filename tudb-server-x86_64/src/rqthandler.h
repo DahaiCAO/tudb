@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <winsock2.h>
 
 /*
  * cmdparser.h
@@ -32,7 +31,7 @@
 
 long htoi(char *s, size_t size);
 
-char* handleMsg(char* respbuf, char *msghead, char *msgbody);
+char* handleMsg(char* msg, char *msghead, char *msgbody);
 
 void createReponse(char *msg, char *msghead, char *msgbody);
 

@@ -172,7 +172,7 @@ int doClient() {
 		char send_dat[4096] = { 0 }; // 4K
 		char send_buf[512] = { 0 }; //
 		if (connectServer(conn_sock, serverip, sport)) {
-		    createLoginRequest("root", "passwd", send_buf);
+			createLoginRequest("root", "passwd", send_buf);
 			//createLoginRequest(username, password, sendbuf);
 			int r = sendRequest(conn_sock, send_buf);
 			memset(send_buf, 0, sizeof(send_buf));
@@ -188,22 +188,27 @@ int doClient() {
 						printf("%s", op_prompt);
 						while (1) {
 							gets(send_dat);
-							//char send_dat1[] = "bye";
-							createRequest(send_dat);
-							int r = sendRequest(conn_sock, send_dat);
-							memset(send_dat, 0, sizeof(send_dat));
-							if (r != -1) {
-								// receive other command response after login
-								memset(recv_dat, 0, sizeof(recv_dat));
-								int rsp = receiveResponse(conn_sock, recv_dat,
-										BUF_SIZE);
-								if (rsp <= 0) {
+							if (strcmp(send_dat, "") != 0) {
+								//char send_dat1[] = "bye";
+								createRequest(send_dat);
+								int r = sendRequest(conn_sock, send_dat);
+								memset(send_dat, 0, sizeof(send_dat));
+								if (r != -1) {
+									// receive other command response after login
+									memset(recv_dat, 0, sizeof(recv_dat));
+									int rsp = receiveResponse(conn_sock,
+											recv_dat,
+											BUF_SIZE);
+									if (rsp <= 0) {
+										break;
+									}
+									printf("%s\n", recv_dat);
+									printf("%s", op_prompt);
+								} else {
 									break;
 								}
-								printf("%s\n", recv_dat);
-								printf("%s", op_prompt);
 							} else {
-								break;
+								printf("%s", op_prompt);
 							}
 						}
 					}
