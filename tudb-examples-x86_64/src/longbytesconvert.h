@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-#include "longbytesconvert.h"
-
 /*
- * test.h
+ * longconverter.h
  *
- * Created on: 2020年1月8日 下午9:38:36
- * Author: Dahai CAO 
+ * Created on: 2020-6-1
+ * Author: Dahai CAO
  */
 
-#ifndef TEST_H_
-#define TEST_H_
 
-typedef struct stuff {
-	char job[20];
-	int age;
-	float height;
-} stuff_t;
+#ifndef LONGBYTESCONVERTER_H_
+#define LONGBYTESCONVERTER_H_
 
-#endif /* TEST_H_ */
+void LongToByteArray(long long value, unsigned char buffer[]);
+
+long long ByteArrayToLong(unsigned char buffer[]);
+
+#endif /* LONGCONVERTER_H_ */

@@ -16,6 +16,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
+
+#include "test.h"
 /*
  * test.c
  *
@@ -59,11 +63,138 @@ void createRequest(char *sd_buf) {
 	}
 }
 
+void initIdDB1(FILE *fp) {
+	// 16 byte
+	long long num = 16; //2004293008363;
+	unsigned char buffer[8] = { 0 };
+	LongToByteArray(num, buffer);
+
+	//long long s = ByteArrayToLong(buffer);
+	//printf("%s\n",s);*/
+	// writing to id db
+	fwrite(buffer, sizeof(unsigned char), 8, fp);
+}
+
+void initIdDB2(FILE *fp) {
+	// 16 byte
+	long long num = -1;	//2004293008363;
+	unsigned char buffer[8] = { 0 };
+	LongToByteArray(num, buffer);
+
+	//long long s = ByteArrayToLong(buffer);
+	//printf("%s\n",s);*/
+	// writing to id db
+	fwrite(buffer, sizeof(unsigned char), 8, fp);
+	// writing to id db
+	fwrite(buffer, sizeof(unsigned char), 8, fp);
+
+}
+
+void fileReadTest() {
+	FILE *idfp = NULL;
+	FILE *dbfp = NULL;
+	char *timeaxisid = "D:/tudata/tustore.timeaxis.db.id";
+	char *timeaxis = "D:/tudata/tustore.timeaxis.db";
+
+	unsigned char buffer1[8] = { 0 };
+	unsigned char buffer2[8] = { 0 };
+	unsigned char buffer3[8] = { 0 };
+	if ((access(timeaxisid, F_OK)) != -1) {
+		// "existed"
+		idfp = fopen(timeaxisid, "ab+");
+		fread(buffer1, sizeof(unsigned char), 8, idfp);
+		long long s0 = ByteArrayToLong(buffer1);
+		printf("%ld\n", s0);
+	}
+	if ((access(timeaxis, F_OK)) != -1) {
+		// "existed"
+		dbfp = fopen(timeaxis, "ab+");
+		long x = fread(buffer2, sizeof(unsigned char), 8, dbfp);
+		printf("%ld\n", x);
+		long long s1 = ByteArrayToLong(buffer2);
+		printf("%ld\n", s1);
+		// whence 可以是 SEEK_SET(0),SEEK_CUR(1),SEEK_END(2)
+		// 这些值决定是从文件头、当前点和文件尾计算偏移量 offset。
+		//fread(buffer2, sizeof(unsigned char), 8, dbfp);
+		int y = fseek(dbfp, 8, SEEK_SET);
+		printf("%d\n", y);
+		long z = fread(buffer3, sizeof(unsigned char), 8, dbfp);
+		printf("%ld\n", z);
+		long long s2 = ByteArrayToLong(buffer3);
+		printf("%ld\n", s2);
+	}
+	fclose(idfp);
+	fclose(dbfp);
+}
+
+void fileWrieTest() {
+	FILE *idfp = NULL;
+	FILE *dbfp = NULL;
+	char *timeaxisid = "D:/tudata/tustore.timeaxis.db.id";
+	char *timeaxis = "D:/tudata/tustore.timeaxis.db";
+	if ((access(timeaxisid, F_OK)) != -1) {
+		// "existed"
+		idfp = fopen(timeaxisid, "ab+");
+
+	} else {	// "not existed"
+		idfp = fopen(timeaxisid, "wb+");
+		initIdDB1(idfp);
+	}
+	if ((access(timeaxis, F_OK)) != -1) {
+		// "existed"
+		dbfp = fopen(timeaxis, "ab+");
+	} else { // "not existed"
+		dbfp = fopen(timeaxis, "wb+");
+		initIdDB2(dbfp);
+	}
+	fclose(idfp);
+	fclose(dbfp);
+}
+
+void createTimeAxisRecord(FILE *idfp, FILE *dbfp) {
+	unsigned long long curtm = (unsigned long) time(NULL);
+	// get one id from id db, update new id to db
+	// insert new record into time axis db.
+
+}
+
 //#include "log.h"
 //#include "confutil.h"
 
 int main(int argv, char **argc) {
+	setvbuf(stdout, NULL, _IONBF, 0);
+	//char send_dat1[] = "bye";
+	//createRequest(send_dat1);
+	//fileReadTest();
+	//fileWrieTest();
+	/* gets time of day */
+	/*time_t now = time(NULL);
+	 char buf[25] = {0};
+	 struct tm *tblock;
+	 //tblock = localtime(&timer);
+	 //localtime() converts date/time to a structure
+	 strftime(buf,24,"%Y%m%d",localtime(&now));
+	 printf("%s\n",buf);
 
-	char send_dat1[] = "bye";
-	createRequest(send_dat1);
+	 strftime(buf,24,"%Y-%m-%d %H:%M:%S",localtime(&now));
+	 printf("%s\n",buf);
+
+	 strftime(buf,24,"%y%m%d %H:%M:%S",localtime(&now));
+	 printf("%s\n",buf);
+
+	 strftime(buf,24,"%y%m%d",localtime(&now));
+	 printf("%s\n",buf);
+
+	 strftime(buf,24,"%H:%M:%S",localtime(&now));
+	 printf("%s\n",buf);*/
+
+	/*	long long num = 2004293008363;
+	 unsigned char buffer[8] = {0};
+	 LongToByteArray(num, buffer);
+
+	 long long s = ByteArrayToLong(buffer);
+	 printf("%lld\n",s);*/
+
+	//printf("%lu\n", (unsigned long)time(NULL)); // For 64-bit systems
+	//printf("%u\n", (unsigned)time(NULL)); // For 32-bit systems
 }
