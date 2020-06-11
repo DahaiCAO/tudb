@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <time.h>
 
+#include <unistd.h>
+
 #include "test.h"
 /*
  * test.c
@@ -65,13 +67,14 @@ void createRequest(char *sd_buf) {
 
 void initIdDB1(FILE *fp) {
 	// 16 byte
-	long long num = 16; //2004293008363;
+	long long num = 0; //2004293008363;
 	unsigned char buffer[8] = { 0 };
 	LongToByteArray(num, buffer);
 
 	//long long s = ByteArrayToLong(buffer);
 	//printf("%s\n",s);*/
 	// writing to id db
+	fwrite(buffer, sizeof(unsigned char), 8, fp);
 	fwrite(buffer, sizeof(unsigned char), 8, fp);
 }
 
@@ -104,7 +107,7 @@ void fileReadTest() {
 		idfp = fopen(timeaxisid, "ab+");
 		fread(buffer1, sizeof(unsigned char), 8, idfp);
 		long long s0 = ByteArrayToLong(buffer1);
-		printf("%ld\n", s0);
+		printf("%lld\n", s0);
 	}
 	if ((access(timeaxis, F_OK)) != -1) {
 		// "existed"
@@ -112,7 +115,7 @@ void fileReadTest() {
 		long x = fread(buffer2, sizeof(unsigned char), 8, dbfp);
 		printf("%ld\n", x);
 		long long s1 = ByteArrayToLong(buffer2);
-		printf("%ld\n", s1);
+		printf("%lld\n", s1);
 		// whence 可以是 SEEK_SET(0),SEEK_CUR(1),SEEK_END(2)
 		// 这些值决定是从文件头、当前点和文件尾计算偏移量 offset。
 		//fread(buffer2, sizeof(unsigned char), 8, dbfp);
@@ -121,7 +124,7 @@ void fileReadTest() {
 		long z = fread(buffer3, sizeof(unsigned char), 8, dbfp);
 		printf("%ld\n", z);
 		long long s2 = ByteArrayToLong(buffer3);
-		printf("%ld\n", s2);
+		printf("%lld\n", s2);
 	}
 	fclose(idfp);
 	fclose(dbfp);
@@ -147,14 +150,78 @@ void fileWrieTest() {
 		dbfp = fopen(timeaxis, "wb+");
 		initIdDB2(dbfp);
 	}
+	createTimeAxisRecord(idfp, dbfp);
 	fclose(idfp);
 	fclose(dbfp);
 }
 
+long long getId(FILE *idfp) {
+//	unsigned long long curtm = (unsigned long) time(NULL);
+//	unsigned char buffer1[8] = { 0 };
+	unsigned char ids[8] = { 0 };
+	unsigned char zero[8] = { 0 };
+	// onver
+	//LongToByteArray(curtm, buffer1);
+	// get one id from id DB, update new id to db
+	fseek(idfp, 8, SEEK_SET);
+	fread(ids, sizeof(unsigned char), 8, idfp);
+	long long s0 = ByteArrayToLong(ids);
+	if (s0 != 0) { // there is reused Id
+		// get one reused Id
+		fseek(idfp, s0, SEEK_SET);
+		fread(ids, sizeof(unsigned char), 8, idfp);
+		long long s0 = ByteArrayToLong(ids);
+		// update the pointer
+		fwrite(zero, sizeof(unsigned char), 8, idfp);
+		fseek(idfp, 8, SEEK_SET);
+		if (s0 > 1) {
+			s0 = s0 - 1;
+			LongToByteArray(s0, ids);
+			fwrite(ids, sizeof(unsigned char), 8, idfp);
+			return s0;
+		} else {
+
+		}
+	} else { // no reused Id
+		fseek(idfp, 0, SEEK_SET);
+		fread(ids, sizeof(unsigned char), 8, idfp);
+		long long newid = ByteArrayToLong(ids);
+		return newid;
+	}
+	//long sz = ftell(idfp);
+//	long long s1 = 0;
+//	if (sz > 16) { // get the last recycled Id.
+//		fseek(idfp, -8, SEEK_END); // move file pointer to file end
+//		fread(ids, sizeof(unsigned char), 8, idfp); // get the last recycled Id
+//		s1 = ByteArrayToLong(ids); // convert to long id
+//		sz = sz - 8; // file length size
+//		truncate(idfp, sz); // shrink file length(size)
+//		//ftruncate(idfp, sz);
+//	} else { // get the first Id
+//		fread(ids, sizeof(unsigned char), 8, idfp);
+//		s1 = ByteArrayToLong(ids);
+//		long long s2 = s1 + 1;
+//		unsigned char buf[8] = { 0 };
+//		LongToByteArray(s2, buf);
+//		fseek(idfp, 0, SEEK_SET);
+//		fwrite(buf, sizeof(unsigned char), 8, idfp);
+//	}
+	// s1 is new Id for new record
+	return 0;
+}
+
+long long recycleId(FILE *idfp, long long id) {
+
+}
+
 void createTimeAxisRecord(FILE *idfp, FILE *dbfp) {
-	unsigned long long curtm = (unsigned long) time(NULL);
-	// get one id from id db, update new id to db
-	// insert new record into time axis db.
+	long long newid = getId(idfp);
+	//fseek(dbfp, 0L, SEEK_END);
+	//long sz1 = ftell(dbfp);
+	// printf("nnnnn%ld\n", sz1);
+	//
+
+	// insert new record into time axis DB.
 
 }
 
@@ -166,7 +233,7 @@ int main(int argv, char **argc) {
 	//char send_dat1[] = "bye";
 	//createRequest(send_dat1);
 	//fileReadTest();
-	//fileWrieTest();
+	fileWrieTest();
 	/* gets time of day */
 	/*time_t now = time(NULL);
 	 char buf[25] = {0};
