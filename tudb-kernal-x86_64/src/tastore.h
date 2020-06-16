@@ -29,23 +29,17 @@
  * Author: Dahai CAO
  */
 
-#ifndef TEXT_H_
-#define TEXT_H_
+#ifndef TASTORE_H_
+#define TASTORE_H_
 
 #define BUFFERSIZE 8L //
 #define PAGESIZE 2500L // read page size.
 #define EPSIZE 25L // evolved point size on time axis (25 bytes)
-const long LONG_SIZE = 8L; //
+
 const long TS_SIZE = 8L; //
 int TA_PAGES = 10; //
 FILE *taidfp = NULL;
 FILE *tadbfp = NULL;
-
-// the cache for new free and reused Ids
-typedef struct id_cache {
-	long long ids[1000];
-	long long reusedids[1000];
-} id_cache_t;
 
 typedef struct evolved_point {
 	unsigned char inUse; // if in use, 0: not in use, otherwise, 1: yes.
@@ -72,5 +66,6 @@ typedef struct ta_book {
 typedef struct tu_lib {
 	ta_book_t *tabook; //
 } tu_lib;
+
 
 #endif /* TEXT_H_ */

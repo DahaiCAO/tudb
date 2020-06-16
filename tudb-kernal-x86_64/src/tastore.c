@@ -14,25 +14,9 @@
  * limitations under the License.
  */
 
-#include "text.h"
+#include "tastore.h"
 
-// Convert long long to byte array
-void LongToByteArray(long long value, unsigned char buffer[]) {
-	memset(buffer, 0, LONG_SIZE);
-	for (int i = 0; i < LONG_SIZE; i++) {
-		buffer[i] = ((value >> (LONG_SIZE * i)) & 0XFF);
-	}
-}
-
-// Convert byte array to long long
-long long ByteArrayToLong(unsigned char buffer[]) {
-	long long recoveredValue = 0;
-	for (int i = 0; i < LONG_SIZE; i++) {
-		long long byteVal = (((long long) buffer[i]) << (LONG_SIZE * i));
-		recoveredValue = recoveredValue | byteVal;
-	}
-	return recoveredValue;
-}
+const long LONG_SIZE = 8L; //
 
 void convertEpToBytes(evolved_point_t *ep, unsigned char buf[]) {
 	memset(buf, 0, 25);
@@ -80,77 +64,6 @@ void convertBytesToEp(evolved_point_t *ep, unsigned char buf[]) {
  * Author: Dahai CAO
  */
 
-long long getId(FILE *idfp) {
-	unsigned char ids[BUFFERSIZE] = { 0 };
-	unsigned char zero[BUFFERSIZE] = { 0 };
-	// get one id from id DB, update new id to db
-	fseek(idfp, LONG_SIZE, SEEK_SET);
-	fread(ids, sizeof(unsigned char), LONG_SIZE, idfp);
-	long long s0 = ByteArrayToLong(ids);
-	if (s0 == 0) { // no reused Id
-		// fetch a new Id
-		fseek(idfp, 0, SEEK_SET); // move file pointer to file head
-		fread(ids, sizeof(unsigned char), LONG_SIZE, idfp); // read the first bytes
-		long long newid = ByteArrayToLong(ids); // convert array to long long
-		// update the next free Id.
-		LongToByteArray((newid + 1), ids); // convert
-		fseek(idfp, 0L, SEEK_SET); // move file pointer to file end
-		fwrite(ids, sizeof(unsigned char), LONG_SIZE, idfp);
-		return newid;
-	} else if (s0 == 2) { // there is one reused Id
-		fseek(idfp, LONG_SIZE * 2, SEEK_SET); // move file pointer to the 16th byte
-		fread(ids, sizeof(unsigned char), LONG_SIZE, idfp); // read a byte array
-		long long reusedId = ByteArrayToLong(ids);
-		// remove and clear the reused Id
-		fseek(idfp, LONG_SIZE * 2, SEEK_SET);
-		fwrite(zero, sizeof(unsigned char), LONG_SIZE, idfp);
-		// remove and clear the second long long
-		fseek(idfp, LONG_SIZE, SEEK_SET);
-		fwrite(zero, sizeof(unsigned char), LONG_SIZE, idfp);
-		return reusedId;
-	} else if (s0 > 2) { // there are more than one reused Ids
-		// get one reused Id
-		fseek(idfp, s0 * LONG_SIZE, SEEK_SET);
-		fread(ids, sizeof(unsigned char), LONG_SIZE, idfp);
-		long long reusedId = ByteArrayToLong(ids);
-		// remove and clear the reused Id
-		fseek(idfp, s0 * LONG_SIZE, SEEK_SET);
-		fwrite(zero, sizeof(unsigned char), LONG_SIZE, idfp);
-		// update the second long long
-		fseek(idfp, LONG_SIZE, SEEK_SET);
-		LongToByteArray((s0 - 1), ids);
-		fwrite(ids, sizeof(unsigned char), LONG_SIZE, idfp);
-		return reusedId;
-	}
-	return 0;
-}
-
-void recycleId(FILE *idfp, long long id) {
-	unsigned char ids[BUFFERSIZE] = { 0L };
-	unsigned char buf[BUFFERSIZE] = { 0L };
-	fseek(idfp, LONG_SIZE, SEEK_SET);
-	fread(ids, sizeof(unsigned char), LONG_SIZE, idfp);
-	long long s0 = ByteArrayToLong(ids);
-	if (s0 == 0L) {
-		LongToByteArray(id, buf); // convert
-		fseek(idfp, LONG_SIZE * 2, SEEK_SET); // move file pointer from file head
-		fwrite(buf, sizeof(unsigned char), LONG_SIZE, idfp); // write
-
-		LongToByteArray(2L, buf); // convert
-		fseek(idfp, LONG_SIZE, SEEK_SET); // move file pointer the 8th byte
-		// update the second long long
-		fwrite(buf, sizeof(unsigned char), LONG_SIZE, idfp);
-	} else {
-		LongToByteArray(id, buf);
-		fseek(idfp, (s0 + 1) * LONG_SIZE, SEEK_SET);
-		fwrite(buf, sizeof(unsigned char), LONG_SIZE, idfp);
-
-		LongToByteArray((s0 + 1), buf);
-		fseek(idfp, LONG_SIZE, SEEK_SET); // move file pointer the 8th byte
-		// update the second long long
-		fwrite(buf, sizeof(unsigned char), LONG_SIZE, idfp);
-	}
-}
 
 // initialize DB
 void initializeDB() {
@@ -182,27 +95,6 @@ void initializeTaDB() {
 	}
 }
 
-void readAllTaIds(FILE *idfp) {
-	unsigned char buf[BUFFERSIZE] = { 0 };
-	fseek(idfp, 0L, SEEK_END);
-	long sz = ftell(idfp);
-	printf("Db size:%ld bytes\n", sz);
-	printf("------------\n");
-	int i = 0;
-	while (!feof(idfp) && sz > 0L) { // pageable to read
-		fseek(idfp, i * LONG_SIZE, SEEK_SET);
-		fread(buf, sizeof(unsigned char), LONG_SIZE, idfp);
-		long long s0 = ByteArrayToLong(buf);
-		// If you are on windows and using MingW, GCC uses the win32 runtime,
-		// where printf needs %I64d for a 64 bit integer.
-		// (and %I64u for an unsigned 64 bit integer)
-		//printf("%I64d\n", s0);
-		printf("%lld\n", s0);
-		i++;
-	}
-	printf("------------\n");
-	printf("Reused Id queue length:%d\n", (i - 2));
-}
 
 void createTimeAixs(long long ts, FILE *taidfp, FILE *tadbfp) {
 	// get a new Id
@@ -225,11 +117,12 @@ void createTimeAixs(long long ts, FILE *taidfp, FILE *tadbfp) {
 	if (firstId == -1 && lastId == -1) {
 		// empty DB, insert it directly.
 		long long id = getId(taidfp); // get new Id
-		evolved_point_t *ep = (evolved_point_t*) malloc(sizeof(evolved_point_t));
+		evolved_point_t *ep = (evolved_point_t*) malloc(
+				sizeof(evolved_point_t));
 		ep->inUse = 1;
 		ep->nxtTsId = -1;
 		ep->prvTsId = -1;
-		ep->time = ts;//(unsigned long)time(NULL);
+		ep->time = ts; //(unsigned long)time(NULL);
 		convertEpToBytes(ep, tsBytes);
 		fseek(tadbfp, 0L, SEEK_SET); // move file pointer to file head
 		unsigned char n1[BUFFERSIZE] = { 0L };
@@ -249,6 +142,24 @@ int main(int argv, char **argc) {
 	// initialize server when install server.
 //	initializeDB();
 //	initializeTaDB();
+
+//	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
+//	for (int i = 0; i < 100; i++) {
+//		cache->nId[i] = 0;
+//		cache->rId[i] = 0;
+//	}
+//	cache->nId[0] = 10;
+//	cache->nId[1] = 11;
+//	cache->nId[2] = 12;
+//	cache->nId[3] = 13;
+//	cache->nId[4] = 14;
+//
+//	cache->rId[0] = 2;
+//	cache->rId[1] = 5;
+//	cache->rId[2] = 7;
+//	cache->rId[3] = 3;
+//
+//	long long id = getOneId();
 
 	// get new Id from next free IDs
 //	char *taid = "D:/tudata/tustore.timeaxis.db.id";
@@ -277,8 +188,11 @@ int main(int argv, char **argc) {
 
 //	readAllTaIds(taidfp);
 
-	fclose(taidfp);
-	fclose(tadbfp);
+//	fclose(taidfp);
+//	fclose(tadbfp);
+
+//	free(cache);
+//	printf("%lld\d", id);
 
 }
 
