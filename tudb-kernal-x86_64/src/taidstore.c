@@ -17,33 +17,183 @@
 #include "taidstore.h"
 
 /*
- * idcache.c
+ * taidstore.c
  *
  * Created on: 2020年6月16日
  * Author: Dahai CAO
  */
 
 id_cache_t *cache;
-
 const long LONG_LONG = 8L; //
 
 long long getOneId() {
-	if (cache->rId[0] != 0) {
-		for (int i = 99; i >= 0; i--) {
-			if (cache->rId[i] != 0) {
-				long long r = cache->rId[i];
-				cache->rId[i] = 0;
-				return r;
+	if (cache->rId != NULL) {
+		id_t *p = cache->rId;
+		id_t *t = NULL;
+		if (p != NULL) {
+			while (p->nxt != NULL) {
+				if (p->nxt->nxt == NULL) {
+					t = p;
+				}
+				p = p->nxt;
 			}
 		}
-	} else if (cache->nId[0] != 0) {
-		for (int i = 99; i >= 0; i--) {
-			if (cache->nId[i] != 0) {
-				long long r = cache->nId[i];
-				cache->nId[i] = 0;
-				return r;
+		t->nxt = NULL;
+		long long r = p->id;
+		free(p);
+		return r;
+	} else if (cache->nId != NULL) {
+		id_t *p = cache->nId;
+		id_t *t = NULL;
+		if (p != NULL) {
+			while (p->nxt != NULL) {
+				if (p->nxt->nxt == NULL) {
+					t = p;
+				}
+				p = p->nxt;
 			}
 		}
+		t->nxt = NULL;
+		long long r = p->id;
+		free(p);
+		return r;
+	}
+	return 0;
+
+}
+
+void loadIds(FILE *idfp) {
+	int c = 5; // cache reused Id capacity. 100 by default.
+
+	// step 1: load new Ids
+	unsigned char ids[BUFFERSIZE] = { 0 };
+	// fetch a new Id
+	fseek(idfp, 0, SEEK_SET); // move file pointer to file head
+	fread(ids, sizeof(unsigned char), LONG_LONG, idfp); // read the first bytes
+	long long newid = ByteArrayToLong(ids); // convert array to long long
+	for (int i = 0; i < c; i++) {
+		id_t *p = cache->nId;
+		if (p != NULL) {
+			while (p->nxt != NULL) {
+				p = p->nxt;
+			}
+			p->nxt = (id_t*) malloc(sizeof(id_t));
+			p->nxt->id = newid;
+			p->nxt->nxt = NULL;
+		} else {
+			cache->nId = (id_t*) malloc(sizeof(id_t));
+			cache->nId->id = newid;
+			cache->nId->nxt = NULL;
+		}
+		newid += 1;
+	}
+	// update the next free Id.
+	LongToByteArray(newid, ids); // convert
+	fseek(idfp, 0, SEEK_SET); // move file pointer to file end
+	fwrite(ids, sizeof(unsigned char), LONG_LONG, idfp);
+
+	// step 2: load reused Ids
+	fseek(idfp, LONG_LONG, SEEK_SET);
+	fread(ids, sizeof(unsigned char), LONG_LONG, idfp);
+
+	long long s0 = ByteArrayToLong(ids);
+	if (s0 != 0) { // there reused Id
+		// 16 means 2 * LONG_LONG Bytes for long long
+		long long rest = (s0 + 1) * LONG_LONG - 2 * LONG_LONG;
+		long bc = LONG_LONG * c;		// byte capacity to fetch
+		if (rest > LONG_LONG * c) {
+			// only read LONG_LONG * c bytes
+			// p is position of byte
+			long long p = (s0 + 1) * LONG_LONG - bc;
+			fseek(idfp, p, SEEK_SET);
+			unsigned char *buf = (unsigned char*) malloc(
+					sizeof(unsigned char) * bc);
+			memset(buf, 0, sizeof(unsigned char) * bc);
+			fread(buf, sizeof(unsigned char), bc, idfp);
+			for (int i = 0; i < c; i++) {
+				memset(ids, 0, LONG_LONG);
+				for (int j = 0; j < LONG_LONG; j++) {
+					ids[j] = buf[i * LONG_LONG + j];
+				}
+				long long d = ByteArrayToLong(ids);
+				// insert one at end of queue
+				id_t *p = cache->rId;
+				if (p != NULL) {
+					while (p->nxt != NULL) {
+						p = p->nxt;
+					}
+					p->nxt = (id_t*) malloc(sizeof(id_t));
+					p->nxt->id = d;
+					p->nxt->nxt = NULL;
+				} else {
+					cache->rId = (id_t*) malloc(sizeof(id_t));
+					cache->rId->id = d;
+					cache->rId->nxt = NULL;
+				}
+			}
+			// clean all reused Ids in DB
+			fseek(idfp, p, SEEK_SET);
+			memset(buf, 0, sizeof(unsigned char) * bc);
+			fwrite(buf, sizeof(unsigned char), bc, idfp);
+			free(buf);
+			// update the second pointer
+			fseek(idfp, LONG_LONG, SEEK_SET);
+			// last reused Id
+			LongToByteArray((p - LONG_LONG) / LONG_LONG, ids);
+			fwrite(ids, sizeof(unsigned char), LONG_LONG, idfp);
+		} else {
+			// all read
+			fseek(idfp, 2 * LONG_LONG, SEEK_SET);
+			unsigned char *buf = (unsigned char*) malloc(
+					sizeof(unsigned char) * rest);
+			memset(buf, 0, sizeof(unsigned char) * rest);
+			fread(buf, sizeof(unsigned char), rest, idfp);
+			for (int i = 0; i < rest / LONG_LONG; i++) {
+				memset(ids, 0, LONG_LONG);
+				for (int j = 0; j < LONG_LONG; j++) {
+					ids[j] = buf[i * LONG_LONG + j];
+				}
+				long long d = ByteArrayToLong(ids);
+				// insert one at end of queue
+				id_t *p = cache->rId;
+				if (p != NULL) {
+					while (p->nxt != NULL) {
+						p = p->nxt;
+					}
+					p->nxt = (id_t*) malloc(sizeof(id_t));
+					p->nxt->id = d;
+					p->nxt->nxt = NULL;
+				} else {
+					cache->rId = (id_t*) malloc(sizeof(id_t));
+					cache->rId->id = d;
+					cache->rId->nxt = NULL;
+				}
+			}
+			fseek(idfp, 2 * LONG_LONG, SEEK_SET);		// clean all reused Ids
+			memset(buf, 0, sizeof(unsigned char) * rest);
+			fwrite(buf, sizeof(unsigned char), rest, idfp);
+			free(buf);
+			// reset reused Id at 8th byte
+			fseek(idfp, LONG_LONG, SEEK_SET);
+			memset(ids, 0, LONG_LONG);
+			fwrite(ids, sizeof(unsigned char), LONG_LONG, idfp);
+		}
+	}
+}
+
+void recycleOneId(long long id) {
+	id_t *p = cache->rId;
+	if (p != NULL) {
+		while (p->nxt != NULL) {
+			p = p->nxt;
+		}
+		p->nxt = (id_t*) malloc(sizeof(id_t));
+		p->nxt->id = id;
+		p->nxt->nxt = NULL;
+	} else {
+		cache->rId = (id_t*) malloc(sizeof(id_t));
+		cache->rId->id = id;
+		cache->rId->nxt = NULL;
 	}
 }
 
@@ -92,84 +242,6 @@ long long getId(FILE *idfp) {
 	return 0;
 }
 
-void loadIds(FILE *idfp) {
-	// step 1: load new Ids
-	unsigned char ids[BUFFERSIZE] = { 0 };
-	// fetch a new Id
-	fseek(idfp, 0, SEEK_SET); // move file pointer to file head
-	fread(ids, sizeof(unsigned char), LONG_LONG, idfp); // read the first bytes
-	long long newid = ByteArrayToLong(ids); // convert array to long long
-	for (int i = 0; i < 10; i++) {
-		cache->nId[i] = newid;
-		newid += 1;
-	}
-	// update the next free Id.
-	LongToByteArray((newid + 1), ids); // convert
-	fseek(idfp, 0L, SEEK_SET); // move file pointer to file end
-	fwrite(ids, sizeof(unsigned char), LONG_LONG, idfp);
-	// step 2: load reused Ids
-	fseek(idfp, LONG_LONG, SEEK_SET);
-	fread(ids, sizeof(unsigned char), LONG_LONG, idfp);
-	long long s0 = ByteArrayToLong(ids);
-	if (s0 != 0) { // there reused Id
-		// 16 means 2 * 8 Bytes for long long
-		long long lenOfReusedId = (s0 + 1) * LONG_LONG - 16;
-		if (lenOfReusedId > 800) {
-			// only read 800 bytes
-			long long p = lenOfReusedId - 8 * 100;
-			fseek(idfp, p, SEEK_SET);
-			unsigned char buf[8 * 100] = { 0 };
-			fread(buf, sizeof(unsigned char), 8 * 100, idfp);
-			for (int i = 0; i < 100; i++) {
-				memset(ids, 0, LONG_LONG);
-				for (int j = 0; j < 8; j++) {
-					ids[j] = buf[i * 8 + j];
-				}
-				long long d = ByteArrayToLong(ids);
-				cache->rId[i] = d;
-			}
-			fseek(idfp, p, SEEK_SET);		// clean all reused Ids
-			memset(buf, 0, 8 * 100);
-			fwrite(buf, sizeof(unsigned char), 8 * 100, idfp);
-		} else {
-			// all read
-			long long p = lenOfReusedId;
-			fseek(idfp, 2 * 8, SEEK_SET);
-			unsigned char buf[100] = { 0 };//lenOfReusedId
-			fread(buf, sizeof(unsigned char), lenOfReusedId, idfp);
-			long long l = lenOfReusedId / 8;
-			for (int i = 0; i < l; i++) {
-				memset(ids, 0, LONG_LONG);
-				for (int j = 0; j < 8; j++) {
-					ids[j] = buf[i * 8 + j];
-				}
-				long long d = ByteArrayToLong(ids);
-				cache->rId[i] = d;
-			}
-			fseek(idfp, 2 * 8, SEEK_SET);		// clean all reused Ids
-			memset(buf, 0, lenOfReusedId);
-			fwrite(buf, sizeof(unsigned char), lenOfReusedId, idfp);
-		}
-
-		fseek(idfp, s0 * LONG_LONG, SEEK_SET);
-		fread(ids, sizeof(unsigned char), LONG_LONG * 50, idfp);
-		unsigned char zero[BUFFERSIZE * 50] = { 0 };
-		/*long long reusedId = ByteArrayToLong(ids);
-		 // remove and clear the reused Id
-		 fseek(idfp, s0 * LONG_LONG, SEEK_SET);
-		 fwrite(zero, sizeof(unsigned char), LONG_LONG, idfp);
-		 // update the second long long
-		 fseek(idfp, LONG_LONG, SEEK_SET);
-		 LongToByteArray((s0 - 1), ids);
-		 fwrite(ids, sizeof(unsigned char), LONG_LONG, idfp);*/
-	}
-
-}
-
-void recycleOneId() {
-
-}
-
 void recycleId(FILE *idfp, long long id) {
 	unsigned char ids[BUFFERSIZE] = { 0L };
 	unsigned char buf[BUFFERSIZE] = { 0L };
@@ -197,6 +269,43 @@ void recycleId(FILE *idfp, long long id) {
 	}
 }
 
+void listAllTaIds() {
+	int count = 0;
+	id_t *p = cache->nId;
+	while (p != NULL) {
+		count++;
+		p = p->nxt;
+	}
+	printf("DB size:%d\n", count);
+	printf("------------\n");
+	p = cache->nId;
+	int i = 0;
+	while (p != NULL) {
+		printf("%d, %lld\n", i, p->id);
+		p = p->nxt;
+		i++;
+	}
+	printf("------------\n");
+	printf("New Id queue length:%d\n", i);
+
+	int count1 = 0;
+	id_t *p1 = cache->rId;
+	while (p1 != NULL) {
+		count1++;
+		p1 = p1->nxt;
+	}
+	printf("DB size:%d\n", count1);
+	printf("------------\n");
+	p1 = cache->rId;
+	int i1 = 0;
+	while (p1 != NULL) {
+		printf("%d, %lld\n", i1, p1->id);
+		p1 = p1->nxt;
+		i1++;
+	}
+	printf("------------\n");
+	printf("Reused Id queue length:%d\n", i1);
+}
 
 void readAllTaIds(FILE *idfp) {
 	unsigned char buf[BUFFERSIZE] = { 0 };
@@ -205,19 +314,97 @@ void readAllTaIds(FILE *idfp) {
 	printf("Db size:%ld bytes\n", sz);
 	printf("------------\n");
 	int i = 0;
-	while (!feof(idfp) && sz > 0L) { // pageable to read
+	while (!feof(idfp) && (i * LONG_LONG) < sz) { // pageable to read
 		fseek(idfp, i * LONG_LONG, SEEK_SET);
+		memset(buf, 0, LONG_LONG);
 		fread(buf, sizeof(unsigned char), LONG_LONG, idfp);
 		long long s0 = ByteArrayToLong(buf);
 		// If you are on windows and using MingW, GCC uses the win32 runtime,
 		// where printf needs %I64d for a 64 bit integer.
 		// (and %I64u for an unsigned 64 bit integer)
 		//printf("%I64d\n", s0);
-		printf("%lld\n", s0);
+		printf("%d, %lld\n", i, s0);
 		i++;
 	}
 	printf("------------\n");
 	printf("Reused Id queue length:%d\n", (i - 2));
 }
 
+int main(int argv, char **argc) {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+	// get new Id from next free IDs
+	char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
+	FILE *taidfp = fopen(taid, "rb+");
+
+	// initialize
+	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
+	cache->nId = NULL;
+	cache->rId = NULL;
+//	cache->nId = (long long*) malloc(
+//			sizeof(long long) * 5);
+//	cache->rId = (long long*) malloc(
+//			sizeof(long long) * 5);
+//	memset(cache->nId, 0, sizeof(long long) * 5);
+//	memset(cache->rId, 0, sizeof(long long) * 5);
+
+//	cache->nId[0] = 10;
+//	cache->nId[1] = 11;
+//	cache->nId[2] = 12;
+//	cache->nId[3] = 13;
+//	cache->nId[4] = 14;
+//
+//	cache->rId[0] = 2;
+//	cache->rId[1] = 5;
+//	cache->rId[2] = 7;
+//	cache->rId[3] = 3;
+//
+//	long long id = getOneId();
+
+	loadIds(taidfp);
+
+	listAllTaIds();
+
+	recycleOneId(14);
+
+	listAllTaIds();
+
+	long long d = getOneId();
+	printf("%lld\n", d);
+	d = getOneId();
+	printf("%lld\n", d);
+	d = getOneId();
+	printf("%lld\n", d);
+
+	// test to get one id.
+	/*long long id = getId(taidfp);
+	 printf("%lld\n", id);
+	 id = getId(taidfp);
+	 printf("%lld\n", id);
+	 id = getId(taidfp);
+	 printf("%lld\n", id);
+	 id = getId(taidfp);
+	 printf("%lld\n", id);
+	 id = getId(taidfp);
+	 printf("%lld\n", id);*/
+
+	// test recycle one id
+//	 recycleId(taidfp, 4);
+//	 recycleId(taidfp, 7);
+//	 recycleId(taidfp, 2);
+//	 recycleId(taidfp, 3);
+//	 recycleId(taidfp, 11);
+//	 recycleId(taidfp, 9);
+//	 recycleId(taidfp, 5);
+//	 recycleId(taidfp, 13);
+//	 recycleId(taidfp, 17);
+//	 recycleId(taidfp, 26);
+//
+//	readAllTaIds(taidfp);
+	fclose(taidfp);
+
+	free(cache);
+	printf("End");
+
+}
 

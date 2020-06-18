@@ -136,7 +136,7 @@ void createTimeAixs(long long ts, FILE *taidfp, FILE *tadbfp) {
 	}
 
 }
-
+/*
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	// initialize server when install server.
@@ -195,4 +195,4 @@ int main(int argv, char **argc) {
 //	printf("%lld\d", id);
 
 }
-
+*/

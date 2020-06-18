@@ -37,11 +37,27 @@
 #define PAGESIZE 2500L // read page size.
 #define EPSIZE 25L // evolved point size on time axis (25 bytes)
 
+typedef struct iddef {
+	long long id;
+	struct iddef *nxt;
+} id_t;
 
 // the cache for new free and reused Ids
 typedef struct id_cache {
-	long long nId[100];// new Id array
-	long long rId[100];// reused Id array
+	id_t *nId;// new Id array
+	id_t *rId;// reused Id array
 } id_cache_t;
+
+long long getOneId();
+
+void loadIds(FILE *idfp);
+
+void readAllTaIds(FILE *idfp);
+
+void recycleOneId();
+
+long long getId(FILE *idfp);
+
+void recycleId(FILE *idfp, long long id);
 
 #endif /* IDCACHE_H_ */

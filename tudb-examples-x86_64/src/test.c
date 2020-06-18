@@ -28,7 +28,6 @@
  * Created on: 2020-01-07 18:33:57
  * Author: Dahai CAO 
  */
-
 void hexconcat(char *buf, char *t) {
 	if (strlen(buf) == 1) {
 		strcat(t, "0000000");
