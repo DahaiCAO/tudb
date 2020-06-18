@@ -341,24 +341,7 @@ int main(int argv, char **argc) {
 	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
 	cache->nId = NULL;
 	cache->rId = NULL;
-//	cache->nId = (long long*) malloc(
-//			sizeof(long long) * 5);
-//	cache->rId = (long long*) malloc(
-//			sizeof(long long) * 5);
-//	memset(cache->nId, 0, sizeof(long long) * 5);
-//	memset(cache->rId, 0, sizeof(long long) * 5);
 
-//	cache->nId[0] = 10;
-//	cache->nId[1] = 11;
-//	cache->nId[2] = 12;
-//	cache->nId[3] = 13;
-//	cache->nId[4] = 14;
-//
-//	cache->rId[0] = 2;
-//	cache->rId[1] = 5;
-//	cache->rId[2] = 7;
-//	cache->rId[3] = 3;
-//
 //	long long id = getOneId();
 
 	loadIds(taidfp);
