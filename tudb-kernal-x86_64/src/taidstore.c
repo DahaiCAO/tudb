@@ -22,10 +22,6 @@
  * Created on: 2020年6月16日
  * Author: Dahai CAO
  */
-
-id_cache_t *cache;
-const long LONG_LONG = 8L; //
-
 long long getOneId() {
 	if (cache->rId != NULL) {
 		id_t *p = cache->rId;
@@ -329,7 +325,7 @@ void readAllTaIds(FILE *idfp) {
 	printf("------------\n");
 	printf("Reused Id queue length:%d\n", (i - 2));
 }
-
+/*
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -342,7 +338,6 @@ int main(int argv, char **argc) {
 	cache->nId = NULL;
 	cache->rId = NULL;
 
-//	long long id = getOneId();
 
 	loadIds(taidfp);
 
@@ -360,16 +355,16 @@ int main(int argv, char **argc) {
 	printf("%lld\n", d);
 
 	// test to get one id.
-	/*long long id = getId(taidfp);
-	 printf("%lld\n", id);
-	 id = getId(taidfp);
-	 printf("%lld\n", id);
-	 id = getId(taidfp);
-	 printf("%lld\n", id);
-	 id = getId(taidfp);
-	 printf("%lld\n", id);
-	 id = getId(taidfp);
-	 printf("%lld\n", id);*/
+//	long long id = getId(taidfp);
+//	 printf("%lld\n", id);
+//	 id = getId(taidfp);
+//	 printf("%lld\n", id);
+//	 id = getId(taidfp);
+//	 printf("%lld\n", id);
+//	 id = getId(taidfp);
+//	 printf("%lld\n", id);
+//	 id = getId(taidfp);
+//	 printf("%lld\n", id);
 
 	// test recycle one id
 //	 recycleId(taidfp, 4);
@@ -389,5 +384,5 @@ int main(int argv, char **argc) {
 	free(cache);
 	printf("End");
 
-}
+}*/
 

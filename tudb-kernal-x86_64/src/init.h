@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <time.h>
 
 #include "convert.h"
-
 /*
- * text.h
+ * init.h
  *
- * Created on: 2020年6月11日
+ * Created on: 2020年6月19日
  * Author: Dahai CAO
  */
 
-#ifndef TASTORE_H_
-#define TASTORE_H_
+#ifndef INIT_H_
+#define INIT_H_
 
-#endif /* TEXT_H_ */
+// initialize id DB
+void initTimeAxisIdDB(char *path);
+// initialize DB
+void initTimeAxisDB(char *path);
+
+#endif /* INIT_H_ */

@@ -33,21 +33,6 @@
 #ifndef TAIDSTORE_H_
 #define TAIDSTORE_H_
 
-#define BUFFERSIZE 8L //
-#define PAGESIZE 2500L // read page size.
-#define EPSIZE 25L // evolved point size on time axis (25 bytes)
-
-typedef struct iddef {
-	long long id;
-	struct iddef *nxt;
-} id_t;
-
-// the cache for new free and reused Ids
-typedef struct id_cache {
-	id_t *nId;// new Id array
-	id_t *rId;// reused Id array
-} id_cache_t;
-
 long long getOneId();
 
 void loadIds(FILE *idfp);

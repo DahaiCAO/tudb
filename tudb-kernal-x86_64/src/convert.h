@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <unistd.h>
+#include <string.h>
+#include "structdef.h"
 /*
  * convert.h
  *
- * Created on: 2020年6月16日
+ * Created on: 2020年6月19日
  * Author: Dahai CAO
  */
 
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
+// Convert long long to byte array
 void LongToByteArray(long long value, unsigned char buffer[]);
 
+// Convert byte array to long long
 long long ByteArrayToLong(unsigned char buffer[]);
 
 #endif /* CONVERT_H_ */

@@ -13,37 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "convert.h"
-
 /*
- * converter.c
+ * convert.c
  *
- * Created on: 2020年6月16日
+ * Created on: 2020年6月19日
  * Author: Dahai CAO
  */
-const long LONG_LONG_SIZE = 8L; //
 // Convert long long to byte array
 void LongToByteArray(long long value, unsigned char buffer[]) {
-	memset(buffer, 0, LONG_LONG_SIZE);
-	for (int i = 0; i < LONG_LONG_SIZE; i++) {
-		buffer[i] = ((value >> (LONG_LONG_SIZE * i)) & 0XFF);
+	memset(buffer, 0, LONG_LONG);
+	for (int i = 0; i < LONG_LONG; i++) {
+		buffer[i] = ((value >> (LONG_LONG * i)) & 0XFF);
 	}
 }
 
 // Convert byte array to long long
 long long ByteArrayToLong(unsigned char buffer[]) {
 	long long recoveredValue = 0;
-	for (int i = 0; i < LONG_LONG_SIZE; i++) {
-		long long byteVal = (((long long) buffer[i]) << (LONG_LONG_SIZE * i));
+	for (int i = 0; i < LONG_LONG; i++) {
+		long long byteVal = (((long long) buffer[i]) << (LONG_LONG * i));
 		recoveredValue = recoveredValue | byteVal;
 	}
 	return recoveredValue;
 }
-
-#ifndef CONVERTER_C_
-#define CONVERTER_C_
-
-
-
-#endif /* CONVERTER_C_ */
