@@ -135,17 +135,15 @@ void createTimeAixs(long long ts, FILE *taidfp, FILE *tadbfp) {
 
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
-	// initialize server when install server.
-
-
 	// get new Id from next free IDs
 	char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
 	FILE *taidfp = fopen(taid, "rb+");
 	char *tadb = "D:/tudata/tustore.timeaxis.db";
 	FILE *tadbfp = fopen(tadb, "rb+");
 
-	//	initializeDB(taidfp);
-	//	initializeTaDB(tadbfp);
+	// initialize server when install server.
+	//	initTimeAxisIdDB(taid);
+	//	initTimeAxisDB(tadb);
 
 	// initialize
 	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
