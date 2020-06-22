@@ -24,11 +24,10 @@
 
 // initialize DB
 void initTimeAxisIdDB(char *path) {
-	//char *timeaxisid = "D:/tudata/tustore.timeaxis.tdb.id";
 	if ((access(path, F_OK)) == -1) {
 		FILE *taidfp = fopen(path, "wb+");
 		// initializes Id DB
-		unsigned char zero[BUFFERSIZE] = { 0L };
+		unsigned char zero[LONG_LONG] = { 0L };
 		fseek(taidfp, 0L, SEEK_SET); // move file pointer to file head
 		fwrite(zero, sizeof(unsigned char), LONG_LONG, taidfp);
 		//fseek(taidfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
@@ -38,16 +37,15 @@ void initTimeAxisIdDB(char *path) {
 }
 
 void initTimeAxisDB(char *path) {
-	//char *taDb = "D:/tudata/tustore.timeaxis.tdb";
 	if ((access(path, F_OK)) == -1) {
 		FILE *tadbfp = fopen(path, "wb+");
 		// initializes Id DB
-		unsigned char n1[BUFFERSIZE] = { 0L };
-		LongToByteArray(-1L, n1); // convert
+		unsigned char n2[LONG_LONG] = { 0L };
+		LongToByteArray(-2L, n2); // convert
 		fseek(tadbfp, 0L, SEEK_SET); // move file pointer to file head
-		fwrite(n1, sizeof(unsigned char), LONG_LONG, tadbfp);
+		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
 		//fseek(tadbfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
-		fwrite(n1, sizeof(unsigned char), LONG_LONG, tadbfp);
+		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
 		fclose(tadbfp);
 	}
 }

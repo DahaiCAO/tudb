@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #include <string.h>
-#include "structdef.h"
+#include "macrodef.h"
 /*
  * convert.h
  *

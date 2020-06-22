@@ -62,7 +62,7 @@ void loadIds(FILE *idfp) {
 	int c = 5; // cache reused Id capacity. 100 by default.
 
 	// step 1: load new Ids
-	unsigned char ids[BUFFERSIZE] = { 0 };
+	unsigned char ids[LONG_LONG] = { 0 };
 	// fetch a new Id
 	fseek(idfp, 0, SEEK_SET); // move file pointer to file head
 	fread(ids, sizeof(unsigned char), LONG_LONG, idfp); // read the first bytes
@@ -194,8 +194,8 @@ void recycleOneId(long long id) {
 }
 
 long long getId(FILE *idfp) {
-	unsigned char ids[BUFFERSIZE] = { 0 };
-	unsigned char zero[BUFFERSIZE] = { 0 };
+	unsigned char ids[LONG_LONG] = { 0 };
+	unsigned char zero[LONG_LONG] = { 0 };
 	// get one id from id DB, update new id to db
 	fseek(idfp, LONG_LONG, SEEK_SET);
 	fread(ids, sizeof(unsigned char), LONG_LONG, idfp);
@@ -239,8 +239,8 @@ long long getId(FILE *idfp) {
 }
 
 void recycleId(FILE *idfp, long long id) {
-	unsigned char ids[BUFFERSIZE] = { 0L };
-	unsigned char buf[BUFFERSIZE] = { 0L };
+	unsigned char ids[LONG_LONG] = { 0L };
+	unsigned char buf[LONG_LONG] = { 0L };
 	fseek(idfp, LONG_LONG, SEEK_SET);
 	fread(ids, sizeof(unsigned char), LONG_LONG, idfp);
 	long long s0 = ByteArrayToLong(ids);
@@ -304,7 +304,7 @@ void listAllTaIds() {
 }
 
 void readAllTaIds(FILE *idfp) {
-	unsigned char buf[BUFFERSIZE] = { 0 };
+	unsigned char buf[LONG_LONG] = { 0 };
 	fseek(idfp, 0L, SEEK_END);
 	long sz = ftell(idfp);
 	printf("Db size:%ld bytes\n", sz);

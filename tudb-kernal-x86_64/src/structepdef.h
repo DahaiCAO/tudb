@@ -21,27 +21,10 @@
  * Author: Dahai CAO
  */
 
-#ifndef STRUCTDEF_H_
-#define STRUCTDEF_H_
-
-#define BUFFERSIZE 8L //
-#define PAGESIZE 2500L // read page size.
-#define EPSIZE 25L // evolved point size on time axis (25 bytes)
-#define LONG_LONG 8L
-
-typedef struct iddef {
-	long long id;
-	struct iddef *nxt;
-} id_t;
-
-// the cache for new free and reused Ids
-typedef struct id_cache {
-	id_t *nId;// new Id array
-	id_t *rId;// reused Id array
-} id_cache_t;
+#ifndef STRUCTEPDEF_H_
+#define STRUCTEPDEF_H_
 
 typedef struct evolved_point {
-	unsigned char inUse; // if in use, 0: not in use, otherwise, 1: yes.
 	long long prvTsId; // previous evolved point(time stamp) Id
 	long long nxtTsId; // next evolved point(time stamp) Id
 	long long time; // time stamp
@@ -51,11 +34,22 @@ typedef struct evolved_point {
 typedef struct ta_page {
 	long long expiretime; // expiration time to mark this page, -1 by default, that means blank page
 	unsigned char *content; // buffer for page content, 100 time axis records.
-	long long firstTsId; // first evolved point(time stamp) Id in this page
-	long long nextTsId; // next evolved point(time stamp) Id in this page
+	long long start; // start point on this page
+	long long end; // end point on this page
 	unsigned char duty; // if duty, then 1; otherwise, 0;
 	int hited; // hit counting, 0 by default, hit once, plus 1;
+	struct ta_page * prvpage;
+	struct ta_page * nxtpage;
 } ta_page_t;
+
+typedef struct ta_buf {
+	ta_page_t *pages; // 10 page by default.
+} ta_buf_t;
+
+ta_buf_t * timeaxispages;
+
+/*
+
 
 typedef struct ta_book {
 	ta_page_t *pages; // 10 page by default.
@@ -66,9 +60,9 @@ typedef struct tu_lib {
 	ta_book_t *tabook; //
 } tu_lib;
 
-id_cache_t *cache;
+*/
 
-#endif /* STRUCTDEF_H_ */
+#endif /* STRUCTEPDEF_H_ */
 
 
 

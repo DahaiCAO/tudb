@@ -22,6 +22,8 @@
 #include <unistd.h>
 
 #include "convert.h"
+#include "macrodef.h"
+#include "structiddef.h"
 
 /*
  * idcache.h

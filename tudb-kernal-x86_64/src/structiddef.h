@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
-#include "macrodef.h"
 /*
- * init.h
+ * structiddef.h
  *
- * Created on: 2020年6月19日
+ * Created on: 2020年6月21日
  * Author: Dahai CAO
  */
 
-#ifndef INIT_H_
-#define INIT_H_
+#ifndef STRUCTIDDEF_H_
+#define STRUCTIDDEF_H_
 
-// initialize id DB
-void initTimeAxisIdDB(char *path);
-// initialize DB
-void initTimeAxisDB(char *path);
+typedef struct iddef {
+	long long id;
+	struct iddef *nxt;
+} id_t;
 
-#endif /* INIT_H_ */
+// the cache for new free and reused Ids
+typedef struct id_cache {
+	id_t *nId;// new Id array
+	id_t *rId;// reused Id array
+} id_cache_t;
+
+id_cache_t *cache;
+
+#endif /* STRUCTIDDEF_H_ */

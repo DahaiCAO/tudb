@@ -21,7 +21,9 @@
 #include <time.h>
 
 #include "convert.h"
-
+#include "macrodef.h"
+#include "taidstore.h"
+#include "structepdef.h"
 /*
  * text.h
  *

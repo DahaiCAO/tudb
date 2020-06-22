@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
-#include "macrodef.h"
 /*
- * init.h
+ * macrodef.h
  *
- * Created on: 2020年6月19日
+ * Created on: 2020年6月20日
  * Author: Dahai CAO
  */
 
-#ifndef INIT_H_
-#define INIT_H_
+#ifndef MACRODEF_H_
+#define MACRODEF_H_
 
-// initialize id DB
-void initTimeAxisIdDB(char *path);
-// initialize DB
-void initTimeAxisDB(char *path);
+#define LONG_LONG 8L
+#define TA_PAGE_SIZE LONG_LONG*3*10
 
-#endif /* INIT_H_ */
+#endif /* MACRODEF_H_ */
