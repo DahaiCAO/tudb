@@ -41,7 +41,7 @@ void initTimeAxisDB(char *path) {
 		FILE *tadbfp = fopen(path, "wb+");
 		// initializes Id DB
 		unsigned char n2[LONG_LONG] = { 0L };
-		LongToByteArray(-2L, n2); // convert
+		LongToByteArray(NULL_POINTER, n2); // convert
 		fseek(tadbfp, 0L, SEEK_SET); // move file pointer to file head
 		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
 		//fseek(tadbfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte

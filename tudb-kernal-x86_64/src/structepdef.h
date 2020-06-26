@@ -36,8 +36,9 @@ typedef struct evolved_point {
 typedef struct ta_page {
 	long long expiretime; // expiration time to mark this page, -1 by default, that means blank page
 	unsigned char *content; // buffer for page content, 100 time axis records.
-	long long start; // start point on this page
-	long long end; // end point on this page
+	long long startNo;
+	long long start; // start byte on this page
+	long long end; // end byte on this page
 	unsigned char dirty; // if dirty, then 1; otherwise, 0;
 	int hited; // hit counting, 0 by default, hit once, plus 1;
 	struct ta_page *prvpage;

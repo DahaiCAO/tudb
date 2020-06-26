@@ -58,7 +58,7 @@
 //	ep->nxtTsId = ByteArrayToLong(nxt);
 //	ep->time = ByteArrayToLong(ts);
 //}
-void getEvolvedPoint(evolved_point_t *ep, unsigned char *p) {
+/*void getEvolvedPoint(evolved_point_t *ep, unsigned char *p) {
 	unsigned char prv[LONG_LONG] = { 0L };
 	unsigned char nxt[LONG_LONG] = { 0L };
 	unsigned char tms[LONG_LONG] = { 0L };
@@ -74,6 +74,49 @@ void getEvolvedPoint(evolved_point_t *ep, unsigned char *p) {
 	ep->prvTsId = ByteArrayToLong(prv);
 	ep->nxtTsId = ByteArrayToLong(nxt);
 	ep->time = ByteArrayToLong(tms);
+}
+
+void parseEvolvedPoint(long long prvId, long long nxtId, long long ts,
+		unsigned char *p) {
+	unsigned char prv[LONG_LONG] = { 0L };
+	unsigned char nxt[LONG_LONG] = { 0L };
+	unsigned char tms[LONG_LONG] = { 0L };
+	for (int i = 0; i < LONG_LONG; i++) {
+		prv[i] = *(p + i);
+	}
+	for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
+		nxt[i] = *(p + i);
+	}
+	for (int i = 2 * LONG_LONG; i < 3 * LONG_LONG; i++) {
+		tms[i] = *(p + i);
+	}
+	prvId = ByteArrayToLong(prv);
+	nxtId = ByteArrayToLong(nxt);
+	ts = ByteArrayToLong(tms);
+}*/
+
+long long parsePrvId(unsigned char *p) {
+	unsigned char prv[LONG_LONG] = { 0L };
+	for (int i = 0; i < LONG_LONG; i++) {
+		prv[i] = *(p + i);
+	}
+	return ByteArrayToLong(prv);
+}
+
+long long parseNxtId(unsigned char *p) {
+	unsigned char nxt[LONG_LONG] = { 0L };
+	for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
+		nxt[i] = *(p + i);
+	}
+	return ByteArrayToLong(nxt);
+}
+
+long long parseStamp(unsigned char *p) {
+	unsigned char tms[LONG_LONG] = { 0L };
+	for (int i = 2 * LONG_LONG; i < 3 * LONG_LONG; i++) {
+		tms[i] = *(p + i);
+	}
+	return ByteArrayToLong(tms);
 }
 
 void putEvolvedPoint(evolved_point_t *ep) {
@@ -94,8 +137,10 @@ void putEvolvedPoint(evolved_point_t *ep) {
 	}
 }
 
-void readOnePage(long long start, FILE *tadbfp) {
-	unsigned char page[TA_PAGE_SIZE] = { 0L };
+ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
+	unsigned char *page = (unsigned char*) malloc(
+			sizeof(unsigned char) * TA_PAGE_SIZE);
+	memset(page, 0, sizeof(unsigned char) * TA_PAGE_SIZE);
 	fseek(tadbfp, start, SEEK_SET); // start to read from the first record
 	int c;
 	if ((c = fgetc(tadbfp)) != EOF) {
@@ -106,6 +151,7 @@ void readOnePage(long long start, FILE *tadbfp) {
 	ta_page_t *p = (ta_page_t*) malloc(sizeof(ta_page_t));
 	p->dirty = 0;
 	p->expiretime = 10; // 10 minutes
+	p->startNo = startNo;
 	p->hited = 0;
 	p->nxtpage = NULL;
 	p->prvpage = NULL;
@@ -123,58 +169,108 @@ void readOnePage(long long start, FILE *tadbfp) {
 	} else {
 		timeaxispages->pages = p;
 	}
+	return p;
 }
 
-void lookupInPage(long long ts, unsigned char *position, long long start,
-		long long end, evolved_point_t *tmp, FILE *tadbfp) {
-	unsigned char *p = position;
-	getEvolvedPoint(tmp, p);
-	if (tmp->time == 0) {
-		// this is empty DB, so ts will be stored here
-		tmp->pos = position;
-	} else if (tmp->time != 0) {
-		if (ts > tmp->time) {
-			// lookup forwards
-			long long n = start + tmp->nxtTsId * (3 * LONG_LONG);
-			if (n > end) {
-				// look up other pages, if not exists, read one page again;
-				ta_page_t *pp = timeaxispages->pages;
-				if (pp != NULL) {
-					int r = -1;
-					while (pp != NULL) {
-						if (n > pp->start && n < pp->end) {
-							evolved_point_t *ep = (evolved_point_t*) malloc(
-									sizeof(evolved_point_t));
-							lookupInPage(ts, pp->content, pp->start, pp->end,
-									ep, tadbfp);
-							if (r == 1) {
-								break; // found
-							}
-						} else {
-							if (pp->nxtpage != NULL) {
-								pp = pp->nxtpage;
-							} else {
-								readOnePage(pp->end, tadbfp);
-							}
-						}
-					}
-					if (r == -1) {
-						//
-					}
-				}
+ta_page_t* findPage(long long id) {
+	ta_page_t *page = timeaxispages->pages;
+	if (page != NULL) {
+		while (page != NULL) {
+			if (id >= page->start && id < page->end) {
+				return page;
 			} else {
-
+				page = page->nxtpage;
 			}
-		} else if (ts < tmp->time) {
-			// lookup backwards
-			long long p = tmp->prvTsId + 3 * LONG_LONG;
-			// look up other pages, if not exists, read one page again;
-			if (p < start) {
-
-			}
-		} else {
-
 		}
+	}
+	return NULL;
+}
+
+/**
+ * ts
+ * tmp: search result
+ */
+void lookupInPage(long long ts, unsigned char *curr, unsigned char *pstart,
+		long long startNo, long long start, long long end, evolved_point_t *tmp,
+		FILE *tadbfp) {
+	long long prvId = parsePrvId(curr);
+	long long nxtId = parseNxtId(curr);
+	long long stamp = parseStamp(curr);
+	if (stamp == 0) {
+		// this is empty DB, so ts will be stored here
+		tmp->pos = curr;
+		return;
+	} else if (stamp != 0) {
+		if (ts > stamp) {
+			// found current record Id
+			if (prvId != NULL_POINTER) {
+				ta_page_t *prp = findPage(prvId);
+				if (prp == NULL) {
+					long long pn = (prvId * (3 * LONG_LONG)) / 240;
+					long long st = pn * 240 + 16L;
+					prp = readOnePage(st, pn * 10, tadbfp);
+				}
+				unsigned char *p1 = prp->content
+						+ (prvId - prp->startNo) * (3 * LONG_LONG);
+				long long nxtId1 = parseNxtId(p1);
+				tmp->prvTsId = nxtId1;
+			} else {
+				tmp->prvTsId = NULL_POINTER;
+			}
+			// lookup forwards
+			long long nxt = start + nxtId * (3 * LONG_LONG);
+			if (nxt <= end) { // in this page
+				unsigned char *p2 = pstart
+						+ (nxtId - startNo) * (3 * LONG_LONG);
+				lookupInPage(ts, p2, pstart, startNo, start, end, tmp, tadbfp);
+			} else if (nxt > end) { // not in this page
+				ta_page_t *nxp = findPage(nxtId);
+				if (nxp == NULL) {
+					long long pn = (nxtId * (3 * LONG_LONG)) / 240;
+					long long st = pn * 240 + 16L;
+					nxp = readOnePage(st, pn * 10, tadbfp);
+				}
+				unsigned char *p3 = nxp->content
+						+ (nxtId - nxp->startNo) * (3 * LONG_LONG);
+				lookupInPage(ts, p3, nxp->content, nxp->startNo, nxp->start,
+						nxp->end, tmp, tadbfp);
+			}
+		}
+	} else if (ts < stamp) {
+		if (nxtId != NULL_POINTER) {
+			ta_page_t *nxp = findPage(nxtId);
+			if (nxp == NULL) {
+				long long pn = (nxtId * (3 * LONG_LONG)) / 240;
+				long long st = pn * 240 + 16L;
+				nxp = readOnePage(st, pn * 10, tadbfp);
+			}
+			unsigned char *p1 = nxp->content
+					+ (nxtId - nxp->startNo) * (3 * LONG_LONG);
+			long long prvId1 = parsePrvId(p1);
+			tmp->nxtTsId = prvId1;
+		} else {
+			tmp->nxtTsId = NULL_POINTER;
+		}
+		// lookup backwards
+		long long prv = start + prvId * (3 * LONG_LONG);
+		if (prv >= start) { // in this page
+			unsigned char *p2 = pstart + (prvId - startNo) * (3 * LONG_LONG);
+			lookupInPage(ts, p2, pstart, startNo, start, end, tmp, tadbfp);
+		} else if (prv < start) {
+			ta_page_t *prp = findPage(prvId);
+			if (prp == NULL) {
+				long long pn = (prvId * (3 * LONG_LONG)) / 240;
+				long long st = pn * 240 + 16L;
+				prp = readOnePage(st, pn * 10, tadbfp);
+			}
+			unsigned char *p3 = prp->content
+					+ (prvId - prp->startNo) * (3 * LONG_LONG);
+			lookupInPage(ts, p3, prp->content, prp->startNo, prp->start,
+					prp->end, tmp, tadbfp);
+		}
+	}
+	if (tmp->nxtTsId != -3 && tmp->nxtTsId != -3) {
+		return;
 	}
 }
 
@@ -185,28 +281,31 @@ void commitEvolvedPoint(evolved_point_t *ep, FILE *tadbfp) {
 void updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 	ta_page_t *pp = timeaxispages->pages;
 	if (pp != NULL) {
-		evolved_point_t *ep = (evolved_point_t*) malloc(
-				sizeof(evolved_point_t));
+		evolved_point_t *t = (evolved_point_t*) malloc(sizeof(evolved_point_t));
+		t->prvTsId = -3;
+		t->nxtTsId = -3;
+		t->time = ts;
 		while (pp != NULL) {
 			if (pp->expiretime != -1) { // does not expired
-				lookupInPage(ts, pp->content, pp->start, pp->end, ep, tadbfp);
+				lookupInPage(ts, pp->content, pp->content, pp->startNo,
+						pp->start, pp->end, t, tadbfp);
 			}
-			if (ep->pos != NULL) { // found a position
+			if (t->pos != NULL) { // found a position
 				break;
 			} else {
 				pp = pp->nxtpage;
 			}
 		}
-		if (ep->pos != NULL) { // found a position
-			// insert the evolved point at the position
+		if (t->pos != NULL && t->time != ts) { // found a position
+		// insert the evolved point at the position
 			evolved_point_t *nwep = (evolved_point_t*) malloc(
 					sizeof(evolved_point_t));
 			long long id = getOneId();
 			nwep->id = id;
-			nwep->nxtTsId = ep->nxtTsId;
-			nwep->prvTsId = ep->prvTsId;
+			nwep->nxtTsId = t->nxtTsId;
+			nwep->prvTsId = t->prvTsId;
 			nwep->time = ts;
-			nwep->pos = ep->pos;
+			nwep->pos = t->pos;
 
 			putEvolvedPoint(nwep);
 			pp->dirty = 1;
@@ -214,8 +313,8 @@ void updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 			//for (int i = 0; i < 24; i++) {
 			//	printf("%d\n", *(r + i));
 			//}
-			free(ep);
 		}
+		free(t);
 	}
 
 }
@@ -271,11 +370,11 @@ int main(int argv, char **argc) {
 	char *tadb = "D:/tudata/tustore.timeaxis.tdb";
 	FILE *tadbfp = fopen(tadb, "rb+");
 
-	// initialize server when install server.
-	// initTimeAxisIdDB(taid);
-	// initTimeAxisDB(tadb);
+// initialize server when install server.
+// initTimeAxisIdDB(taid);
+// initTimeAxisDB(tadb);
 
-	// initialize
+// initialize
 	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
 	cache->nId = NULL;
 	cache->rId = NULL;
@@ -284,25 +383,25 @@ int main(int argv, char **argc) {
 	timeaxispages->pages = NULL;
 
 	if (timeaxispages->pages == NULL) {
-		readOnePage(16L, tadbfp);
+		readOnePage(16L, 0, tadbfp);
 	}
 
-	//loadIds(taidfp);
-	//readAllTaIds(taidfp);
+//loadIds(taidfp);
+//readAllTaIds(taidfp);
 
 	long long ts = (unsigned long) time(NULL);
 	updateEvolvedPoint(ts, taidfp, tadbfp);
 	long long ts1 = (unsigned long) time(NULL);
 	updateEvolvedPoint(ts1, taidfp, tadbfp);
 
-	// commitEvolvedPoint(ep, tadbfp);
+// commitEvolvedPoint(ep, tadbfp);
 
 	fclose(taidfp);
 	fclose(tadbfp);
 
 	free(timeaxispages);
 	free(cache);
-	//	printf("%lld\d", id);
+//	printf("%lld\d", id);
 	/*
 	 unsigned char *p = (unsigned char*) malloc(sizeof(unsigned char) * 3);
 	 unsigned char a[3] = { 1, 2, 3 };

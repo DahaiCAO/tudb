@@ -25,6 +25,7 @@
 #define MACRODEF_H_
 
 #define LONG_LONG 8L
+#define NULL_POINTER -2L
 #define TA_PAGE_SIZE LONG_LONG*3*10
 
 #endif /* MACRODEF_H_ */
