@@ -158,7 +158,7 @@ ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
 	p->dirty = 0;
 	p->expiretime = 10; // 10 minutes
 	p->startNo = startNo;
-	p->hited = 0;
+	p->hit = 0;
 	p->nxtpage = NULL;
 	p->prvpage = NULL;
 	p->content = page;
@@ -190,6 +190,35 @@ ta_page_t* findPage(long long id) {
 		}
 	}
 	return NULL;
+}
+
+void showAllPages() {
+	ta_page_t *page = timeaxispages->pages;
+	if (page != NULL) {
+		while (page != NULL) {
+			printf("----Page head----\n");
+			printf("Page hit:%d\n", page->hit);
+			printf("Page duty:%d\n", page->dirty);
+			printf("Page expire time:%d minutes\n", page->expiretime);
+			printf("Page start offset:%d\n", page->start);
+			printf("Page end offset:%d\n", page->end);
+			printf("Page start id:%d\n", page->startNo);
+			printf("----Page body----\n");
+			int i = 0;
+			while (i < 10) {// 10 is page size.
+				unsigned char *curr = page->content;
+				long long prvId = parsePrvId(curr);
+				long long nxtId = parseNxtId(curr);
+				long long stamp = parseStamp(curr);
+				unsigned char *p2 = page->content + i * (3 * LONG_LONG);
+				printf("%lld,%lld,%lld\n", prvId, nxtId, stamp);
+				i++;
+			}
+			printf("----Page end---\n");
+			page = page->nxtpage;
+
+		}
+	}
 }
 
 /**
@@ -601,6 +630,7 @@ long long updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 int main(int argv, char **argc) {
 
 	setvbuf(stdout, NULL, _IONBF, 0);
+
 // get new Id from next free IDs
 	char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
 	FILE *taidfp = fopen(taid, "rb+");
@@ -626,12 +656,16 @@ int main(int argv, char **argc) {
 //loadIds(taidfp);
 //readAllTaIds(taidfp);
 
+	//1593783935
+	// 1593783957
 	long long ts = (unsigned long) time(NULL);
-	updateEvolvedPoint(ts, taidfp, tadbfp);
+	//updateEvolvedPoint(ts, taidfp, tadbfp);
 	long long ts1 = (unsigned long) time(NULL);
-	updateEvolvedPoint(ts1, taidfp, tadbfp);
+	//updateEvolvedPoint(ts1, taidfp, tadbfp);
 
 // commitEvolvedPoint(ep, tadbfp);
+
+	showAllPages();
 
 	fclose(taidfp);
 	fclose(tadbfp);

@@ -40,7 +40,7 @@ typedef struct ta_page {
 	long long start; // start byte on this page
 	long long end; // end byte on this page
 	unsigned char dirty; // if dirty, then 1; otherwise, 0;
-	int hited; // hit counting, 0 by default, hit once, plus 1;
+	int hit; // hit counting, 0 by default, hit once, plus 1;
 	struct ta_page *prvpage;
 	struct ta_page *nxtpage;
 } ta_page_t;
