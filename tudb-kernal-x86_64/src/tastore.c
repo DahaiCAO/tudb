@@ -95,10 +95,15 @@
  ts = ByteArrayToLong(tms);
  }*/
 
+unsigned char parseInUse(unsigned char *p) {
+	unsigned char inuse = *p;
+	return inuse;
+}
+
 long long parsePrvId(unsigned char *p) {
 	unsigned char prv[LONG_LONG] = { 0L };
 	for (int i = 0; i < LONG_LONG; i++) {
-		prv[i] = *(p + i);
+		prv[i] = *(p + i + 1);
 	}
 	return ByteArrayToLong(prv);
 }
@@ -106,7 +111,7 @@ long long parsePrvId(unsigned char *p) {
 long long parseNxtId(unsigned char *p) {
 	unsigned char nxt[LONG_LONG] = { 0L };
 	for (int i = 0; i < LONG_LONG; i++) {
-		nxt[i] = *(p + i + LONG_LONG);
+		nxt[i] = *(p + i + LONG_LONG + 1);
 	}
 	return ByteArrayToLong(nxt);
 }
@@ -114,16 +119,20 @@ long long parseNxtId(unsigned char *p) {
 long long parseStamp(unsigned char *p) {
 	unsigned char tms[LONG_LONG] = { 0L };
 	for (int i = 0; i < LONG_LONG; i++) {
-		tms[i] = *(p + i + 2 * LONG_LONG);
+		tms[i] = *(p + i + 2 * LONG_LONG + 1);
 	}
 	return ByteArrayToLong(tms);
+}
+
+void putInUse(evolved_point_t *ep) {
+	*ep->pos = ep->inuse;
 }
 
 void putPrvId(evolved_point_t *ep) {
 	unsigned char prv[LONG_LONG] = { 0 };
 	LongToByteArray(ep->prvTsId, prv);
 	for (int i = 0; i < LONG_LONG; i++) {
-		*(ep->pos + i) = prv[i];
+		*(ep->pos + i + 1) = prv[i];
 	}
 }
 
@@ -131,7 +140,7 @@ void putNxtId(evolved_point_t *ep) {
 	unsigned char nxt[LONG_LONG] = { 0 };
 	LongToByteArray(ep->nxtTsId, nxt);
 	for (int i = 0; i < LONG_LONG; i++) {
-		*(ep->pos + i + LONG_LONG) = nxt[i];
+		*(ep->pos + i + LONG_LONG + 1) = nxt[i];
 	}
 }
 
@@ -139,7 +148,7 @@ void putStamp(evolved_point_t *ep) {
 	unsigned char ts[LONG_LONG] = { 0 };
 	LongToByteArray(ep->time, ts);
 	for (int i = 0; i < LONG_LONG; i++) {
-		*(ep->pos + i + 2 * LONG_LONG) = ts[i];
+		*(ep->pos + i + 2 * LONG_LONG + 1) = ts[i];
 	}
 }
 
@@ -199,19 +208,20 @@ void showAllPages() {
 			printf("----Page head----\n");
 			printf("Page hit:%d\n", page->hit);
 			printf("Page duty:%d\n", page->dirty);
-			printf("Page expire time:%d minutes\n", page->expiretime);
-			printf("Page start offset:%d\n", page->start);
-			printf("Page end offset:%d\n", page->end);
-			printf("Page start id:%d\n", page->startNo);
+			printf("Page expire time:%lld minutes\n", page->expiretime);
+			printf("Page start offset:%lld\n", page->start);
+			printf("Page end offset:%lld\n", page->end);
+			printf("Page start id:%lld\n", page->startNo);
 			printf("----Page body----\n");
 			int i = 0;
-			while (i < 10) {// 10 is page size.
+			while (i < 10) { // 10 is page size.
 				unsigned char *curr = page->content;
+				unsigned char inuse = parseInUse(curr);
 				long long prvId = parsePrvId(curr);
 				long long nxtId = parseNxtId(curr);
 				long long stamp = parseStamp(curr);
 				unsigned char *p2 = page->content + i * (3 * LONG_LONG);
-				printf("%lld,%lld,%lld\n", prvId, nxtId, stamp);
+				printf("%d, %lld,%lld,%lld\n", inuse, prvId, nxtId, stamp);
 				i++;
 			}
 			printf("----Page end---\n");
@@ -256,20 +266,20 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 			} else {
 				// lookup backwards
 				long long prv = page->start
-						+ (prvId - page->startNo) * (3 * LONG_LONG);
+						+ (prvId - page->startNo) * (3 * LONG_LONG + 1);
 				if (prv >= page->start) { // in this page
 					unsigned char *p2 = page->content
-							+ (prvId - page->startNo) * (3 * LONG_LONG);
+							+ (prvId - page->startNo) * (3 * LONG_LONG + 1);
 					lookup(ts, p2, page, tmp, previous, next, tadbfp);
 				} else if (prv < page->start) { // not in this page
 					ta_page_t *prp = findPage(prvId);
 					if (prp == NULL) {
-						long long pn = (prvId * (3 * LONG_LONG)) / 240;
-						long long st = pn * 240 + 16L;
+						long long pn = (prvId * (3 * LONG_LONG + 1)) / 250;
+						long long st = pn * 250 + 16L;
 						prp = readOnePage(st, pn * 10, tadbfp);
 					}
 					unsigned char *p3 = prp->content
-							+ (prvId - prp->startNo) * (3 * LONG_LONG);
+							+ (prvId - prp->startNo) * (3 * LONG_LONG + 1);
 					lookup(ts, p3, prp, tmp, previous, next, tadbfp);
 				}
 			}
@@ -288,20 +298,20 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 				timeaxispages->lastduty = 1;
 			} else {
 				long long nxt = page->start
-						+ (nxtId - page->startNo) * (3 * LONG_LONG);
+						+ (nxtId - page->startNo) * (3 * LONG_LONG + 1);
 				if (nxt <= page->end) { // in this page
 					unsigned char *p2 = page->content
-							+ (nxtId - page->startNo) * (3 * LONG_LONG);
+							+ (nxtId - page->startNo) * (3 * LONG_LONG + 1);
 					lookup(ts, p2, page, tmp, previous, next, tadbfp);
 				} else if (nxt > page->end) { // not in this page
 					ta_page_t *nxp = findPage(nxtId);
 					if (nxp == NULL) {
-						long long pn = (nxtId * (3 * LONG_LONG)) / 240;
-						long long st = pn * 240 + 16L;
+						long long pn = (nxtId * (3 * LONG_LONG + 1)) / 250;
+						long long st = pn * 250 + 16L;
 						nxp = readOnePage(st, pn * 10, tadbfp);
 					}
 					unsigned char *p3 = nxp->content
-							+ (nxtId - nxp->startNo) * (3 * LONG_LONG);
+							+ (nxtId - nxp->startNo) * (3 * LONG_LONG + 1);
 					lookup(ts, p3, nxp, tmp, previous, next, tadbfp);
 				}
 			}
@@ -309,12 +319,12 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 			// tmp is the current record
 			ta_page_t *nxp = findPage(nxtId);
 			if (nxp == NULL) {
-				long long pn = (nxtId * (3 * LONG_LONG)) / 240;
-				long long st = pn * 240 + 16L;
+				long long pn = (nxtId * (3 * LONG_LONG + 1)) / 240;
+				long long st = pn * 250 + 16L;
 				nxp = readOnePage(st, pn * 10, tadbfp);
 			}
 			unsigned char *p4 = nxp->content
-					+ (nxtId - nxp->startNo) * (3 * LONG_LONG);
+					+ (nxtId - nxp->startNo) * (3 * LONG_LONG + 1);
 			long long thisprvId = parsePrvId(p4);
 			tmp->id = thisprvId;
 			tmp->time = ts;
@@ -328,6 +338,10 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		evolved_point_t *tmp, evolved_point_t *previous, evolved_point_t *next,
 		FILE *tadbfp) {
+	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
+	int pagererecords = 10; // record counting in one page
+	int pagebytes = pagererecords * pagererecords; // byte counting in one page
+	long long startbyte = 16L; // start points in database
 	// current record, it may be previous/next record
 	long long prvId = parsePrvId(currpos);
 	long long nxtId = parseNxtId(currpos);
@@ -343,11 +357,12 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		if (ts < stamp) {
 			while (currpage != NULL) {
 				// current record, it may be previous/next record
+				unsigned char inuse = parseInUse(currpos);
 				long long prvId = parsePrvId(currpos);
 				long long nxtId = parseNxtId(currpos);
 				long long stamp = parseStamp(currpos);
 				// tmp will be the next record of the current record
-				if (prvId == NULL_POINTER) {
+				if (prvId == NULL_POINTER) { // the first record
 					long long id = getOneId();
 					tmp->id = id; //
 					tmp->prvTsId = NULL_POINTER;
@@ -360,168 +375,194 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 					timeaxispages->firstduty = 1;
 					return;
 				} else {
-					if (ts < stamp) {
-						// lookup backwards
-						long long prv = currpage->start
-								+ (prvId - currpage->startNo) * (3 * LONG_LONG);
-						if (prv >= currpage->start) { // in this page
-							currpos = currpage->content
-									+ (prvId - currpage->startNo)
-											* (3 * LONG_LONG);
-						} else if (prv < currpage->start) { // not in this page
-							ta_page_t *prp = findPage(prvId);
-							if (prp == NULL) {
-								long long pn = (prvId * (3 * LONG_LONG)) / 240;
-								long long st = pn * 240 + 16L;
-								currpage = readOnePage(st, pn * 10, tadbfp);
-							} else {
-								currpage = prp;
+					if (inuse == 1) {
+						if (ts < stamp) {
+
+							// lookup backwards
+							long long prv = currpage->start
+									+ (prvId - currpage->startNo) * recordbytes;
+							if (prv >= currpage->start) { // in this page
+								currpos = currpage->content
+										+ (prvId - currpage->startNo)
+												* recordbytes;
+							} else if (prv < currpage->start) { // not in this page
+								ta_page_t *prp = findPage(prvId);
+								if (prp == NULL) {
+									long long pn = (prvId * recordbytes)
+											/ pagebytes;
+									long long st = pn * pagebytes + startbyte;
+									currpage = readOnePage(st,
+											pn * pagererecords, tadbfp);
+								} else {
+									currpage = prp;
+								}
+								currpos = currpage->content
+										+ (prvId - currpage->startNo)
+												* recordbytes;
 							}
-							currpos = currpos = currpage->content
-									+ (prvId - currpage->startNo)
-											* (3 * LONG_LONG);
+							continue;
+						} else if (ts > stamp) {
+							ta_page_t *prvp = findPage(prvId);
+							if (prvp == NULL) {
+								long long pn = (prvId * recordbytes)
+										/ pagebytes;
+								long long st = pn * pagebytes + startbyte;
+								prvp = readOnePage(st, pn * pagererecords,
+										tadbfp);
+							}
+							unsigned char *cpos = prvp->content
+									+ (prvId - prvp->startNo) * recordbytes;
+							//long long prvId1 = parsePrvId(cpos);
+							long long curId = parseNxtId(cpos);
+							//long long stamp1 = parseStamp(cpos);
+
+							long long id = getOneId();
+							tmp->id = id; //
+							tmp->prvTsId = curId; //
+							tmp->nxtTsId = nxtId;
+							tmp->time = ts;
+
+							previous->id = curId;
+							previous->nxtTsId = id;
+							previous->pos = currpos;
+
+							ta_page_t *nxtp = findPage(nxtId);
+							if (nxtp == NULL) {
+								long long pn1 = (nxtId * recordbytes)
+										/ pagebytes;
+								long long st1 = pn1 * pagebytes + startbyte;
+								nxtp = readOnePage(st1, pn1 * pagererecords,
+										tadbfp);
+							}
+							unsigned char *npos = nxtp->content
+									+ (nxtId - nxtp->startNo) * recordbytes;
+							//long long prvId2 = parsePrvId(npos);
+							//long long nxtId2 = parseNxtId(npos);
+							//long long stamp2 = parseStamp(npos);
+
+							next->id = nxtId;
+							next->prvTsId = id; //
+							next->pos = npos;
+							return;
+						} else if (ts == stamp) {
 						}
-						continue;
-					} else if (ts > stamp) {
-						ta_page_t *prvp = findPage(prvId);
-						if (prvp == NULL) {
-							long long pn = (prvId * (3 * LONG_LONG)) / 240;
-							long long st = pn * 240 + 16L;
-							prvp = readOnePage(st, pn * 10, tadbfp);
-						}
-						unsigned char *cpos = prvp->content
-								+ (prvId - prvp->startNo) * (3 * LONG_LONG);
-						//long long prvId1 = parsePrvId(cpos);
-						long long curId = parseNxtId(cpos);
-						//long long stamp1 = parseStamp(cpos);
-
-						long long id = getOneId();
-						tmp->id = id; //
-						tmp->prvTsId = curId; //
-						tmp->nxtTsId = nxtId;
-						tmp->time = ts;
-
-						previous->id = curId;
-						previous->nxtTsId = id;
-						previous->pos = currpos;
-
-						ta_page_t *nxtp = findPage(nxtId);
-						if (nxtp == NULL) {
-							long long pn1 = (nxtId * (3 * LONG_LONG)) / 240;
-							long long st1 = pn1 * 240 + 16L;
-							nxtp = readOnePage(st1, pn1 * 10, tadbfp);
-						}
-						unsigned char *npos = nxtp->content
-								+ (nxtId - nxtp->startNo) * (3 * LONG_LONG);
-						//long long prvId2 = parsePrvId(npos);
-						//long long nxtId2 = parseNxtId(npos);
-						//long long stamp2 = parseStamp(npos);
-
-						next->id = nxtId;
-						next->prvTsId = id; //
-						next->pos = npos;
-						return;
+					} else {
+						currpos += recordbytes;
 					}
 				}
 			}
-		}
-	} else if (ts > stamp) {
-		while (currpage != NULL) {
-			// current record, it may be previous/next record
-			long long prvId = parsePrvId(currpos);
-			long long nxtId = parseNxtId(currpos);
-			long long stamp = parseStamp(currpos);
-			if (nxtId == NULL_POINTER) {
-				long long id = getOneId();
-				tmp->id = id; //
-				tmp->prvTsId = timeaxispages->last;
-				tmp->nxtTsId = NULL_POINTER;
-				// the previous is the current record
-				previous->nxtTsId = id; //
-				previous->pos = currpos;
-				//previous->prvTsId = nxtId;// keep
-				timeaxispages->last = id;
-				timeaxispages->lastduty = 1;
-				return;
-			} else {
-				if (ts > stamp) {
-					long long nxt = currpage->start
-							+ (nxtId - currpage->startNo) * (3 * LONG_LONG);
-					if (nxt <= currpage->end) { // in this page
-						currpos = currpage->content
-								+ (nxtId - currpage->startNo) * (3 * LONG_LONG);
-					} else if (nxt > currpage->end) { // not in this page
-						ta_page_t *nxp = findPage(nxtId);
-						if (nxp == NULL) {
-							long long pn = (nxtId * (3 * LONG_LONG)) / 240;
-							long long st = pn * 240 + 16L;
-							currpage = readOnePage(st, pn * 10, tadbfp);
-						} else {
-							currpage = nxp;
-						}
-						currpos = currpage->content
-								+ (nxtId - currpage->startNo) * (3 * LONG_LONG);
-					}
-					continue;
-				} else if (ts < stamp) {
-					ta_page_t *nxtp = findPage(nxtId);
-					if (nxtp == NULL) {
-						long long pn = (nxtId * (3 * LONG_LONG)) / 240;
-						long long st = pn * 240 + 16L;
-						nxtp = readOnePage(st, pn * 10, tadbfp);
-					}
-					unsigned char *cpos = nxtp->content
-							+ (nxtId - nxtp->startNo) * (3 * LONG_LONG);
-					long long curId = parsePrvId(cpos);
-					//long long nxtId1 = parseNxtId(cpos);
-					//long long stamp1 = parseStamp(cpos);
-
+		} else if (ts > stamp) {
+			while (currpage != NULL) {
+				// current record, it may be previous/next record
+				unsigned char inuse = parseInUse(currpos);
+				long long prvId = parsePrvId(currpos);
+				long long nxtId = parseNxtId(currpos);
+				long long stamp = parseStamp(currpos);
+				if (nxtId == NULL_POINTER) {
 					long long id = getOneId();
 					tmp->id = id; //
-					tmp->prvTsId = prvId; //
-					tmp->nxtTsId = curId;
-					tmp->time = ts;
-
-					next->id = curId;
-					next->prvTsId = id;
-					next->pos = currpos;
-
-					ta_page_t *prvp = findPage(prvId);
-					if (prvp == NULL) {
-						long long pn1 = (prvId * (3 * LONG_LONG)) / 240;
-						long long st1 = pn1 * 240 + 16L;
-						prvp = readOnePage(st1, pn1 * 10, tadbfp);
-					}
-					unsigned char *ppos = prvp->content
-							+ (prvId - prvp->startNo) * (3 * LONG_LONG);
-					//long long prvId2 = parsePrvId(npos);
-					//long long nxtId2 = parseNxtId(ppos);
-					//long long stamp2 = parseStamp(npos);
-					previous->id = prvId;
+					tmp->prvTsId = timeaxispages->last;
+					tmp->nxtTsId = NULL_POINTER;
+					// the previous is the current record
 					previous->nxtTsId = id; //
-					previous->pos = ppos;
-
+					previous->pos = currpos;
+					//previous->prvTsId = nxtId;// keep
+					timeaxispages->last = id;
+					timeaxispages->lastduty = 1;
 					return;
+				} else {
+					if (inuse == 1) {
+						if (ts > stamp) {
+							long long nxt = currpage->start
+									+ (nxtId - currpage->startNo) * recordbytes;
+							if (nxt <= currpage->end) { // in this page
+								currpos = currpage->content
+										+ (nxtId - currpage->startNo)
+												* recordbytes;
+							} else if (nxt > currpage->end) { // not in this page
+								ta_page_t *nxp = findPage(nxtId);
+								if (nxp == NULL) {
+									long long pn = (nxtId * recordbytes)
+											/ pagebytes;
+									long long st = pn * pagebytes + startbyte;
+									currpage = readOnePage(st,
+											pn * pagererecords, tadbfp);
+								} else {
+									currpage = nxp;
+								}
+								currpos = currpage->content
+										+ (nxtId - currpage->startNo)
+												* recordbytes;
+							}
+							continue;
+						} else if (ts <= stamp) {
+							ta_page_t *nxtp = findPage(nxtId);
+							if (nxtp == NULL) {
+								long long pn = (nxtId * recordbytes)
+										/ pagebytes;
+								long long st = pn * pagebytes + startbyte;
+								nxtp = readOnePage(st, pn * pagererecords,
+										tadbfp);
+							}
+							unsigned char *cpos = nxtp->content
+									+ (nxtId - nxtp->startNo) * recordbytes;
+							long long curId = parsePrvId(cpos);
+							//long long nxtId1 = parseNxtId(cpos);
+							//long long stamp1 = parseStamp(cpos);
+
+							long long id = getOneId();
+							tmp->id = id; //
+							tmp->prvTsId = prvId; //
+							tmp->nxtTsId = curId;
+							tmp->time = ts;
+
+							next->id = curId;
+							next->prvTsId = id;
+							next->pos = currpos;
+
+							ta_page_t *prvp = findPage(prvId);
+							if (prvp == NULL) {
+								long long pn1 = (prvId * recordbytes)
+										/ pagebytes;
+								long long st1 = pn1 * pagebytes + startbyte;
+								prvp = readOnePage(st1, pn1 * pagererecords,
+										tadbfp);
+							}
+							unsigned char *ppos = prvp->content
+									+ (prvId - prvp->startNo) * recordbytes;
+							//long long prvId2 = parsePrvId(npos);
+							//long long nxtId2 = parseNxtId(ppos);
+							//long long stamp2 = parseStamp(npos);
+							previous->id = prvId;
+							previous->nxtTsId = id; //
+							previous->pos = ppos;
+
+							return;
+						} else if (ts == stamp) {
+						}
+					} else {
+						currpos += recordbytes;
+					}
 				}
 			}
+		} else if (ts == stamp) {
+			// tmp is the current record
+			ta_page_t *nxp = findPage(nxtId);
+			if (nxp == NULL) {
+				long long pn = (nxtId * recordbytes) / pagebytes;
+				long long st = pn * pagebytes + startbyte;
+				currpage = readOnePage(st, pn * pagererecords, tadbfp);
+			}
+			currpos = currpage->content
+					+ (nxtId - currpage->startNo) * recordbytes;
+			long long curId = parsePrvId(currpos);
+			tmp->id = curId;
+			tmp->time = ts;
+			tmp->prvTsId = prvId;
+			tmp->nxtTsId = nxtId;
+			tmp->pos = currpos;
+			return;
 		}
-	} else if (ts == stamp) {
-		// tmp is the current record
-		ta_page_t *nxp = findPage(nxtId);
-		if (nxp == NULL) {
-			long long pn = (nxtId * (3 * LONG_LONG)) / 240;
-			long long st = pn * 240 + 16L;
-			currpage = readOnePage(st, pn * 10, tadbfp);
-		}
-		currpos = currpage->content
-				+ (nxtId - currpage->startNo) * (3 * LONG_LONG);
-		long long curId = parsePrvId(currpos);
-		tmp->id = curId;
-		tmp->time = ts;
-		tmp->prvTsId = prvId;
-		tmp->nxtTsId = nxtId;
-		tmp->pos = currpos;
-		return;
 	}
 }
 
@@ -534,16 +575,19 @@ long long updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 	long long id = -1;
 	if (pp != NULL) {
 		evolved_point_t *t = (evolved_point_t*) malloc(sizeof(evolved_point_t));
+		t->inuse = 1;
 		t->prvTsId = -3;
 		t->nxtTsId = -3;
 		t->time = 0;
 		t->id = -3;
 		evolved_point_t *p = (evolved_point_t*) malloc(sizeof(evolved_point_t));
+		p->inuse = 1;
 		p->prvTsId = -3;
 		p->nxtTsId = -3;
 		p->time = 0;
 		p->id = -3;
 		evolved_point_t *n = (evolved_point_t*) malloc(sizeof(evolved_point_t));
+		n->inuse = 1;
 		n->prvTsId = -3;
 		n->nxtTsId = -3;
 		n->time = 0;
@@ -561,6 +605,7 @@ long long updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 			if (t->time != ts) { // found a position
 				// insert the evolved point at the position
 				t->time = ts;
+				putInUse(t);
 				putPrvId(t);
 				putNxtId(t);
 				putStamp(t);
@@ -653,15 +698,15 @@ int main(int argv, char **argc) {
 		readOnePage(16L, 0, tadbfp);
 	}
 
-//loadIds(taidfp);
-//readAllTaIds(taidfp);
+	loadIds(taidfp);
+	showAllTaIds(taidfp);
 
 	//1593783935
-	// 1593783957
-	long long ts = (unsigned long) time(NULL);
-	//updateEvolvedPoint(ts, taidfp, tadbfp);
-	long long ts1 = (unsigned long) time(NULL);
-	//updateEvolvedPoint(ts1, taidfp, tadbfp);
+	//1593783957
+	long long ts = 1593783935;	//(unsigned long) time(NULL);
+	updateEvolvedPoint(ts, taidfp, tadbfp);
+	long long ts1 = 1593783957;	//(unsigned long) time(NULL);
+	updateEvolvedPoint(ts1, taidfp, tadbfp);
 
 // commitEvolvedPoint(ep, tadbfp);
 

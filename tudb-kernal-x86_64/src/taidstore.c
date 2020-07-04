@@ -303,7 +303,7 @@ void listAllTaIds() {
 	printf("Reused Id queue length:%d\n", i1);
 }
 
-void readAllTaIds(FILE *idfp) {
+void showAllTaIds(FILE *idfp) {
 	unsigned char buf[LONG_LONG] = { 0 };
 	fseek(idfp, 0L, SEEK_END);
 	long sz = ftell(idfp);

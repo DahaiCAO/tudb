@@ -39,7 +39,7 @@ long long getOneId();
 
 void loadIds(FILE *idfp);
 
-void readAllTaIds(FILE *idfp);
+void showAllTaIds(FILE *idfp);
 
 void recycleOneId();
 

@@ -30,6 +30,7 @@ typedef struct evolved_point {
 	long long nxtTsId; // next evolved point(time stamp) Id
 	long long time; // time stamp
 	unsigned char *pos;
+	unsigned char inuse;// 1: in use; othewise, 0
 } evolved_point_t;
 
 // time axis read buffer for update
