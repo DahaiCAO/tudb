@@ -25,34 +25,28 @@
 long long getOneId() {
 	if (cache->rId != NULL) {
 		id_t *p = cache->rId;
-		id_t *t = NULL;
 		if (p != NULL) {
 			while (p->nxt != NULL) {
 				if (p->nxt->nxt == NULL) {
-					t = p;
+					break;
 				}
 				p = p->nxt;
 			}
 		}
-		t->nxt = NULL;
 		long long r = p->id;
-		free(p);
+		p = NULL;
 		return r;
 	} else if (cache->nId != NULL) {
 		id_t *p = cache->nId;
-		id_t *t = NULL;
 		if (p != NULL) {
-			while (p->nxt != NULL) {
-				if (p->nxt->nxt == NULL) {
-					t = p;
-				}
-				p = p->nxt;
-			}
+			long long r = p->id;
+			cache->nId = p->nxt;
+			p = NULL;
+			return r;
+		} else {
+			p = NULL;
+			return 0;
 		}
-		t->nxt = NULL;
-		long long r = p->id;
-		free(p);
-		return r;
 	}
 	return 0;
 
@@ -326,63 +320,63 @@ void showAllTaIds(FILE *idfp) {
 	printf("Reused Id queue length:%d\n", (i - 2));
 }
 /*
-int main(int argv, char **argc) {
-	setvbuf(stdout, NULL, _IONBF, 0);
+ int main(int argv, char **argc) {
+ setvbuf(stdout, NULL, _IONBF, 0);
 
-	// get new Id from next free IDs
-	char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
-	FILE *taidfp = fopen(taid, "rb+");
+ // get new Id from next free IDs
+ char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
+ FILE *taidfp = fopen(taid, "rb+");
 
-	// initialize
-	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
-	cache->nId = NULL;
-	cache->rId = NULL;
+ // initialize
+ cache = (id_cache_t*) malloc(sizeof(id_cache_t));
+ cache->nId = NULL;
+ cache->rId = NULL;
 
 
-	loadIds(taidfp);
+ loadIds(taidfp);
 
-	listAllTaIds();
+ listAllTaIds();
 
-	recycleOneId(14);
+ recycleOneId(14);
 
-	listAllTaIds();
+ listAllTaIds();
 
-	long long d = getOneId();
-	printf("%lld\n", d);
-	d = getOneId();
-	printf("%lld\n", d);
-	d = getOneId();
-	printf("%lld\n", d);
+ long long d = getOneId();
+ printf("%lld\n", d);
+ d = getOneId();
+ printf("%lld\n", d);
+ d = getOneId();
+ printf("%lld\n", d);
 
-	// test to get one id.
-//	long long id = getId(taidfp);
-//	 printf("%lld\n", id);
-//	 id = getId(taidfp);
-//	 printf("%lld\n", id);
-//	 id = getId(taidfp);
-//	 printf("%lld\n", id);
-//	 id = getId(taidfp);
-//	 printf("%lld\n", id);
-//	 id = getId(taidfp);
-//	 printf("%lld\n", id);
+ // test to get one id.
+ //	long long id = getId(taidfp);
+ //	 printf("%lld\n", id);
+ //	 id = getId(taidfp);
+ //	 printf("%lld\n", id);
+ //	 id = getId(taidfp);
+ //	 printf("%lld\n", id);
+ //	 id = getId(taidfp);
+ //	 printf("%lld\n", id);
+ //	 id = getId(taidfp);
+ //	 printf("%lld\n", id);
 
-	// test recycle one id
-//	 recycleId(taidfp, 4);
-//	 recycleId(taidfp, 7);
-//	 recycleId(taidfp, 2);
-//	 recycleId(taidfp, 3);
-//	 recycleId(taidfp, 11);
-//	 recycleId(taidfp, 9);
-//	 recycleId(taidfp, 5);
-//	 recycleId(taidfp, 13);
-//	 recycleId(taidfp, 17);
-//	 recycleId(taidfp, 26);
-//
-//	readAllTaIds(taidfp);
-	fclose(taidfp);
+ // test recycle one id
+ //	 recycleId(taidfp, 4);
+ //	 recycleId(taidfp, 7);
+ //	 recycleId(taidfp, 2);
+ //	 recycleId(taidfp, 3);
+ //	 recycleId(taidfp, 11);
+ //	 recycleId(taidfp, 9);
+ //	 recycleId(taidfp, 5);
+ //	 recycleId(taidfp, 13);
+ //	 recycleId(taidfp, 17);
+ //	 recycleId(taidfp, 26);
+ //
+ //	readAllTaIds(taidfp);
+ fclose(taidfp);
 
-	free(cache);
-	printf("End");
+ free(cache);
+ printf("End");
 
-}*/
+ }*/
 

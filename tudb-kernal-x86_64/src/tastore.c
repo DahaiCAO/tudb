@@ -191,7 +191,8 @@ ta_page_t* findPage(long long id) {
 	ta_page_t *page = timeaxispages->pages;
 	if (page != NULL) {
 		while (page != NULL) {
-			if (id >= page->start && id < page->end) {
+			long long pos = 16LL + id * (3 * LONG_LONG + 1);
+			if (pos >= page->start && pos < page->end) {
 				return page;
 			} else {
 				page = page->nxtpage;
@@ -214,15 +215,24 @@ void showAllPages() {
 			printf("Page start id:%lld\n", page->startNo);
 			printf("----Page body----\n");
 			int i = 0;
+			unsigned char *curr;
 			while (i < 10) { // 10 is page size.
-				unsigned char *curr = page->content;
-				unsigned char inuse = parseInUse(curr);
-				long long prvId = parsePrvId(curr);
-				long long nxtId = parseNxtId(curr);
-				long long stamp = parseStamp(curr);
-				unsigned char *p2 = page->content + i * (3 * LONG_LONG);
-				printf("%d, %lld,%lld,%lld\n", inuse, prvId, nxtId, stamp);
-				i++;
+				curr = page->content + i * (3 * LONG_LONG + 1);
+				if (curr != NULL) {
+					unsigned char inuse = parseInUse(curr);
+					long long prvId = parsePrvId(curr);
+					long long nxtId = parseNxtId(curr);
+					long long stamp = parseStamp(curr);
+					if (stamp != 0LL) {
+						printf("%d %lld|%lld|%lld\n", inuse, prvId, nxtId,
+								stamp);
+					} else {
+						break;
+					}
+					i++;
+				} else {
+					break;
+				}
 			}
 			printf("----Page end---\n");
 			page = page->nxtpage;
@@ -319,7 +329,7 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 			// tmp is the current record
 			ta_page_t *nxp = findPage(nxtId);
 			if (nxp == NULL) {
-				long long pn = (nxtId * (3 * LONG_LONG + 1)) / 240;
+				long long pn = (nxtId * (3 * LONG_LONG + 1)) / 250;
 				long long st = pn * 250 + 16L;
 				nxp = readOnePage(st, pn * 10, tadbfp);
 			}
@@ -339,9 +349,9 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		evolved_point_t *tmp, evolved_point_t *previous, evolved_point_t *next,
 		FILE *tadbfp) {
 	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
-	int pagererecords = 10; // record counting in one page
-	int pagebytes = pagererecords * pagererecords; // byte counting in one page
-	long long startbyte = 16L; // start points in database
+	int pagererecords = 10LL; // record counting in one page
+	int pagebytes = recordbytes * pagererecords; // byte counting in one page
+	long long startbyte = 16LL; // start points in database
 	// current record, it may be previous/next record
 	long long prvId = parsePrvId(currpos);
 	long long nxtId = parseNxtId(currpos);
@@ -349,9 +359,15 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 	if (stamp == 0) {
 		// this is an empty DB,
 		// so this time stamp will be stored here
+		long long id = getOneId();
+		tmp->id = id; //
 		tmp->pos = currpos;
 		tmp->nxtTsId = NULL_POINTER;
 		tmp->prvTsId = NULL_POINTER;
+		timeaxispages->first = id;
+		timeaxispages->firstduty = 1;
+		timeaxispages->last = id;
+		timeaxispages->lastduty = 1;
 		return;
 	} else if (stamp != 0) {
 		if (ts < stamp) {
@@ -377,7 +393,6 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				} else {
 					if (inuse == 1) {
 						if (ts < stamp) {
-
 							// lookup backwards
 							long long prv = currpage->start
 									+ (prvId - currpage->startNo) * recordbytes;
@@ -445,6 +460,7 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->pos = npos;
 							return;
 						} else if (ts == stamp) {
+
 						}
 					} else {
 						currpos += recordbytes;
@@ -571,6 +587,10 @@ void commitEvolvedPoint(evolved_point_t *ep, FILE *tadbfp) {
 }
 
 long long updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
+	int recordbytes = 3LL * LONG_LONG + 1LL; // byte counting in one record
+	int pagererecords = 10LL; // record counting in one page
+	int pagebytes = recordbytes * pagererecords; // byte counting in one page
+	long long startbyte = 16LL; // start points in database
 	ta_page_t *pp = timeaxispages->pages;
 	long long id = -1;
 	if (pp != NULL) {
@@ -596,11 +616,11 @@ long long updateEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 		search(ts, pp->content, pp, t, p, n, tadbfp);
 		ta_page_t *newp = findPage(t->id);
 		if (newp == NULL) {
-			long long pn = (t->id * (3 * LONG_LONG)) / 240;
-			long long st = pn * 240 + 16L;
-			newp = readOnePage(st, pn * 10, tadbfp);
+			long long pn = (t->id * recordbytes) / pagebytes;
+			long long st = pn * pagebytes + startbyte;
+			newp = readOnePage(st, pn * pagererecords, tadbfp);
 		}
-		t->pos = newp->content + (t->id - newp->startNo) * (3 * LONG_LONG);
+		t->pos = newp->content + (t->id - newp->startNo) * recordbytes;
 		if (t->pos != NULL) {
 			if (t->time != ts) { // found a position
 				// insert the evolved point at the position
@@ -691,26 +711,51 @@ int main(int argv, char **argc) {
 	cache->nId = NULL;
 	cache->rId = NULL;
 
+	loadIds(taidfp);
+	//showAllTaIds(taidfp);
+	listAllTaIds();
+
 	timeaxispages = (ta_buf_t*) malloc(sizeof(ta_buf_t));
 	timeaxispages->pages = NULL;
-
-	if (timeaxispages->pages == NULL) {
-		readOnePage(16L, 0, tadbfp);
+	unsigned char p[LONG_LONG * 2] = { 0 };
+	unsigned char first[LONG_LONG] = { 0 };
+	unsigned char last[LONG_LONG] = { 0 };
+	fseek(tadbfp, 0, SEEK_SET); //
+	fread(p, sizeof(unsigned char), LONG_LONG * 2, tadbfp);
+	for (int i = 0; i < LONG_LONG; i++) {
+		first[i] = p[i];
 	}
-
-	loadIds(taidfp);
-	showAllTaIds(taidfp);
+	for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
+		last[i] = p[i];
+	}
+	long long firstId = ByteArrayToLong(first);
+	long long lastId = ByteArrayToLong(last);
+	timeaxispages->first = firstId;
+	timeaxispages->firstduty = 0;
+	timeaxispages->last = lastId;
+	timeaxispages->lastduty = 0;
+	if (timeaxispages->pages == NULL) {
+		readOnePage(16LL, 0, tadbfp);
+	}
 
 	//1593783935
 	//1593783957
 	long long ts = 1593783935;	//(unsigned long) time(NULL);
 	updateEvolvedPoint(ts, taidfp, tadbfp);
+	showAllPages();
 	long long ts1 = 1593783957;	//(unsigned long) time(NULL);
 	updateEvolvedPoint(ts1, taidfp, tadbfp);
-
-// commitEvolvedPoint(ep, tadbfp);
-
 	showAllPages();
+	long long ts2 = 1593783958;	//(unsigned long) time(NULL);
+	updateEvolvedPoint(ts2, taidfp, tadbfp);
+	showAllPages();
+	long long ts3 = 1593783959;	//(unsigned long) time(NULL);
+	updateEvolvedPoint(ts3, taidfp, tadbfp);
+	showAllPages();
+	long long ts4 = 1593783960;	//(unsigned long) time(NULL);
+	updateEvolvedPoint(ts4, taidfp, tadbfp);
+	showAllPages();
+	// commitEvolvedPoint(ep, tadbfp);
 
 	fclose(taidfp);
 	fclose(tadbfp);

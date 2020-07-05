@@ -20,6 +20,7 @@
 #include <time.h>
 
 #include "macrodef.h"
+#include "convert.h"
 /*
  * init.h
  *
