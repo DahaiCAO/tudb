@@ -48,9 +48,9 @@ typedef struct ta_page {
 
 typedef struct ta_buf {
 	long long first; // address of the first time axis record
-	unsigned char firstduty;
+	unsigned char firstdirty;
 	long long last; // address of the second time axis record
-	unsigned char lastduty;
+	unsigned char lastdirty;
 	ta_page_t *pages; // 10 page by default.
 } ta_buf_t;
 

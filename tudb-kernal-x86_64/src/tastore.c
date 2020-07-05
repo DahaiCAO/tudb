@@ -204,6 +204,11 @@ ta_page_t* findPage(long long id) {
 
 void showAllPages() {
 	ta_page_t *page = timeaxispages->pages;
+	printf("----DB Head----\n");
+	printf("First Id:%d\n", timeaxispages->first);
+	printf("First Id dirty:%d\n", timeaxispages->firstdirty);
+	printf("Last Id:%d\n", timeaxispages->last);
+	printf("Last Id dirty:%d\n", timeaxispages->lastdirty);
 	if (page != NULL) {
 		while (page != NULL) {
 			printf("----Page head----\n");
@@ -272,7 +277,7 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 				next->pos = curr;
 				// next->nxtTsId = nxtId; // keep same
 				timeaxispages->first = id;
-				timeaxispages->firstduty = 1;
+				timeaxispages->firstdirty = 1;
 			} else {
 				// lookup backwards
 				long long prv = page->start
@@ -305,7 +310,7 @@ void lookup(long long ts, unsigned char *curr, ta_page_t *page,
 				previous->pos = curr;
 				//previous->prvTsId = nxtId;// keep
 				timeaxispages->last = id;
-				timeaxispages->lastduty = 1;
+				timeaxispages->lastdirty = 1;
 			} else {
 				long long nxt = page->start
 						+ (nxtId - page->startNo) * (3 * LONG_LONG + 1);
@@ -365,9 +370,9 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		tmp->nxtTsId = NULL_POINTER;
 		tmp->prvTsId = NULL_POINTER;
 		timeaxispages->first = id;
-		timeaxispages->firstduty = 1;
+		timeaxispages->firstdirty = 1;
 		timeaxispages->last = id;
-		timeaxispages->lastduty = 1;
+		timeaxispages->lastdirty = 1;
 		return;
 	} else if (stamp != 0) {
 		if (ts < stamp) {
@@ -388,7 +393,7 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 					next->pos = currpos;
 					// next->nxtTsId = nxtId; // keep same
 					timeaxispages->first = id;
-					timeaxispages->firstduty = 1;
+					timeaxispages->firstdirty = 1;
 					return;
 				} else {
 					if (inuse == 1) {
@@ -484,7 +489,7 @@ void search(long long ts, unsigned char *currpos, ta_page_t *currpage,
 					previous->pos = currpos;
 					//previous->prvTsId = nxtId;// keep
 					timeaxispages->last = id;
-					timeaxispages->lastduty = 1;
+					timeaxispages->lastdirty = 1;
 					return;
 				} else {
 					if (inuse == 1) {
@@ -731,9 +736,9 @@ int main(int argv, char **argc) {
 	long long firstId = ByteArrayToLong(first);
 	long long lastId = ByteArrayToLong(last);
 	timeaxispages->first = firstId;
-	timeaxispages->firstduty = 0;
+	timeaxispages->firstdirty = 0;
 	timeaxispages->last = lastId;
-	timeaxispages->lastduty = 0;
+	timeaxispages->lastdirty = 0;
 	if (timeaxispages->pages == NULL) {
 		readOnePage(16LL, 0, tadbfp);
 	}
