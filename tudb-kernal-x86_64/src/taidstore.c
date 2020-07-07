@@ -53,7 +53,7 @@ long long getOneId() {
 }
 
 void loadIds(FILE *idfp) {
-	int c = 5; // cache reused Id capacity. 100 by default.
+	int c = 25; // cache reused Id capacity. 100 by default.
 
 	// step 1: load new Ids
 	unsigned char ids[LONG_LONG] = { 0 };
