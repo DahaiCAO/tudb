@@ -24,15 +24,6 @@
 #ifndef STRUCTEPDEF_H_
 #define STRUCTEPDEF_H_
 
-typedef struct evolved_point {
-	long long id; //
-	long long prvTsId; // previous evolved point(time stamp) Id
-	long long nxtTsId; // next evolved point(time stamp) Id
-	long long time; // time stamp
-	unsigned char *pos;
-	unsigned char inuse;// 1: in use; othewise, 0
-} evolved_point_t;
-
 // time axis read buffer for update
 typedef struct ta_page {
 	long long expiretime; // expiration time to mark this page, -1 by default, that means blank page
@@ -45,6 +36,16 @@ typedef struct ta_page {
 	struct ta_page *prvpage;
 	struct ta_page *nxtpage;
 } ta_page_t;
+
+typedef struct evolved_point {
+	long long id; //
+	long long prvTsId; // previous evolved point(time stamp) Id
+	long long nxtTsId; // next evolved point(time stamp) Id
+	long long time; // time stamp
+	unsigned char *pos;
+	unsigned char inuse; // 1: in use; othewise, 0
+	ta_page_t *page;
+} evolved_point_t;
 
 typedef struct ta_buf {
 	long long first; // address of the first time axis record
