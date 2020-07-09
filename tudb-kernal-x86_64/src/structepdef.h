@@ -47,12 +47,17 @@ typedef struct evolved_point {
 	ta_page_t *page;
 } evolved_point_t;
 
-typedef struct ta_buf {
+typedef struct tadb_head {
 	long long first; // address of the first time axis record
 	unsigned char firstdirty;
 	long long last; // address of the second time axis record
 	unsigned char lastdirty;
-	ta_page_t *pages; // 10 page by default.
+} tadb_head_t;
+
+typedef struct ta_buf {
+	long long first; // address of the first time axis record
+	long long last; // address of the second time axis record
+	ta_page_t *pages; // 10 pages by default.
 } ta_buf_t;
 
 ta_buf_t *timeaxispages;
