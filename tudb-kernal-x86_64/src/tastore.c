@@ -394,8 +394,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 					if (inuse == 1) {
 						if (ts > stamp) {
 							previous->nxtTsId = nxtId; //
-							previous->pos = currpage;
-							previous->page = currpos;
+							previous->pos = currpos;
+							previous->page = currpage;
 
 							long long nxt = currpage->start
 									+ (nxtId - currpage->startNo) * recordbytes;
