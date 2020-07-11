@@ -251,8 +251,6 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 
 							next->id = nxtId;
 							next->prvTsId = id;
-//							next->pos = tmp->pos;
-//							next->page = tmp->page;
 							return;
 						} else if (ts == stamp) { // ts is the first, no actions
 							tmp->id = timeaxispages->first;
@@ -290,13 +288,6 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							}
 							continue;
 						} else if (ts > stamp) {
-//							ta_page_t *prvp = searchPage(prvId, recordbytes,
-//									startbyte, pagererecords, pagebytes,
-//									tadbfp);
-//							unsigned char *cpos = prvp->content
-//									+ (prvId - prvp->startNo) * recordbytes;
-//							long long curId = parseNxtId(cpos);
-
 							long long id = getOneId();
 							tmp->id = id; //
 							tmp->prvTsId = next->prvTsId; //
@@ -313,13 +304,6 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->prvTsId = id; //
 							return;
 						} else if (ts == stamp) {
-//							ta_page_t *nxtp = searchPage(nxtId, recordbytes,
-//									startbyte, pagererecords, pagebytes,
-//									tadbfp);
-//							unsigned char *npos = nxtp->content
-//									+ (nxtId - nxtp->startNo) * recordbytes;
-//							tmp->id = parsePrvId(npos);
-
 							tmp->id = next->prvTsId;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
@@ -369,8 +353,6 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 
 							previous->id = prvId;
 							previous->nxtTsId = id; //
-//							previous->pos = tmp->pos;
-//							previous->page = tmp->page;
 
 							next->id = nxtId;
 							next->prvTsId = id;
@@ -413,12 +395,6 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							}
 							continue;
 						} else if (ts < stamp) {
-//							ta_page_t *nxtp = searchPage(nxtId, recordbytes,
-//									startbyte, pagererecords, pagebytes,
-//									tadbfp);
-//							unsigned char *cpos = nxtp->content
-//									+ (nxtId - nxtp->startNo) * recordbytes;
-//							long long curId = parsePrvId(cpos);
 							long long id = getOneId();
 							tmp->id = id; //
 							tmp->prvTsId = prvId; //
@@ -431,24 +407,11 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->pos = currpos;
 							next->page = currpage;
 
-//							ta_page_t *prvp = searchPage(prvId, recordbytes,
-//									startbyte, pagererecords, pagebytes,
-//									tadbfp);
-//							unsigned char *ppos = prvp->content
-//									+ (prvId - prvp->startNo) * recordbytes;
 							previous->id = prvId;
 							previous->nxtTsId = id; //
-//							previous->pos = ppos;
-//							previous->page = prvp;
 
 							return;
 						} else if (ts == stamp) {
-//							ta_page_t *nxtp = searchPage(nxtId, recordbytes,
-//									startbyte, pagererecords, pagebytes,
-//									tadbfp);
-//							unsigned char *npos = nxtp->content
-//									+ (nxtId - nxtp->startNo) * recordbytes;
-//							tmp->id = parsePrvId(npos);
 							tmp->id = previous->nxtTsId;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
