@@ -69,6 +69,11 @@ typedef struct ep_queue_node {
 
 ep_queue_node_t *queue;
 
+typedef struct idbuf {
+	long long id;
+	struct idbuf *nxt;
+} idbuf_t;
+
 /*
 
 
