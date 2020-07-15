@@ -186,7 +186,7 @@ ta_page_t* searchPage(long long id, int recordbytes, long long startbyte,
 }
 
 // query one evolved point by specified time stamp (ts)
-void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
+void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		evolved_point_t *tmp, evolved_point_t *previous, evolved_point_t *next,
 		FILE *tadbfp) {
 	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
@@ -207,8 +207,8 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				long long prvId = parsePrvId(currpos);
 				long long nxtId = parseNxtId(currpos);
 				long long stamp = parseStamp(currpos);
-				if (prvId == NULL_POINTER) {
-					if (inuse == 1) {
+				if (inuse == 1) {
+					if (prvId == NULL_POINTER) {
 						if (ts != stamp) { // not found
 							tmp->id = NULL_POINTER;
 							return;
@@ -222,11 +222,6 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos += recordbytes;
-						continue;
-					}
-				} else {
-					if (inuse == 1) {
 						if (ts < stamp) {
 							next->prvTsId = prvId; //
 							// lookup backwards
@@ -257,10 +252,10 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->page = currpage;
 							return;
 						}
-					} else {
-						currpos += recordbytes;
-						continue;
 					}
+				} else {
+					currpos += recordbytes;
+					continue;
 				}
 			}
 		} else if (ts > stamp) { // search forwards
@@ -270,8 +265,8 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				long long prvId = parsePrvId(currpos);
 				long long nxtId = parseNxtId(currpos);
 				long long stamp = parseStamp(currpos);
-				if (nxtId == NULL_POINTER) { // this is last record
-					if (inuse == 1) {
+				if (inuse == 1) {
+					if (nxtId == NULL_POINTER) { // this is last record
 						if (ts != stamp) {
 							tmp->id = NULL_POINTER; // not found
 							return;
@@ -285,11 +280,6 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos -= recordbytes;
-						continue;
-					}
-				} else {
-					if (inuse == 1) {
 						if (ts > stamp) {
 							previous->nxtTsId = nxtId; //
 							long long nxt = currpage->start
@@ -319,10 +309,10 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->page = currpage;
 							return;
 						}
-					} else {
-						currpos += recordbytes;
-						continue;
 					}
+				} else {
+					currpos += recordbytes;
+					continue;
 				}
 			}
 		} else if (ts == stamp) {
@@ -338,6 +328,284 @@ void searchforQuery(long long ts, unsigned char *currpos, ta_page_t *currpage,
 			tmp->nxtTsId = nxtId;
 			tmp->pos = currpos;
 			tmp->page = currpage;
+			return;
+		}
+	}
+}
+
+// query one or more evolved points between specified minimum time stamp (mints)
+// maximum time stamp (maxts), mints should be less than maxts.
+void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
+		unsigned char *currpos, ta_page_t *currpage, evolved_point_t *tmp,
+		evolved_point_t *previous, evolved_point_t *next, FILE *tadbfp) {
+	if (mints > maxts) {
+		return;
+	} else if (mints == maxts) {
+		searchforQueryEP(mints, timeaxispages->pages->content,
+				timeaxispages->pages, tmp, previous, next, tadbfp);
+		if (tmp->id != NULL_POINTER) {
+			idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+			bf->id = tmp->id;
+			bf->nxt = NULL;
+			buf = bf;
+		}
+		return;
+	}
+	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
+	int pagererecords = 10LL; // record counting in one page
+	int pagebytes = recordbytes * pagererecords; // byte counting in one page
+	long long startbyte = 16LL; // start points in database
+	// current record, it may be previous/next record
+	long long prvId = parsePrvId(currpos);
+	long long nxtId = parseNxtId(currpos);
+	long long stamp = parseStamp(currpos);
+	if (stamp == 0) {	// this is an empty DB,
+		tmp->id = NULL_POINTER; //
+		return;
+	} else if (stamp != 0) {
+		if (maxts <= stamp) { // search backwards
+			while (currpage != NULL) {
+				unsigned char inuse = parseInUse(currpos);
+				long long prvId = parsePrvId(currpos);
+				long long nxtId = parseNxtId(currpos);
+				long long stamp = parseStamp(currpos);
+				if (inuse == 1) {
+					if (prvId == NULL_POINTER) {
+						if (maxts >= stamp) {
+							idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+							bf->id = next->prvTsId;
+							bf->nxt = NULL;
+							if (buf == NULL)
+								buf = bf;
+							else {
+								bf->nxt = buf; // insert into head
+								buf = bf;
+							}
+						}
+						return;
+					} else {
+						if (mints <= stamp) {
+							if (maxts >= stamp) {
+								idbuf_t *bf = (idbuf_t*) malloc(
+										sizeof(idbuf_t));
+								bf->id = next->prvTsId;
+								bf->nxt = NULL;
+								if (buf == NULL)
+									buf = bf;
+								else {
+									bf->nxt = buf;
+									buf = bf;
+								}
+							}
+							next->prvTsId = prvId; //
+							// lookup backwards
+							long long prv = currpage->start
+									+ (prvId - currpage->startNo) * recordbytes;
+							if (prv >= currpage->start && prv < currpage->end) { // in this page
+								currpos = currpage->content
+										+ (prvId - currpage->startNo)
+												* recordbytes;
+							} else { // not in this page
+								currpage = searchPage(prvId, recordbytes,
+										startbyte, pagererecords, pagebytes,
+										tadbfp);
+								currpos = currpage->content
+										+ (prvId - currpage->startNo)
+												* recordbytes;
+							}
+							continue;
+						} else if (mints > stamp) {
+							return;
+						}
+					}
+				} else {
+					currpos += recordbytes;
+					continue;
+				}
+			}
+		} else if (mints >= stamp) { // search forwards
+			while (currpage != NULL) {
+				// current record, it may be previous/next record
+				unsigned char inuse = parseInUse(currpos);
+				long long prvId = parsePrvId(currpos);
+				long long nxtId = parseNxtId(currpos);
+				long long stamp = parseStamp(currpos);
+				if (inuse == 1) {
+					if (nxtId == NULL_POINTER) { // this is last record
+						if (maxts >= stamp) {
+							if (buf->id == NULL_POINTER && buf->nxt == NULL) {
+								buf->id = previous->nxtTsId;
+							} else {
+								idbuf_t *p = buf;
+								while (p->nxt != NULL) {
+									p = p->nxt;
+								}
+								idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+								bf->id = previous->nxtTsId;
+								bf->nxt = NULL;
+								p->nxt = bf;
+							}
+						}
+						return;
+					} else {
+						if (maxts >= stamp) {
+							if (mints <= stamp) {
+								if (buf->id == NULL_POINTER && buf->nxt == NULL) {
+									buf->id = previous->nxtTsId;
+								} else {
+									idbuf_t *p = buf;
+									while (p->nxt != NULL) {
+										p = p->nxt;
+									}
+									idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+									bf->id = previous->nxtTsId;
+									bf->nxt = NULL;
+									p->nxt = bf;
+								}
+							}
+							previous->nxtTsId = nxtId; //
+							long long nxt = currpage->start
+									+ (nxtId - currpage->startNo) * recordbytes;
+							if (nxt >= currpage->start && nxt < currpage->end) { // in this page
+								currpos = currpage->content
+										+ (nxtId - currpage->startNo)
+												* recordbytes;
+							} else { // not in this page
+								currpage = searchPage(nxtId, recordbytes,
+										startbyte, pagererecords, pagebytes,
+										tadbfp);
+								currpos = currpage->content
+										+ (nxtId - currpage->startNo)
+												* recordbytes;
+							}
+							continue;
+						} else if (maxts < stamp) {
+							return;
+						}
+					}
+				} else {
+					currpos += recordbytes;
+					continue;
+				}
+			}
+		} else if (mints <= stamp && maxts >= stamp) {
+			unsigned char *cpos = currpos;
+			ta_page_t *cpage = currpage;
+			while (cpage != NULL) {
+				unsigned char inuse = parseInUse(cpos);
+				long long prvId = parsePrvId(cpos);
+				long long nxtId = parseNxtId(cpos);
+				long long stamp = parseStamp(cpos);
+				if (inuse == 1) {
+					if (prvId == NULL_POINTER) {
+						idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+						bf->id = next->prvTsId;
+						bf->nxt = NULL;
+						if (buf == NULL)
+							buf = bf;
+						else {
+							bf->nxt = buf; // insert into head
+							buf = bf;
+						}
+						break;
+					} else {
+						if (mints <= stamp) {
+							idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+							bf->id = next->prvTsId;
+							bf->nxt = NULL;
+							if (buf == NULL)
+								buf = bf;
+							else {
+								bf->nxt = buf;
+								buf = bf;
+							}
+							// lookup backwards
+							next->prvTsId = prvId; //
+							long long prv = cpage->start
+									+ (prvId - cpage->startNo) * recordbytes;
+							if (prv >= cpage->start && prv < cpage->end) { // in this page
+								cpos = cpage->content
+										+ (prvId - cpage->startNo)
+												* recordbytes;
+							} else { // not in this page
+								cpage = searchPage(prvId, recordbytes,
+										startbyte, pagererecords, pagebytes,
+										tadbfp);
+								cpos = cpage->content
+										+ (prvId - cpage->startNo)
+												* recordbytes;
+							}
+							continue;
+						} else if (mints > stamp) {
+							break;
+						}
+					}
+				} else {
+					cpos += recordbytes;
+					continue;
+				}
+			}
+			cpos = currpos;
+			cpage = currpage;
+			while (cpage != NULL) {
+				// current record, it may be previous/next record
+				unsigned char inuse = parseInUse(cpos);
+				long long prvId = parsePrvId(cpos);
+				long long nxtId = parseNxtId(cpos);
+				long long stamp = parseStamp(cpos);
+				if (inuse == 1) {
+					if (nxtId == NULL_POINTER) { // this is last record
+						if (buf->id == NULL_POINTER && buf->nxt == NULL) {
+							buf->id = previous->nxtTsId;
+						} else {
+							idbuf_t *p = buf;
+							while (p->nxt != NULL) {
+								p = p->nxt;
+							}
+							idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+							bf->id = previous->nxtTsId;
+							bf->nxt = NULL;
+							p->nxt = bf;
+						}
+					} else {
+						if (maxts >= stamp) {
+							if (buf->id == NULL_POINTER && buf->nxt == NULL) {
+								buf->id = previous->nxtTsId;
+							} else {
+								idbuf_t *p = buf;
+								while (p->nxt != NULL) {
+									p = p->nxt;
+								}
+								idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+								bf->id = previous->nxtTsId;
+								bf->nxt = NULL;
+								p->nxt = bf;
+							}
+							previous->nxtTsId = nxtId; //
+							long long nxt = cpage->start
+									+ (nxtId - cpage->startNo) * recordbytes;
+							if (nxt >= cpage->start && nxt < cpage->end) { // in this page
+								cpos = cpage->content
+										+ (nxtId - cpage->startNo)
+												* recordbytes;
+							} else { // not in this page
+								cpage = searchPage(nxtId, recordbytes,
+										startbyte, pagererecords, pagebytes,
+										tadbfp);
+								cpos = cpage->content
+										+ (nxtId - cpage->startNo)
+												* recordbytes;
+							}
+							continue;
+						} else if (maxts < stamp) {
+							break;
+						}
+					}
+				} else {
+					cpos += recordbytes;
+					continue;
+				}
+			}
 			return;
 		}
 	}
@@ -376,8 +644,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				long long prvId = parsePrvId(currpos);
 				long long nxtId = parseNxtId(currpos);
 				long long stamp = parseStamp(currpos);
-				if (prvId == NULL_POINTER) { // the first record
-					if (inuse == 1) {
+				if (inuse == 1) {
+					if (prvId == NULL_POINTER) { // the first record
 						if (ts < stamp) { // ts will be the first
 							long long id = getOneId();
 							tmp->id = id; //
@@ -420,11 +688,6 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos += recordbytes;
-						continue;
-					}
-				} else {
-					if (inuse == 1) {
 						if (ts < stamp) { // stamp will the next to ts
 							next->prvTsId = prvId; //
 							next->pos = currpos;
@@ -470,10 +733,10 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->page = currpage;
 							return;
 						}
-					} else {
-						currpos += recordbytes;
-						continue;
 					}
+				} else {
+					currpos += recordbytes;
+					continue;
 				}
 			}
 		} else if (ts > stamp) { // search forwards
@@ -624,8 +887,8 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				long long prvId = parsePrvId(currpos);
 				long long nxtId = parseNxtId(currpos);
 				long long stamp = parseStamp(currpos);
-				if (prvId == NULL_POINTER) {
-					if (inuse == 1) {
+				if (inuse == 1) {
+					if (prvId == NULL_POINTER) {
 						if (ts != stamp) { // not found
 							tmp->id = NULL_POINTER;
 							return;
@@ -645,11 +908,6 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos += recordbytes;
-						continue;
-					}
-				} else {
-					if (inuse == 1) {
 						if (ts < stamp) {
 							next->prvTsId = prvId; //
 							next->pos = currpos;
@@ -699,10 +957,10 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 
 							return;
 						}
-					} else {
-						currpos += recordbytes;
-						continue;
 					}
+				} else {
+					currpos += recordbytes;
+					continue;
 				}
 			}
 		} else if (ts > stamp) { // search forwards
@@ -712,8 +970,8 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				long long prvId = parsePrvId(currpos);
 				long long nxtId = parseNxtId(currpos);
 				long long stamp = parseStamp(currpos);
-				if (nxtId == NULL_POINTER) { // this is last record
-					if (inuse == 1) {
+				if (inuse == 1) {
+					if (nxtId == NULL_POINTER) { // this is last record
 						if (ts != stamp) {
 							tmp->id = NULL_POINTER; // not found
 							return;
@@ -733,11 +991,6 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos -= recordbytes;
-						continue;
-					}
-				} else {
-					if (inuse == 1) {
 						if (ts > stamp) {
 							previous->nxtTsId = nxtId; //
 							previous->pos = currpos;
@@ -784,10 +1037,10 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 
 							return;
 						}
-					} else {
-						currpos += recordbytes;
-						continue;
 					}
+				} else {
+					currpos += recordbytes;
+					continue;
 				}
 			}
 		} else if (ts == stamp) {
@@ -912,17 +1165,44 @@ long long commitDelete(long long ts, evolved_point_t *p, evolved_point_t *t,
 }
 
 // query one set of IDs between minimum time stamp and maximum time stamp
-long long queryEvolvedPoint(long long mints, long long maxts, FILE *taidfp,
-		FILE *tadbfp) {
-
+void queryEvolvedPoints(long long mints, long long maxts, idbuf_t *buf,
+		FILE *taidfp, FILE *tadbfp) {
+	if (timeaxispages->pages != NULL) {
+		evolved_point_t *temp = (evolved_point_t*) malloc(
+				sizeof(evolved_point_t));
+		temp->inuse = 1;
+		temp->prvTsId = -3;
+		temp->nxtTsId = -3;
+		temp->time = 0;
+		temp->id = -3;
+		evolved_point_t *previous = (evolved_point_t*) malloc(
+				sizeof(evolved_point_t));
+		previous->inuse = 1;
+		previous->prvTsId = -3;
+		previous->nxtTsId = -3;
+		previous->time = 0;
+		previous->id = -3;
+		evolved_point_t *next = (evolved_point_t*) malloc(
+				sizeof(evolved_point_t));
+		next->inuse = 1;
+		next->prvTsId = -3;
+		next->nxtTsId = -3;
+		next->time = 0;
+		next->id = -3;
+		searchforQueryBetween(mints, maxts, buf, timeaxispages->pages->content,
+				timeaxispages->pages, temp, previous, next, tadbfp);
+		free(temp);
+		free(previous);
+		free(next);
+	}
 }
 
 // query one evolved point ID
 long long queryEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
-	int recordbytes = 3LL * LONG_LONG + 1LL; // byte counting in one record
-	int pagererecords = 10LL; // record counting in one page
-	int pagebytes = recordbytes * pagererecords; // byte counting in one page
-	long long startbyte = 16LL; // start points in database
+//	int recordbytes = 3LL * LONG_LONG + 1LL; // byte counting in one record
+//	int pagererecords = 10LL; // record counting in one page
+//	int pagebytes = recordbytes * pagererecords; // byte counting in one page
+//	long long startbyte = 16LL; // start points in database
 	long long id = NULL_POINTER;
 	if (timeaxispages->pages != NULL) {
 		evolved_point_t *temp = (evolved_point_t*) malloc(
@@ -946,12 +1226,13 @@ long long queryEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 		next->nxtTsId = -3;
 		next->time = 0;
 		next->id = -3;
-		searchforQuery(ts, timeaxispages->pages->content, timeaxispages->pages,
-				temp, previous, next, tadbfp);
+		searchforQueryEP(ts, timeaxispages->pages->content,
+				timeaxispages->pages, temp, previous, next, tadbfp);
+		id = temp->id;
 		free(temp);
 		free(previous);
 		free(next);
-		return temp->id;
+		return id;
 	}
 	return NULL_POINTER;
 }
@@ -1169,7 +1450,17 @@ int main(int argv, char **argc) {
 	showAllPages();
 
 	listAllTaIds();
-	// commitEvolvedPoint(ep, tadbfp);
+
+	long long ts23 = 1593783961;
+	long long id1 = queryEvolvedPoint(ts23, taidfp, tadbfp);
+	printf("--%lld\n", id1);
+
+	long long mints = 1593783969;
+	long long maxts = 1593783974;
+	idbuf_t *buf = (idbuf_t*) malloc(sizeof(idbuf_t));
+	buf->id = NULL_POINTER;
+	buf->nxt = NULL;
+	queryEvolvedPoints(mints, maxts, buf, taidfp, tadbfp);
 
 	fclose(taidfp);
 	fclose(tadbfp);
