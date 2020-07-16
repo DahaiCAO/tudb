@@ -22,6 +22,94 @@
  * Author: Dahai CAO
  */
 
+//void convertEpToBytes(evolved_point_t *ep, unsigned char buf[]) {
+//	memset(buf, 0, 25);
+//	unsigned char prv[LONG_LONG] = { 0 };
+//	unsigned char nxt[LONG_LONG] = { 0 };
+//	unsigned char ts[LONG_LONG] = { 0 };
+//	LongToByteArray(ep->prvTsId, prv);
+//	LongToByteArray(ep->nxtTsId, nxt);
+//	LongToByteArray(ep->time, ts);
+//	for (int i = 0; i < 8; i++) {
+//		buf[i] = prv[i];
+//	}
+//	for (int i = 8; i < 16; i++) {
+//		buf[i] = nxt[i];
+//	}
+//	for (int i = 16; i < 24; i++) {
+//		buf[i] = ts[i];
+//	}
+//}
+//
+//void convertBytesToEp(evolved_point_t *ep, unsigned char buf[]) {
+//	unsigned char prv[LONG_LONG] = { 0 };
+//	unsigned char nxt[LONG_LONG] = { 0 };
+//	unsigned char ts[LONG_LONG] = { 0 };
+//	for (int i = 0; i < 8; i++) {
+//		prv[i] = buf[i];
+//	}
+//	for (int i = 8; i < 16; i++) {
+//		nxt[i] = buf[i];
+//	}
+//	for (int i = 16; i < 24; i++) {
+//		ts[i] = buf[i];
+//	}
+//	ep->prvTsId = ByteArrayToLong(prv);
+//	ep->nxtTsId = ByteArrayToLong(nxt);
+//	ep->time = ByteArrayToLong(ts);
+//}
+/*void getEvolvedPoint(evolved_point_t *ep, unsigned char *p) {
+ unsigned char prv[LONG_LONG] = { 0L };
+ unsigned char nxt[LONG_LONG] = { 0L };
+ unsigned char tms[LONG_LONG] = { 0L };
+ for (int i = 0; i < LONG_LONG; i++) {
+ prv[i] = *(p + i);
+ }
+ for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
+ nxt[i] = *(p + i);
+ }
+ for (int i = 2 * LONG_LONG; i < 3 * LONG_LONG; i++) {
+ tms[i] = *(p + i);
+ }
+ ep->prvTsId = ByteArrayToLong(prv);
+ ep->nxtTsId = ByteArrayToLong(nxt);
+ ep->time = ByteArrayToLong(tms);
+ }
+
+ void parseEvolvedPoint(long long prvId, long long nxtId, long long ts,
+ unsigned char *p) {
+ unsigned char prv[LONG_LONG] = { 0L };
+ unsigned char nxt[LONG_LONG] = { 0L };
+ unsigned char tms[LONG_LONG] = { 0L };
+ for (int i = 0; i < LONG_LONG; i++) {
+ prv[i] = *(p + i);
+ }
+ for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
+ nxt[i] = *(p + i);
+ }
+ for (int i = 2 * LONG_LONG; i < 3 * LONG_LONG; i++) {
+ tms[i] = *(p + i);
+ }
+ prvId = ByteArrayToLong(prv);
+ nxtId = ByteArrayToLong(nxt);
+ ts = ByteArrayToLong(tms);
+ }*/
+
+void EpToByteArray(evolved_point_t *ep, int len, unsigned char buffer[]) {
+	memset(buffer, 0, len);
+	buffer[0] = ep->inuse;
+	for (int i = 1; i < LONG_LONG + 1; i++) {
+		buffer[i] = ((ep->prvTsId >> (LONG_LONG * i)) & 0XFF);
+	}
+	for (int i = LONG_LONG + 1; i < 1 * LONG_LONG + 1; i++) {
+		buffer[i] = ((ep->nxtTsId >> (LONG_LONG * i)) & 0XFF);
+	}
+	for (int i = 2 * LONG_LONG + 1; i < 3 * LONG_LONG + 1; i++) {
+		buffer[i] = ((ep->time >> (LONG_LONG * i)) & 0XFF);
+	}
+
+}
+
 unsigned char parseInUse(unsigned char *p) {
 	unsigned char inuse = *p;
 	return inuse;
@@ -440,7 +528,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 								while (p->nxt != NULL) {
 									p = p->nxt;
 								}
-								idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+								idbuf_t *bf = (idbuf_t*) malloc(
+										sizeof(idbuf_t));
 								bf->id = previous->nxtTsId;
 								bf->nxt = NULL;
 								p->nxt = bf;
@@ -457,7 +546,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 									while (p->nxt != NULL) {
 										p = p->nxt;
 									}
-									idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+									idbuf_t *bf = (idbuf_t*) malloc(
+											sizeof(idbuf_t));
 									bf->id = previous->nxtTsId;
 									bf->nxt = NULL;
 									p->nxt = bf;
@@ -576,7 +666,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 								while (p->nxt != NULL) {
 									p = p->nxt;
 								}
-								idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
+								idbuf_t *bf = (idbuf_t*) malloc(
+										sizeof(idbuf_t));
 								bf->id = previous->nxtTsId;
 								bf->nxt = NULL;
 								p->nxt = bf;
@@ -1123,6 +1214,62 @@ long long commitInsert(long long ts, evolved_point_t *p, evolved_point_t *t,
 	if (h->lastdirty == 1) {
 		timeaxispages->last = h->last;
 	}
+
+	// write to DB file
+	if (newp->dirty == 1) {
+		unsigned char newta[3 * LONG_LONG + 1] = { 0 };
+		void EpToByteArray( t, recordbytes, newta);
+		fseek(tadbfp, t->id, SEEK_SET);
+		fwrite(newta, sizeof(unsigned char), recordbytes, tadbfp);
+		newp->dirty = 0;
+	}
+
+	if (p->page->dirty == 1) {
+		if (p->prvTsId != -3) {
+			unsigned char newprv[LONG_LONG] = { 0 };
+			LongToByteArray(p->prvTsId, newprv);
+			fseek(tadbfp, (p->id + 1LL), SEEK_SET);
+			fwrite(newprv, sizeof(unsigned char), LONG_LONG, tadbfp);
+		}
+		if (p->nxtTsId != -3) {
+			unsigned char newnxt[LONG_LONG] = { 0 };
+			LongToByteArray(p->nxtTsId, newnxt);
+			fseek(tadbfp, (p->id + 1LL + LONG_LONG), SEEK_SET);
+			fwrite(newnxt, sizeof(unsigned char), LONG_LONG, tadbfp);
+		}
+		p->page->dirty = 0;
+	}
+
+	if (n->page->dirty == 1) {
+		if (n->prvTsId != -3) {
+			unsigned char newprv[LONG_LONG] = { 0 };
+			LongToByteArray(n->prvTsId, newprv);
+			fseek(tadbfp, (n->id + 1LL), SEEK_SET);
+			fwrite(newprv, sizeof(unsigned char), LONG_LONG, tadbfp);
+		}
+		if (n->nxtTsId != -3) {
+			unsigned char newnxt[LONG_LONG] = { 0 };
+			LongToByteArray(n->nxtTsId, newnxt);
+			fseek(tadbfp, (n->id + 1LL + LONG_LONG), SEEK_SET);
+			fwrite(newnxt, sizeof(unsigned char), LONG_LONG, tadbfp);
+		}
+		n->page->dirty = 0;
+	}
+
+	if (h->firstdirty == 1) {
+		unsigned char newf[LONG_LONG] = { 0 };
+		LongToByteArray(h->first, newf);
+		fseek(tadbfp, 0, SEEK_SET);
+		fwrite(newf, sizeof(unsigned char), LONG_LONG, tadbfp);
+		h->firstdirty = 0;
+	}
+	if (h->lastdirty == 1) {
+		unsigned char newl[LONG_LONG] = { 0 };
+		LongToByteArray(h->last, newl);
+		fseek(tadbfp, LONG_LONG, SEEK_SET);
+		fwrite(newl, sizeof(unsigned char), LONG_LONG, tadbfp);
+		h->lastdirty = 0;
+	}
 	return t->id;
 }
 
@@ -1160,8 +1307,115 @@ long long commitDelete(long long ts, evolved_point_t *p, evolved_point_t *t,
 		if (h->lastdirty == 1) {
 			timeaxispages->last = h->last;
 		}
+//
+		if (t->page->dirty == 1) {
+			unsigned char inuse[1] = { t->inuse };
+			fseek(tadbfp, t->id, SEEK_SET);
+			fwrite(inuse, sizeof(unsigned char), 1, tadbfp);
+			t->page->dirty = 0;
+		}
+		if (p->page->dirty == 1) {
+			if (p->prvTsId != -3) {
+				unsigned char newprv[LONG_LONG] = { 0 };
+				LongToByteArray(p->prvTsId, newprv);
+				fseek(tadbfp, (p->id + 1LL), SEEK_SET);
+				fwrite(newprv, sizeof(unsigned char), LONG_LONG, tadbfp);
+			}
+			if (p->nxtTsId != -3) {
+				unsigned char newnxt[LONG_LONG] = { 0 };
+				LongToByteArray(p->nxtTsId, newnxt);
+				fseek(tadbfp, (p->id + 1LL + LONG_LONG), SEEK_SET);
+				fwrite(newnxt, sizeof(unsigned char), LONG_LONG, tadbfp);
+			}
+			p->page->dirty = 0;
+		}
+
+		if (n->page->dirty == 1) {
+			if (n->prvTsId != -3) {
+				unsigned char newprv[LONG_LONG] = { 0 };
+				LongToByteArray(n->prvTsId, newprv);
+				fseek(tadbfp, (n->id + 1LL), SEEK_SET);
+				fwrite(newprv, sizeof(unsigned char), LONG_LONG, tadbfp);
+			}
+			if (n->nxtTsId != -3) {
+				unsigned char newnxt[LONG_LONG] = { 0 };
+				LongToByteArray(n->nxtTsId, newnxt);
+				fseek(tadbfp, (n->id + 1LL + LONG_LONG), SEEK_SET);
+				fwrite(newnxt, sizeof(unsigned char), LONG_LONG, tadbfp);
+			}
+			n->page->dirty = 0;
+		}
+
+		if (h->firstdirty == 1) {
+			unsigned char newf[LONG_LONG] = { 0 };
+			LongToByteArray(h->first, newf);
+			fseek(tadbfp, 0, SEEK_SET);
+			fwrite(newf, sizeof(unsigned char), LONG_LONG, tadbfp);
+			h->firstdirty = 0;
+		}
+		if (h->lastdirty == 1) {
+			unsigned char newl[LONG_LONG] = { 0 };
+			LongToByteArray(h->last, newl);
+			fseek(tadbfp, LONG_LONG, SEEK_SET);
+			fwrite(newl, sizeof(unsigned char), LONG_LONG, tadbfp);
+			h->lastdirty = 0;
+		}
 	}
 	return t->id;
+}
+
+void showAllTimeAxis(FILE *tadbfp) {
+	unsigned char buf[3LL * LONG_LONG + 1LL] = { 0 };
+	fseek(tadbfp, 0LL, SEEK_END);
+	long sz = ftell(tadbfp);
+	printf("Db size:%ld bytes\n", sz);
+	printf("------------\n");
+	unsigned char first[LONG_LONG] = { 0 };
+	unsigned char last[LONG_LONG] = { 0 };
+	fseek(tadbfp, 0, SEEK_SET);
+	fread(first, sizeof(unsigned char), LONG_LONG, tadbfp);
+	long long f = ByteArrayToLong(first);
+	fseek(tadbfp, LONG_LONG, SEEK_SET);
+	printf("First Id:%lld\n", f);
+	fread(last, sizeof(unsigned char), LONG_LONG, tadbfp);
+	long long l = ByteArrayToLong(last);
+	printf("Last Id:%lld\n", l);
+	printf("------------\n");
+	long long i = 16LL;
+	fseek(tadbfp, i, SEEK_SET);
+	int c;
+	long long prvId = 0LL;
+	long long nxtId = 0LL;
+	long long ts = 0LL;
+	while ((c = fgetc(tadbfp)) != EOF) {
+		fseek(tadbfp, i * (3LL * LONG_LONG + 1LL), SEEK_SET);
+		memset(buf, 0, 3LL * LONG_LONG + 1LL);
+		fread(buf, sizeof(unsigned char), (3LL * LONG_LONG + 1LL), tadbfp);
+		unsigned char inuse = buf[0];
+		unsigned char prv[LONG_LONG] = { 0L };
+		unsigned char nxt[LONG_LONG] = { 0L };
+		unsigned char tms[LONG_LONG] = { 0L };
+		for (int i = 0; i < LONG_LONG; i++) {
+			prv[i] = buf[i + 1];
+		}
+		for (int i = 0; i < LONG_LONG; i++) {
+			nxt[i] = buf[i + LONG_LONG + 1];
+		}
+		for (int i = 0; i < LONG_LONG; i++) {
+			tms[i] = buf[i + 2 * LONG_LONG + 1];
+		}
+		prvId = ByteArrayToLong(prv);
+		nxtId = ByteArrayToLong(nxt);
+		ts = ByteArrayToLong(tms);
+		if (ts != 0LL) {
+			printf("%d %lld|%lld|%lld\n", inuse, prvId, nxtId, ts);
+		} else {
+			break;
+		}
+		i++;
+	}
+	printf("------------\n");
+
 }
 
 // query one set of IDs between minimum time stamp and maximum time stamp
