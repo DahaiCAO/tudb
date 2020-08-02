@@ -23,7 +23,7 @@
  */
 
 // initialize DB
-void initTimeAxisIdDB(char *path) {
+void initIdDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
 		FILE *taidfp = fopen(path, "wb+");
 		// initializes Id DB

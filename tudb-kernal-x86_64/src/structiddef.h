@@ -31,10 +31,15 @@ typedef struct iddef {
 
 // the cache for new free and reused Ids
 typedef struct id_cache {
-	id_t *nId;// new Id array
-	id_t *rId;// reused Id array
+	id_t *nId; // new Id array
+	id_t *rId; // reused Id array
 } id_cache_t;
 
 id_cache_t *cache;
+
+typedef struct id_caches {
+	id_cache_t *taIds;
+	id_cache_t *teIds;
+} id_caches_t;
 
 #endif /* STRUCTIDDEF_H_ */
