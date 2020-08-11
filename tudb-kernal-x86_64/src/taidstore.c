@@ -22,7 +22,7 @@
  * Created on: 2020年6月16日
  * Author: Dahai CAO
  */
-long long getOneId() {
+long long getOneId(id_cache_t *cache) {
 	if (cache->rId != NULL) {
 		id_t *p = cache->rId;
 		if (p != NULL) {
@@ -52,7 +52,7 @@ long long getOneId() {
 
 }
 
-void loadIds(FILE *idfp) {
+void loadIds(FILE *idfp, id_cache_t *cache) {
 	int c = 25; // cache reused Id capacity. 100 by default.
 
 	// step 1: load new Ids
@@ -171,7 +171,7 @@ void loadIds(FILE *idfp) {
 	}
 }
 
-void recycleOneId(long long id) {
+void recycleOneId(long long id, id_cache_t *cache) {
 	id_t *p = cache->rId;
 	if (p != NULL) {
 		while (p->nxt != NULL) {
@@ -187,7 +187,47 @@ void recycleOneId(long long id) {
 	}
 }
 
-long long getId(FILE *idfp) {
+void listAllTaIds(id_cache_t *cache) {
+	int count = 0;
+	id_t *p = cache->nId;
+	while (p != NULL) {
+		count++;
+		p = p->nxt;
+	}
+	printf("DB size:%d\n", count);
+	printf("------------\n");
+	p = cache->nId;
+	int i = 0;
+	while (p != NULL) {
+		printf("%d, %lld\n", i, p->id);
+		p = p->nxt;
+		i++;
+	}
+	printf("------------\n");
+	printf("New Id queue length:%d\n", i);
+
+	int count1 = 0;
+	id_t *p1 = cache->rId;
+	while (p1 != NULL) {
+		count1++;
+		p1 = p1->nxt;
+	}
+	printf("DB size:%d\n", count1);
+	printf("------------\n");
+	p1 = cache->rId;
+	int i1 = 0;
+	while (p1 != NULL) {
+		printf("%d, %lld\n", i1, p1->id);
+		p1 = p1->nxt;
+		i1++;
+	}
+	printf("------------\n");
+	printf("Reused Id queue length:%d\n", i1);
+}
+
+
+
+/*long long getId(FILE *idfp) {
 	unsigned char ids[LONG_LONG] = { 0 };
 	unsigned char zero[LONG_LONG] = { 0 };
 	// get one id from id DB, update new id to db
@@ -259,44 +299,6 @@ void recycleId(FILE *idfp, long long id) {
 	}
 }
 
-void listAllTaIds() {
-	int count = 0;
-	id_t *p = cache->nId;
-	while (p != NULL) {
-		count++;
-		p = p->nxt;
-	}
-	printf("DB size:%d\n", count);
-	printf("------------\n");
-	p = cache->nId;
-	int i = 0;
-	while (p != NULL) {
-		printf("%d, %lld\n", i, p->id);
-		p = p->nxt;
-		i++;
-	}
-	printf("------------\n");
-	printf("New Id queue length:%d\n", i);
-
-	int count1 = 0;
-	id_t *p1 = cache->rId;
-	while (p1 != NULL) {
-		count1++;
-		p1 = p1->nxt;
-	}
-	printf("DB size:%d\n", count1);
-	printf("------------\n");
-	p1 = cache->rId;
-	int i1 = 0;
-	while (p1 != NULL) {
-		printf("%d, %lld\n", i1, p1->id);
-		p1 = p1->nxt;
-		i1++;
-	}
-	printf("------------\n");
-	printf("Reused Id queue length:%d\n", i1);
-}
-
 void showAllTaIds(FILE *idfp) {
 	unsigned char buf[LONG_LONG] = { 0 };
 	fseek(idfp, 0L, SEEK_END);
@@ -318,4 +320,4 @@ void showAllTaIds(FILE *idfp) {
 	}
 	printf("------------\n");
 	printf("Reused Id queue length:%d\n", (i - 2));
-}
+}*/

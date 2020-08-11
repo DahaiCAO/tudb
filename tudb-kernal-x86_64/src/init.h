@@ -21,6 +21,8 @@
 
 #include "macrodef.h"
 #include "convert.h"
+#include "structiddef.h"
+#include "structepdef.h"
 /*
  * init.h
  *
@@ -32,8 +34,12 @@
 #define INIT_H_
 
 // initialize id DB
-void initTimeAxisIdDB(char *path);
+void initIdDB(char *path);
 // initialize DB
 void initTimeAxisDB(char *path);
+
+void initIdCaches(id_caches_t * caches);
+
+void initTaDBMemPages(ta_buf_t* pages, FILE *tadbfp);
 
 #endif /* INIT_H_ */

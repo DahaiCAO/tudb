@@ -35,11 +35,11 @@ typedef struct id_cache {
 	id_t *rId; // reused Id array
 } id_cache_t;
 
-id_cache_t *cache;
-
 typedef struct id_caches {
 	id_cache_t *taIds;
 	id_cache_t *teIds;
 } id_caches_t;
+
+id_caches_t *caches;
 
 #endif /* STRUCTIDDEF_H_ */

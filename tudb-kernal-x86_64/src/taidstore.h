@@ -35,18 +35,18 @@
 #ifndef TAIDSTORE_H_
 #define TAIDSTORE_H_
 
-long long getOneId();
+long long getOneId(id_cache_t *cache);
 
-void loadIds(FILE *idfp);
+void loadIds(FILE *idfp, id_cache_t *cache);
 
-void listAllTaIds();
+void listAllTaIds(id_cache_t *cache);
 
-void showAllTaIds(FILE *idfp);
+void recycleOneId(long long id, id_cache_t *cache);
 
-void recycleOneId();
-
-long long getId(FILE *idfp);
-
-void recycleId(FILE *idfp, long long id);
+//long long getId(FILE *idfp);
+//
+//void recycleId(FILE *idfp, long long id);
+//
+//void showAllTaIds(FILE *idfp);
 
 #endif /* IDCACHE_H_ */

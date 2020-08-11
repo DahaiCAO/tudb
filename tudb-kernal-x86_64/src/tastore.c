@@ -716,7 +716,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 	long long stamp = parseStamp(currpos);
 	if (stamp == 0) {	// this is an empty DB,
 		// so this time stamp will be stored here
-		long long id = getOneId();
+		long long id = getOneId(caches->taIds);
 		tmp->id = id; //
 		tmp->pos = currpos;
 		tmp->nxtTsId = NULL_POINTER;
@@ -738,7 +738,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				if (inuse == 1) {
 					if (prvId == NULL_POINTER) { // the first record
 						if (ts < stamp) { // ts will be the first
-							long long id = getOneId();
+							long long id = getOneId(caches->taIds);
 							tmp->id = id; //
 							tmp->prvTsId = NULL_POINTER;
 							tmp->nxtTsId = timeaxispages->first;
@@ -754,7 +754,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							h->firstdirty = 1;
 							return;
 						} else if (ts > stamp) { // ts will be the second
-							long long id = getOneId();
+							long long id = getOneId(caches->taIds);
 							tmp->id = id; //
 							tmp->prvTsId = timeaxispages->first;
 							tmp->nxtTsId = nxtId;
@@ -800,7 +800,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							}
 							continue;
 						} else if (ts > stamp) {
-							long long id = getOneId();
+							long long id = getOneId(caches->taIds);
 							tmp->id = id; //
 							tmp->prvTsId = next->prvTsId; //
 							tmp->nxtTsId = nxtId; // it is next->id
@@ -840,7 +840,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				if (nxtId == NULL_POINTER) { // this is last record
 					if (inuse == 1) {
 						if (ts > stamp) { // ts will the last
-							long long id = getOneId();
+							long long id = getOneId(caches->taIds);
 							tmp->id = id; //
 							tmp->prvTsId = timeaxispages->last;
 							tmp->nxtTsId = NULL_POINTER;
@@ -856,7 +856,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							h->lastdirty = 1;
 							return;
 						} else if (ts < stamp) { // ts will the second last.
-							long long id = getOneId();
+							long long id = getOneId(caches->taIds);
 							tmp->id = id; //
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = timeaxispages->last;
@@ -907,7 +907,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							}
 							continue;
 						} else if (ts < stamp) {
-							long long id = getOneId();
+							long long id = getOneId(caches->taIds);
 							tmp->id = id; //
 							tmp->prvTsId = prvId; //
 							tmp->nxtTsId = previous->nxtTsId;
@@ -1281,7 +1281,7 @@ long long commitDelete(long long ts, evolved_point_t *p, evolved_point_t *t,
 		putInUse(t);
 		t->page->dirty = 1;
 		t->page->hit++;
-		recycleOneId(t->id);
+		recycleOneId(t->id, caches->taIds);
 
 		// update previous evolved point
 		if (p->prvTsId != -3)

@@ -62,12 +62,12 @@ typedef struct ta_buf {
 
 ta_buf_t *timeaxispages;
 
-typedef struct ep_queue_node {
-	evolved_point_t *ep;
-	struct ep_queue_node *next;
-} ep_queue_node_t;
-
-ep_queue_node_t *queue;
+//typedef struct ep_queue_node {
+//	evolved_point_t *ep;
+//	struct ep_queue_node *next;
+//} ep_queue_node_t;
+//
+//ep_queue_node_t *queue;
 
 typedef struct idbuf {
 	long long id;
