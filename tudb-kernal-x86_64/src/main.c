@@ -71,15 +71,52 @@
 //}
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
-
-	char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
+	const char *path = "D:/tudata/";
+	char *taid;
+	strcat(taid, path);
+	strcat(taid,"tustore.timeaxis.tdb.id");
 	FILE *taidfp = fopen(taid, "rb+");
-	char *tadb = "D:/tudata/tustore.timeaxis.tdb";
+
+	char *tadb;
+	strcat(tadb, path);
+	strcat(tadb, "tustore.timeaxis.tdb");
 	FILE *tadbfp = fopen(tadb, "rb+");
-	char *teid = "D:/tudata/tustore.element.tdb.id";
+
+	char *teid;
+	strcat(teid, path);
+	strcat(teid, "tustore.element.tdb.id");
 	FILE *teidfp = fopen(teid, "rb+");
-	char *tedb = "D:/tudata/tustore.element.tdb";
+
+	char *tedb;
+	strcat(tedb, path);
+	strcat(tedb, "tustore.element.tdb");
 	FILE *tedbfp = fopen(tedb, "rb+");
+
+	char *labelsid;
+	strcat(labelsid, path);
+	strcat(labelsid, "tustore.element.tdb.labels.id");
+	FILE *labelsidfp = fopen(labelsid, "rb+");
+
+	char *labels;
+	strcat(labels, path);
+	strcat(labels, "tustore.element.tdb.labels");
+	FILE *labelsfp = fopen(labels, "rb+");
+
+	char *labelindex;
+	strcat(labelindex, path);
+	strcat(labelindex, "tustore.element.tdb.labelindex");
+	FILE *labelindexfp = fopen(labelindex, "rb+");
+
+	char *labeltknid;
+	strcat(labeltknid, path);
+	strcat(labeltknid, "tustore.element.tdb.labeltoken.id");
+	FILE *labeltknidfp = fopen(labeltknid, "rb+");
+
+	char *labeltkn;
+	strcat(labeltkn, path);
+	strcat(labeltkn, "tustore.element.tdb.labeltoken");
+	FILE *labeltknfp = fopen(labeltkn, "rb+");
+
 	initIdDB(taid);
 	initIdDB(teid);
 	// initTimeAxisDB(tadb);

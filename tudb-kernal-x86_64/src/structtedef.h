@@ -47,7 +47,7 @@ typedef struct tu_element {
 	long long nxtTeId; // next Tu element Id, it is for evolution, -2 by default
 	long long lblId; // label Id
 	unsigned char *pos;
-	unsigned char inuse; // 1: in use; othewise, 0
+	unsigned char inuse; // 1: in use; otherwise, 0
 	unsigned char extra; // for extra use
 	te_page_t *page;
 } tu_element_t;
