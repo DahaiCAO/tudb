@@ -95,6 +95,63 @@
  ts = ByteArrayToLong(tms);
  }*/
 
+// read one page
+ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
+	unsigned char *page = (unsigned char*) malloc(
+			sizeof(unsigned char) * TA_PAGE_SIZE);
+	memset(page, 0, sizeof(unsigned char) * TA_PAGE_SIZE);
+	fseek(tadbfp, start, SEEK_SET); // start to read from the first record
+	int c;
+	if ((c = fgetc(tadbfp)) != EOF) {
+		fseek(tadbfp, start, SEEK_SET);
+		fread(page, sizeof(unsigned char), TA_PAGE_SIZE, tadbfp); // read one page
+	}
+
+	ta_page_t *p = (ta_page_t*) malloc(sizeof(ta_page_t));
+	p->dirty = 0;
+	p->expiretime = 10; // 10 minutes
+	p->startNo = startNo;
+	p->hit = 0;
+	p->nxtpage = NULL;
+	p->prvpage = NULL;
+	p->content = page;
+	p->start = start;
+	p->end = start + TA_PAGE_SIZE;
+
+	ta_page_t *pp = timeaxispages->pages;
+	if (pp != NULL) {
+		while (pp->nxtpage != NULL) {
+			pp = pp->nxtpage;
+		}
+		pp->nxtpage = p;
+		p->prvpage = pp;
+	} else {
+		timeaxispages->pages = p;
+	}
+	return p;
+}
+
+void initTaDBMemPages(ta_buf_t* pages, FILE *tadbfp) {
+	unsigned char p[LONG_LONG * 2] = { 0 };
+	unsigned char first[LONG_LONG] = { 0 };
+	unsigned char last[LONG_LONG] = { 0 };
+	fseek(tadbfp, 0, SEEK_SET); //
+	fread(p, sizeof(unsigned char), LONG_LONG * 2, tadbfp);
+	for (int i = 0; i < LONG_LONG; i++) {
+		first[i] = p[i];
+	}
+	for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
+		last[i] = p[i];
+	}
+	long long firstId = ByteArrayToLong(first);
+	long long lastId = ByteArrayToLong(last);
+	pages->first = firstId;
+	pages->last = lastId;
+	if (pages->pages == NULL) {
+		readOnePage(16LL, 0, tadbfp);
+	}
+}
+
 void EpToByteArray(evolved_point_t *ep, int len, unsigned char buffer[]) {
 	memset(buffer, 0, len);
 	buffer[0] = ep->inuse;
@@ -165,42 +222,6 @@ void putStamp(evolved_point_t *ep) {
 	for (int i = 0; i < LONG_LONG; i++) {
 		*(ep->pos + i + 2 * LONG_LONG + 1) = ts[i];
 	}
-}
-
-// read one page
-ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
-	unsigned char *page = (unsigned char*) malloc(
-			sizeof(unsigned char) * TA_PAGE_SIZE);
-	memset(page, 0, sizeof(unsigned char) * TA_PAGE_SIZE);
-	fseek(tadbfp, start, SEEK_SET); // start to read from the first record
-	int c;
-	if ((c = fgetc(tadbfp)) != EOF) {
-		fseek(tadbfp, start, SEEK_SET);
-		fread(page, sizeof(unsigned char), TA_PAGE_SIZE, tadbfp); // read one page
-	}
-
-	ta_page_t *p = (ta_page_t*) malloc(sizeof(ta_page_t));
-	p->dirty = 0;
-	p->expiretime = 10; // 10 minutes
-	p->startNo = startNo;
-	p->hit = 0;
-	p->nxtpage = NULL;
-	p->prvpage = NULL;
-	p->content = page;
-	p->start = start;
-	p->end = start + TA_PAGE_SIZE;
-
-	ta_page_t *pp = timeaxispages->pages;
-	if (pp != NULL) {
-		while (pp->nxtpage != NULL) {
-			pp = pp->nxtpage;
-		}
-		pp->nxtpage = p;
-		p->prvpage = pp;
-	} else {
-		timeaxispages->pages = p;
-	}
-	return p;
 }
 
 // search one Id in all memory pages

@@ -62,31 +62,10 @@ typedef struct ta_buf {
 
 ta_buf_t *timeaxispages;
 
-//typedef struct ep_queue_node {
-//	evolved_point_t *ep;
-//	struct ep_queue_node *next;
-//} ep_queue_node_t;
-//
-//ep_queue_node_t *queue;
-
 typedef struct idbuf {
 	long long id;
 	struct idbuf *nxt;
 } idbuf_t;
-
-/*
-
-
- typedef struct ta_book {
- ta_page_t *pages; // 10 page by default.
- } ta_book_t;
-
- // memory page manager
- typedef struct tu_lib {
- ta_book_t *tabook; //
- } tu_lib;
-
- */
 
 #endif /* STRUCTEPDEF_H_ */
 

@@ -22,6 +22,6 @@
  */
 
 
-long long createTuElement(char * labelstring, FILE *teidfp, FILE *tedbfp) {
-	return 0;
-}
+//long long createTuElement(char * labelstring, FILE *teidfp, FILE *tedbfp) {
+//	return 0;
+//}

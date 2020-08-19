@@ -15,30 +15,20 @@
  */
 
 /*
- * lbltokenstore.h
+ * lblidxstore.h
  *
- * Created on: 2020年8月12日
+ * Created on: 2020年8月15日
  * Author: Dahai CAO
  */
 
-#ifndef LBLTOKENSTORE_H_
-#define LBLTOKENSTORE_H_
+#ifndef LBLIDXSTORE_H_
+#define LBLIDXSTORE_H_
 
-typedef struct _label_token {
-	long long id; // pointer in DB
-	long long taId; //time axis Id, it is for evolution
-	unsigned char inUse; // 1: in use; otherwise, 0
-	int len;
-	struct _label_token * nxtBlkId;// next block
-	char * blkContent;
-} label_token_t;
+// bytes in one label index record
+int lbl_idx_record_bytes = 2 * LONG_LONG + 4;
+// records in one page with label index records
+int lbl_idx_page_records = 10LL;
+// bytes in one page with label index records
+int lbl_idx_page_bytes;
 
-typedef struct _label_index {
-	long long id; // pointer in DB
-	long long lblCount; // the number of this label has been used
-	label_token_t *tknId;
-	int codingType;//
-} label_index_t;
-
-
-#endif /* LBLTOKENSTORE_H_ */
+#endif /* LBLIDXSTORE_H_ */

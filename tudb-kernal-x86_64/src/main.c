@@ -19,11 +19,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <locale.h>
 
 #include "convert.h"
 #include "macrodef.h"
 #include "taidstore.h"
-#include "structepdef.h"
+//#include "structepdef.h"
+#include "lblidxstore.h"
+#include "lbltknstore.h"
 #include "init.h"
 
 /*
@@ -40,104 +43,66 @@
 //	char *tadb = "D:/tudata/tustore.timeaxis.tdb";
 //	FILE *tadbfp = fopen(tadb, "rb+");
 //
-//	//initIdDB(taid);
-//	//initTimeAxisDB(tadb);
+//	initIdDB(taid);
+//	initTimeAxisDB(tadb);
 //
-//	cache = (id_cache_t*) malloc(sizeof(id_cache_t));
-//	cache->nId = NULL;
-//	cache->rId = NULL;
+//	caches = (id_cache_t*) malloc(sizeof(id_cache_t));
+//	caches->taIds->nId = NULL;
+//	caches->taIds->rId = NULL;
 //
 //	loadIds(taidfp);
 //	listAllTaIds();
-//	 fseek(tadbfp, 0, SEEK_SET); //
-//	 fread(p, sizeof(unsigned char), LONG_LONG * 2, tadbfp);
-//	ta_btree_t **_btree = (ta_btree_t **) calloc(1, sizeof(ta_btree_t));
+//	//fseek(tadbfp, 0, SEEK_SET); //
+//	//fread(p, sizeof(unsigned char), LONG_LONG * 2, tadbfp);
+//	ta_btree_t **_btree = (ta_btree_t**) calloc(1, sizeof(ta_btree_t));
 //	btree_create(_btree, 9, NULL);
-//	btree_insert(*_btree, 29);//1
-//	btree_insert(*_btree, 40);//2
-//	btree_insert(*_btree, 22);//3
-//	btree_insert(*_btree, 32);//3
-//	btree_insert(*_btree, 59);//4
-//	btree_insert(*_btree, 99);//5
-//	btree_insert(*_btree, 72);//6
-//	btree_insert(*_btree, 8);//7
-//	btree_insert(*_btree, 37);//8
-//	btree_insert(*_btree, 58);//9
-//	btree_insert(*_btree, 78);//10
-//	btree_insert(*_btree, 10);//11
-//	btree_insert(*_btree, 20);//12
-//	btree_insert(*_btree, 48);//13
-//	btree_insert(*_btree, 43);//14
+//	btree_insert(*_btree, 29); //1
+//	btree_insert(*_btree, 40); //2
+//	btree_insert(*_btree, 22); //3
+//	btree_insert(*_btree, 32); //3
+//	btree_insert(*_btree, 59); //4
+//	btree_insert(*_btree, 99); //5
+//	btree_insert(*_btree, 72); //6
+//	btree_insert(*_btree, 8); //7
+//	btree_insert(*_btree, 37); //8
+//	btree_insert(*_btree, 58); //9
+//	btree_insert(*_btree, 78); //10
+//	btree_insert(*_btree, 10); //11
+//	btree_insert(*_btree, 20); //12
+//	btree_insert(*_btree, 48); //13
+//	btree_insert(*_btree, 43); //14
 //}
-int main(int argv, char **argc) {
-	setvbuf(stdout, NULL, _IONBF, 0);
-	const char *path = "D:/tudata/";
-	char *taid;
-	strcat(taid, path);
-	strcat(taid,"tustore.timeaxis.tdb.id");
-	FILE *taidfp = fopen(taid, "rb+");
 
-	char *tadb;
-	strcat(tadb, path);
-	strcat(tadb, "tustore.timeaxis.tdb");
-	FILE *tadbfp = fopen(tadb, "rb+");
-
-	char *teid;
-	strcat(teid, path);
-	strcat(teid, "tustore.element.tdb.id");
-	FILE *teidfp = fopen(teid, "rb+");
-
-	char *tedb;
-	strcat(tedb, path);
-	strcat(tedb, "tustore.element.tdb");
-	FILE *tedbfp = fopen(tedb, "rb+");
-
-	char *labelsid;
-	strcat(labelsid, path);
-	strcat(labelsid, "tustore.element.tdb.labels.id");
-	FILE *labelsidfp = fopen(labelsid, "rb+");
-
-	char *labels;
-	strcat(labels, path);
-	strcat(labels, "tustore.element.tdb.labels");
-	FILE *labelsfp = fopen(labels, "rb+");
-
-	char *labelindex;
-	strcat(labelindex, path);
-	strcat(labelindex, "tustore.element.tdb.labelindex");
-	FILE *labelindexfp = fopen(labelindex, "rb+");
-
-	char *labeltknid;
-	strcat(labeltknid, path);
-	strcat(labeltknid, "tustore.element.tdb.labeltoken.id");
-	FILE *labeltknidfp = fopen(labeltknid, "rb+");
-
-	char *labeltkn;
-	strcat(labeltkn, path);
-	strcat(labeltkn, "tustore.element.tdb.labeltoken");
-	FILE *labeltknfp = fopen(labeltkn, "rb+");
-
-	initIdDB(taid);
-	initIdDB(teid);
-	// initTimeAxisDB(tadb);
-	// initialize
-	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
-	initIdCaches(caches);
-
-	loadIds(taidfp, caches->taIds);
-	loadIds(taidfp, caches->teIds);
-	listAllTaIds(caches->taIds);
-	listAllTaIds(caches->teIds);
-
-	timeaxispages = (ta_buf_t*) malloc(sizeof(ta_buf_t));
-	timeaxispages->pages = NULL;
-	initTaDBMemPages(timeaxispages, tadbfp);
-
-
-
-	// insert 13 time stamp sequentially
-	//1593783935
-	//1593783957
+// test time axis DB
+//int main(int argv, char **argc) {
+//	setvbuf(stdout, NULL, _IONBF, 0);
+//	const char *path = "D:/tudata/";
+//	char *taid;
+//	strcat(taid, path);
+//	strcat(taid, "tustore.timeaxis.tdb.id");
+//	FILE *taidfp = fopen(taid, "rb+");
+//
+//	char *tadb;
+//	strcat(tadb, path);
+//	strcat(tadb, "tustore.timeaxis.tdb");
+//	FILE *tadbfp = fopen(tadb, "rb+");
+//
+//	initIdDB(taid);
+//	initTimeAxisDB(tadb);
+//	// initialize
+//	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+//	initIdCaches(caches);
+//	loadIds(taidfp, caches->taIds);
+//	loadIds(taidfp, caches->teIds);
+//	listAllTaIds(caches->taIds);
+//	listAllTaIds(caches->teIds);
+//	timeaxispages = (ta_buf_t*) malloc(sizeof(ta_buf_t));
+//	timeaxispages->pages = NULL;
+//	initTaDBMemPages(timeaxispages, tadbfp);
+//
+//	// insert 13 time stamp sequentially
+//	//1593783935
+//	//1593783957
 //	long long ts = 1593783935;	//(unsigned long) time(NULL);
 //	insertEvolvedPoint(ts, taidfp, tadbfp);
 //	//showAllPages();
@@ -227,16 +192,101 @@ int main(int argv, char **argc) {
 //	buf->id = NULL_POINTER;
 //	buf->nxt = NULL;
 //	queryEvolvedPoints(mints, maxts, buf, taidfp, tadbfp);
+//
+//	fclose(taidfp);
+//	fclose(tadbfp);
+//
+//	free(timeaxispages);
+//	free(caches);
+//
+//}
 
-	fclose(taidfp);
-	fclose(tadbfp);
+// test label token store
+int main(int argv, char **argc) {
+	//setlocale(LC_ALL, "");
+	setvbuf(stdout, NULL, _IONBF, 0);
+	const char *d_path = "D:/tudata/";
+//	char *taid;
+//	strcat(taid, path);
+//	strcat(taid,"tustore.timeaxis.tdb.id");
+//	FILE *taidfp = fopen(taid, "rb+");
+//
+//	char *tadb;
+//	strcat(tadb, path);
+//	strcat(tadb, "tustore.timeaxis.tdb");
+//	FILE *tadbfp = fopen(tadb, "rb+");
+//
+//	char *teid;
+//	strcat(teid, path);
+//	strcat(teid, "tustore.element.tdb.id");
+//	FILE *teidfp = fopen(teid, "rb+");
+//
+//	char *tedb;
+//	strcat(tedb, path);
+//	strcat(tedb, "tustore.element.tdb");
+//	FILE *tedbfp = fopen(tedb, "rb+");
+//
+//	char *labelsid;
+//	strcat(labelsid, path);
+//	strcat(labelsid, "tustore.element.tdb.labels.id");
+//	FILE *labelsidfp = fopen(labelsid, "rb+");
+//
+//	char *labels;
+//	strcat(labels, path);
+//	strcat(labels, "tustore.element.tdb.labels");
+//	FILE *labelsfp = fopen(labels, "rb+");
 
-	free(timeaxispages);
+//	char *lbl_idx_id_path;
+//	strcat(lbl_idx_id_path, d_path);
+//	strcat(lbl_idx_id_path, "tustore.element.tdb.labelindex.id");
+//	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
+//
+//	char *lbl_idx_path;
+//	strcat(lbl_idx_path, d_path);
+//	strcat(lbl_idx_path, "tustore.element.tdb.labelindex");
+//	FILE *lbl_idx_fp = fopen(lbl_idx_path, "rb+");
+
+	char *lbl_tkn_id_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_tkn_id_path, d_path);
+	strcat(lbl_tkn_id_path, "tustore.element.tdb.labeltoken.id");
+	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
+
+	char *lbl_tkn_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_tkn_path, d_path);
+	strcat(lbl_tkn_path, "tustore.element.tdb.labeltoken");
+	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
+
+//	initIdDB(lbl_idx_id_path);
+	initIdDB(lbl_tkn_id_path);
+	// initTimeAxisDB(tadb);
+	// initialize
+	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+	initIdCaches(caches);
+
+	//loadIds(taidfp, caches->taIds);
+	//loadIds(taidfp, caches->teIds);
+	//loadIds(labelindexidfp, caches->lblidxIds);
+	loadIds(lbl_tkn_fp, caches->lbltknIds);
+
+	//listAllTaIds(caches->taIds);
+	//listAllTaIds(caches->teIds);
+	//listAllTaIds(caches->lblidxIds);
+	listAllTaIds(caches->lbltknIds);
+
+	lbl_tkn_pages = (lbl_tkn_page_t*) malloc(sizeof(lbl_tkn_page_t));
+	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
+	char label[] = "Microsoft corporation 美国微软公司出品 版权所有";
+	char *l = label;
+	long long tknId = insertLabelToken(10, label, lbl_tkn_id_fp, lbl_tkn_fp);
+	fclose(lbl_tkn_id_fp);
+	fclose(lbl_tkn_fp);
+	free(lbl_tkn_pages);
 	free(caches);
 
 }
 
 /*
+ // test time axis DB Id
  int main(int argv, char **argc) {
  setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -296,3 +346,5 @@ int main(int argv, char **argc) {
  printf("End");
 
  }*/
+
+

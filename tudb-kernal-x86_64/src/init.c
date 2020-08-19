@@ -57,25 +57,10 @@ void initIdCaches(id_caches_t * caches) {
 	caches->teIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
 	caches->teIds->nId = NULL;
 	caches->teIds->rId = NULL;
-}
-
-void initTaDBMemPages(ta_buf_t* pages, FILE *tadbfp) {
-	unsigned char p[LONG_LONG * 2] = { 0 };
-	unsigned char first[LONG_LONG] = { 0 };
-	unsigned char last[LONG_LONG] = { 0 };
-	fseek(tadbfp, 0, SEEK_SET); //
-	fread(p, sizeof(unsigned char), LONG_LONG * 2, tadbfp);
-	for (int i = 0; i < LONG_LONG; i++) {
-		first[i] = p[i];
-	}
-	for (int i = LONG_LONG; i < 2 * LONG_LONG; i++) {
-		last[i] = p[i];
-	}
-	long long firstId = ByteArrayToLong(first);
-	long long lastId = ByteArrayToLong(last);
-	pages->first = firstId;
-	pages->last = lastId;
-	if (pages->pages == NULL) {
-		readOnePage(16LL, 0, tadbfp);
-	}
+	caches->lblidxIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lblidxIds->nId = NULL;
+	caches->lblidxIds->rId = NULL;
+	caches->lbltknIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lbltknIds->nId = NULL;
+	caches->lbltknIds->rId = NULL;
 }
