@@ -164,7 +164,6 @@ bool check_utf8(const char *str, size_t length) {
 // 只查询存粹的GBK
 bool check_gbk(const char *str, size_t length) {
 	size_t i = 0;
-	int nBytes = 0;
 	unsigned char ch = 0;
 	unsigned char ch1 = 0;
 	while (i < length) {
@@ -188,52 +187,52 @@ bool check_gbk(const char *str, size_t length) {
 	return true;
 }
 
-int is_str_utf8(const char *str) {
-	unsigned int nBytes = 0; //UFT8可用1-6个字节编码,ASCII用一个字节
-	unsigned char chr = *str;
-	int bAllAscii = 1;
-	for (unsigned int i = 0; str[i] != '\0'; ++i) {
-		chr = *(str + i);
-		//判断是否ASCII编码,如果不是,说明有可能是UTF8,ASCII用7位编码,最高位标记为0,0xxxxxxx
-		if (nBytes == 0 && (chr & 0x80) != 0) {
-			bAllAscii = 0;
-		}
-		if (nBytes == 0) {
-			//如果不是ASCII码,应该是多字节符,计算字节数
-			if (chr >= 0x80) {
-				if (chr >= 0xFC && chr <= 0xFD) {
-					nBytes = 6;
-				} else if (chr >= 0xF8) {
-					nBytes = 5;
-				} else if (chr >= 0xF0) {
-					nBytes = 4;
-				} else if (chr >= 0xE0) {
-					nBytes = 3;
-				} else if (chr >= 0xC0) {
-					nBytes = 2;
-				} else {
-					return 0;
-				}
-				nBytes--;
-			}
-		} else {
-			//多字节符的非首字节,应为 10xxxxxx
-			if ((chr & 0xC0) != 0x80) {
-				return 0;
-			}
-			//减到为零为止
-			nBytes--;
-		}
-	}
-	//违返UTF8编码规则
-	if (nBytes != 0) {
-		return 0;
-	}
-	if (bAllAscii) { //如果全部都是ASCII, 也是UTF8
-		return 1;
-	}
-	return 1;
-}
+//int is_str_utf8(const char *str) {
+//	unsigned int nBytes = 0; //UFT8可用1-6个字节编码,ASCII用一个字节
+//	unsigned char chr = *str;
+//	int bAllAscii = 1;
+//	for (unsigned int i = 0; str[i] != '\0'; ++i) {
+//		chr = *(str + i);
+//		//判断是否ASCII编码,如果不是,说明有可能是UTF8,ASCII用7位编码,最高位标记为0,0xxxxxxx
+//		if (nBytes == 0 && (chr & 0x80) != 0) {
+//			bAllAscii = 0;
+//		}
+//		if (nBytes == 0) {
+//			//如果不是ASCII码,应该是多字节符,计算字节数
+//			if (chr >= 0x80) {
+//				if (chr >= 0xFC && chr <= 0xFD) {
+//					nBytes = 6;
+//				} else if (chr >= 0xF8) {
+//					nBytes = 5;
+//				} else if (chr >= 0xF0) {
+//					nBytes = 4;
+//				} else if (chr >= 0xE0) {
+//					nBytes = 3;
+//				} else if (chr >= 0xC0) {
+//					nBytes = 2;
+//				} else {
+//					return 0;
+//				}
+//				nBytes--;
+//			}
+//		} else {
+//			//多字节符的非首字节,应为 10xxxxxx
+//			if ((chr & 0xC0) != 0x80) {
+//				return 0;
+//			}
+//			//减到为零为止
+//			nBytes--;
+//		}
+//	}
+//	//违返UTF8编码规则
+//	if (nBytes != 0) {
+//		return 0;
+//	}
+//	if (bAllAscii) { //如果全部都是ASCII, 也是UTF8
+//		return 1;
+//	}
+//	return 1;
+//}
 
 long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 		FILE *lbl_tkn_fp) {
