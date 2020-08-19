@@ -167,7 +167,6 @@ bool check_gbk(const char *str, size_t length) {
 	int nBytes = 0;
 	unsigned char ch = 0;
 	unsigned char ch1 = 0;
-	bool bAllAscii = true;
 	while (i < length) {
 		ch = *(str + i);
 		ch1 = *(str + i + 1);
