@@ -206,7 +206,9 @@ int main(int argv, char **argc) {
 	//setlocale(LC_ALL, "");
 	setvbuf(stdout, NULL, _IONBF, 0);
 	const char *d_path = "D:/tudata/";
-//	char *taid;
+
+
+	//	char *taid;
 //	strcat(taid, path);
 //	strcat(taid,"tustore.timeaxis.tdb.id");
 //	FILE *taidfp = fopen(taid, "rb+");
@@ -236,15 +238,15 @@ int main(int argv, char **argc) {
 //	strcat(labels, "tustore.element.tdb.labels");
 //	FILE *labelsfp = fopen(labels, "rb+");
 
-//	char *lbl_idx_id_path;
-//	strcat(lbl_idx_id_path, d_path);
-//	strcat(lbl_idx_id_path, "tustore.element.tdb.labelindex.id");
-//	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
-//
-//	char *lbl_idx_path;
-//	strcat(lbl_idx_path, d_path);
-//	strcat(lbl_idx_path, "tustore.element.tdb.labelindex");
-//	FILE *lbl_idx_fp = fopen(lbl_idx_path, "rb+");
+	char *lbl_idx_id_path;
+	strcat(lbl_idx_id_path, d_path);
+	strcat(lbl_idx_id_path, "tustore.element.tdb.labelindex.id");
+	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
+
+	char *lbl_idx_path;
+	strcat(lbl_idx_path, d_path);
+	strcat(lbl_idx_path, "tustore.element.tdb.labelindex");
+	FILE *lbl_idx_fp = fopen(lbl_idx_path, "rb+");
 
 	char *lbl_tkn_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_tkn_id_path, d_path);
@@ -256,7 +258,7 @@ int main(int argv, char **argc) {
 	strcat(lbl_tkn_path, "tustore.element.tdb.labeltoken");
 	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
 
-//	initIdDB(lbl_idx_id_path);
+	initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_tkn_id_path);
 	// initTimeAxisDB(tadb);
 	// initialize
@@ -276,12 +278,19 @@ int main(int argv, char **argc) {
 	lbl_tkn_pages = (lbl_tkn_page_t*) malloc(sizeof(lbl_tkn_page_t));
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
 	char label[] = "Microsoft corporation 美国微软公司出品 版权所有";
-	char *l = label;
 	long long tknId = insertLabelToken(10, label, lbl_tkn_id_fp, lbl_tkn_fp);
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_fp);
 	free(lbl_tkn_pages);
 	free(caches);
+
+//	char *s = "中国";
+//	char buf[10];
+//	u2g(s, strlen(s), buf, sizeof(buf));
+//
+//	char buf2[10];
+//	g2u(buf, strlen(buf), buf2, sizeof(buf2));
+//    printf("%s\n", "end");
 
 }
 

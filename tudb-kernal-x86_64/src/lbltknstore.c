@@ -15,6 +15,15 @@
  */
 #include "lbltknstore.h"
 #include <stdbool.h>
+#include <iconv.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+
+
 /*
  * lbltknstore.c
  *
@@ -102,20 +111,71 @@ int UnicodeToUtf8(char *pInput, char *pOutput) {
 	return len;
 }
 
-bool check_ascii(const char *str, size_t length) {
-	size_t i = 0;
-	unsigned char ch = 0;
-	while (i < length) {
-		ch = *(str + i);
-		//判断是否ASCII编码,如果不是,说明有可能是UTF8,ASCII用7位编码,最高位标记为0,0xxxxxxx
-		if ((ch & 0x80) != 0)
-			return false;
-		i++;
+/*************************************************************************************************
+* 将UTF8编码转换成Unicode（UCS-2LE）编码  低地址存低位字节
+* 参数：
+*    char* pInput   输入字符串
+*    char*pOutput   输出字符串
+* 返回值：转换后的Unicode字符串的字节数，如果出错则返回-1
+**************************************************************************************************/
+//utf8转unicode
+int Utf8ToUnicode(char *pInput, char *pOutput) {
+	int outputSize = 0; //记录转换后的Unicode字符串的字节数
+	while (*pInput) {
+		if (*pInput > 0x00 && *pInput <= 0x7F) {//处理单字节UTF8字符（英文字母、数字）
+			*pOutput = *pInput;
+			pOutput++;
+			*pOutput = 0; //小端法表示，在高地址填补0
+		} else if (((*pInput) & 0xE0) == 0xC0) {//处理双字节UTF8字符
+			char high = *pInput;
+			pInput++;
+			char low = *pInput;
+			if ((low & 0xC0) != 0x80) { //检查是否为合法的UTF8字符表示
+				return -1; //如果不是则报错
+			}
+			*pOutput = (high << 6) + (low & 0x3F);
+			pOutput++;
+			*pOutput = (high >> 2) & 0x07;
+		} else if (((*pInput) & 0xF0) == 0xE0) {//处理三字节UTF8字符
+			char high = *pInput;
+			pInput++;
+			char middle = *pInput;
+			pInput++;
+			char low = *pInput;
+			if (((middle & 0xC0) != 0x80) || ((low & 0xC0) != 0x80)) {
+				return -1;
+			}
+			*pOutput = (middle << 6) + (low & 0x3F); //取出middle的低两位与low的低6位，组合成unicode字符的低8位
+			pOutput++;
+			*pOutput = (high << 4) + ((middle >> 2) & 0x0F); //取出high的低四位与middle的中间四位，组合成unicode字符的高8位
+		} else { //对于其他字节数的UTF8字符不进行处理
+			return -1;
+		}
+		pInput++; //处理下一个utf8字符
+		pOutput++;
+		outputSize += 2;
 	}
-	return true;
+	//unicode字符串后面，有两个\0
+	*pOutput = 0;
+	pOutput++;
+	*pOutput = 0;
+	return outputSize;
 }
 
-//
+//bool check_ascii(const char *str, size_t length) {
+//	size_t i = 0;
+//	unsigned char ch = 0;
+//	while (i < length) {
+//		ch = *(str + i);
+//		//判断是否ASCII编码,如果不是,说明有可能是UTF8,ASCII用7位编码,最高位标记为0,0xxxxxxx
+//		if ((ch & 0x80) != 0)
+//			return false;
+//		i++;
+//	}
+//	return true;
+//}
+
+// check UTF-8 and ASCII charset
 bool check_utf8(const char *str, size_t length) {
 	size_t i = 0;
 	int nBytes = 0; //UTF8可用1 - 6个字节编码, ASCII用一个字节
@@ -161,7 +221,10 @@ bool check_utf8(const char *str, size_t length) {
 	return (nBytes == 0);
 }
 
-// 只查询存粹的GBK
+bool check_gb2312(const char *str, size_t length) {
+	return true;
+}
+
 bool check_gbk(const char *str, size_t length) {
 	size_t i = 0;
 	unsigned char ch = 0;
@@ -234,6 +297,43 @@ bool check_gbk(const char *str, size_t length) {
 //	return 1;
 //}
 
+int code_convert(char *from_charset, char *to_charset, char *inbuf,
+		size_t inlen, char *outbuf, size_t outlen) {
+	iconv_t cd;
+	char **pin = &inbuf;
+	char **pout = &outbuf;
+
+	cd = iconv_open(to_charset, from_charset);
+	if (cd == 0)
+		return -1;
+	memset(outbuf, 0, outlen);
+	if (iconv(cd, pin, &inlen, pout, &outlen) == -1)
+		return -1;
+	iconv_close(cd);
+	*pout = '\0';
+
+	return 0;
+}
+
+int u2g(char *inbuf, size_t inlen, char *outbuf, size_t outlen) {
+	//return code_convert("utf-8", "gb2312", inbuf, inlen, outbuf, outlen);
+	return code_convert("utf-8", "gbk", inbuf, inlen, outbuf, outlen);
+}
+
+int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen) {
+	//return code_convert("gb2312", "utf-8", inbuf, inlen, outbuf, outlen);
+	return code_convert("gbk", "utf-8", inbuf, inlen, outbuf, outlen);
+}
+
+void convert(char *fromstr, char* tostr) {
+	if (!check_utf8(fromstr, strlen(fromstr))) {
+		if (check_gbk(fromstr, strlen(fromstr)) ||
+				check_gb2312(fromstr, strlen(fromstr))) {
+			g2u(fromstr, strlen(fromstr), tostr, sizeof(tostr));
+		}
+	}
+}
+
 long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 		FILE *lbl_tkn_fp) {
 	lbl_tkn_record_bytes = 10 * LONG_LONG + 5;
@@ -242,11 +342,18 @@ long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 	long long startbyte = 0LL; // start points in database
 	long long id = NULL_POINTER;
 	if (lbl_tkn_pages != NULL) {
+		char tmpbuf[256] = {0};
+		convert(label, tmpbuf);
+		// dividing the label string
+//		memcpy(node2->key, node->key + sidx + 1,
+//						(total - sidx - 1) * sizeof(int));
+
+
 		lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
-		tkn->blkContent = label;
+		tkn->blkContent = tmpbuf;
 		tkn->id = -2;
 		tkn->inUse = 0;
-		tkn->len = strlen(label);
+		tkn->len = strlen(tmpbuf);
 		tkn->page = NULL;
 		tkn->taId = 0;
 		tkn->nxtBlkId = -2;
