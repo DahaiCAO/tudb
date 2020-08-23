@@ -23,7 +23,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-
 /*
  * lbltknstore.c
  *
@@ -35,8 +34,8 @@
 // start the start pointer in memory
 // start_no the start record id in this page
 // lbl_tkn_db_fp label token DB file
-lbl_tkn_page_t* readOneLabelTokenPage(long long start, long long start_no,
-		FILE *lbl_tkn_db_fp) {
+lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start,
+		long long start_no, FILE *lbl_tkn_db_fp) {
 	lbl_tkn_page_bytes = lbl_tkn_record_bytes * lbl_tkn_page_records;
 	unsigned char *page = (unsigned char*) malloc(
 			sizeof(unsigned char) * lbl_tkn_page_bytes);
@@ -59,7 +58,7 @@ lbl_tkn_page_t* readOneLabelTokenPage(long long start, long long start_no,
 	p->start = start;
 	p->end = start + lbl_tkn_page_bytes;
 
-	lbl_tkn_page_t *pp = lbl_tkn_pages;
+	lbl_tkn_page_t *pp = pages;
 	if (pp != NULL) {
 		while (pp->nxtpage != NULL) {
 			pp = pp->nxtpage;
@@ -73,9 +72,7 @@ lbl_tkn_page_t* readOneLabelTokenPage(long long start, long long start_no,
 }
 
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp) {
-	if (pages == NULL) {
-		readOneLabelTokenPage(0LL, 0LL, lbl_tkn_db_fp);
-	}
+	readOneLabelTokenPage(pages, 0LL, 0LL, lbl_tkn_db_fp);
 }
 
 int UnicodeToUtf8(char *pInput, char *pOutput) {
@@ -112,21 +109,21 @@ int UnicodeToUtf8(char *pInput, char *pOutput) {
 }
 
 /*************************************************************************************************
-* 将UTF8编码转换成Unicode（UCS-2LE）编码  低地址存低位字节
-* 参数：
-*    char* pInput   输入字符串
-*    char*pOutput   输出字符串
-* 返回值：转换后的Unicode字符串的字节数，如果出错则返回-1
-**************************************************************************************************/
+ * 将UTF8编码转换成Unicode（UCS-2LE）编码  低地址存低位字节
+ * 参数：
+ *    char* pInput   输入字符串
+ *    char*pOutput   输出字符串
+ * 返回值：转换后的Unicode字符串的字节数，如果出错则返回-1
+ **************************************************************************************************/
 //utf8转unicode
 int Utf8ToUnicode(char *pInput, char *pOutput) {
 	int outputSize = 0; //记录转换后的Unicode字符串的字节数
 	while (*pInput) {
-		if (*pInput > 0x00 && *pInput <= 0x7F) {//处理单字节UTF8字符（英文字母、数字）
+		if (*pInput > 0x00 && *pInput <= 0x7F) { //处理单字节UTF8字符（英文字母、数字）
 			*pOutput = *pInput;
 			pOutput++;
 			*pOutput = 0; //小端法表示，在高地址填补0
-		} else if (((*pInput) & 0xE0) == 0xC0) {//处理双字节UTF8字符
+		} else if (((*pInput) & 0xE0) == 0xC0) { //处理双字节UTF8字符
 			char high = *pInput;
 			pInput++;
 			char low = *pInput;
@@ -136,7 +133,7 @@ int Utf8ToUnicode(char *pInput, char *pOutput) {
 			*pOutput = (high << 6) + (low & 0x3F);
 			pOutput++;
 			*pOutput = (high >> 2) & 0x07;
-		} else if (((*pInput) & 0xF0) == 0xE0) {//处理三字节UTF8字符
+		} else if (((*pInput) & 0xF0) == 0xE0) { //处理三字节UTF8字符
 			char high = *pInput;
 			pInput++;
 			char middle = *pInput;
@@ -325,38 +322,65 @@ int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen) {
 	return code_convert("gbk", "utf-8", inbuf, inlen, outbuf, outlen);
 }
 
-void convert(char *fromstr, char* tostr) {
+void convert2Utf8(char *fromstr, char *tostr) {
 	if (!check_utf8(fromstr, strlen(fromstr))) {
-		if (check_gbk(fromstr, strlen(fromstr)) ||
-				check_gb2312(fromstr, strlen(fromstr))) {
+		if (check_gbk(fromstr, strlen(fromstr))
+				|| check_gb2312(fromstr, strlen(fromstr))) {
 			g2u(fromstr, strlen(fromstr), tostr, sizeof(tostr));
 		}
+	} else {
+		//tostr = fromstr;
+		memcpy(tostr, fromstr, strlen(fromstr));
 	}
 }
 
 long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 		FILE *lbl_tkn_fp) {
+	size_t BLOCK_LENGTH = 4;
 	lbl_tkn_record_bytes = 10 * LONG_LONG + 5;
 	lbl_tkn_page_records = 10LL;
 	lbl_tkn_page_bytes = lbl_tkn_record_bytes * lbl_tkn_page_records;
 	long long startbyte = 0LL; // start points in database
 	long long id = NULL_POINTER;
+	lbl_tkn_t **list;
 	if (lbl_tkn_pages != NULL) {
-		char tmpbuf[256] = {0};
-		convert(label, tmpbuf);
-		// dividing the label string
-//		memcpy(node2->key, node->key + sidx + 1,
-//						(total - sidx - 1) * sizeof(int));
-
-
-		lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
-		tkn->blkContent = tmpbuf;
-		tkn->id = -2;
-		tkn->inUse = 0;
-		tkn->len = strlen(tmpbuf);
-		tkn->page = NULL;
-		tkn->taId = 0;
-		tkn->nxtBlkId = -2;
+		char tmpbuf[256] = { 0 };
+		convert2Utf8(label, tmpbuf);
+		size_t l = strlen(tmpbuf);
+		if (l > BLOCK_LENGTH) {
+			size_t t = l % BLOCK_LENGTH;
+			if (t > 0) {
+				t = l / BLOCK_LENGTH + 1;
+				list = (lbl_tkn_t**) calloc(t, sizeof(lbl_tkn_t));
+				for (int i = 0; i < t; i++) {
+					char *buf = (char*) calloc(BLOCK_LENGTH, sizeof(int));
+					memcpy(buf, tmpbuf + i * BLOCK_LENGTH, BLOCK_LENGTH);
+					lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+					tkn->blkContent = buf;
+					tkn->id = NULL_POINTER;
+					tkn->inUse = 0;
+					tkn->len = BLOCK_LENGTH;
+					tkn->page = NULL;
+					tkn->taId = 0;
+					tkn->nxtBlkId = NULL;
+					*list = tkn;
+					list = list + 1;
+					buf = NULL;
+				}
+			}
+		} else {
+			list = (lbl_tkn_t**) calloc(1, sizeof(lbl_tkn_t));
+			lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+			tkn->blkContent = &tmpbuf;
+			tkn->id = NULL_POINTER;
+			tkn->inUse = 0;
+			tkn->len = strlen(tmpbuf);
+			tkn->page = NULL;
+			tkn->taId = 0;
+			tkn->nxtBlkId = NULL;
+			*list = tkn;
+			list = list + 1;
+		}
 
 	}
 }

@@ -40,7 +40,7 @@ int lbl_tkn_page_records;
 // bytes in one page with label token records
 int lbl_tkn_page_bytes;
 
-lbl_tkn_page_t* readOneLabelTokenPage(long long start, long long start_no,
+lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start, long long start_no,
 		FILE *lbl_tkn_db_fp);
 
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp);

@@ -50,6 +50,12 @@ void initTimeAxisDB(char *path) {
 	}
 }
 
+void initDB(char *path) {
+	if ((access(path, F_OK)) == -1) {
+		FILE *tadbfp = fopen(path, "wb+");
+	}
+}
+
 void initIdCaches(id_caches_t * caches) {
 	caches->taIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
 	caches->taIds->nId = NULL;

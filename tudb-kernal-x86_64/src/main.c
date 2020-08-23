@@ -238,15 +238,15 @@ int main(int argv, char **argc) {
 //	strcat(labels, "tustore.element.tdb.labels");
 //	FILE *labelsfp = fopen(labels, "rb+");
 
-	char *lbl_idx_id_path;
-	strcat(lbl_idx_id_path, d_path);
-	strcat(lbl_idx_id_path, "tustore.element.tdb.labelindex.id");
-	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
-
-	char *lbl_idx_path;
-	strcat(lbl_idx_path, d_path);
-	strcat(lbl_idx_path, "tustore.element.tdb.labelindex");
-	FILE *lbl_idx_fp = fopen(lbl_idx_path, "rb+");
+//	char *lbl_idx_id_path;
+//	strcat(lbl_idx_id_path, d_path);
+//	strcat(lbl_idx_id_path, "tustore.element.tdb.labelindex.id");
+//	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
+//
+//	char *lbl_idx_path;
+//	strcat(lbl_idx_path, d_path);
+//	strcat(lbl_idx_path, "tustore.element.tdb.labelindex");
+//	FILE *lbl_idx_fp = fopen(lbl_idx_path, "rb+");
 
 	char *lbl_tkn_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_tkn_id_path, d_path);
@@ -258,9 +258,10 @@ int main(int argv, char **argc) {
 	strcat(lbl_tkn_path, "tustore.element.tdb.labeltoken");
 	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
 
-	initIdDB(lbl_idx_id_path);
+	//initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_tkn_id_path);
 	// initTimeAxisDB(tadb);
+	initDB(lbl_tkn_path);
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
 	initIdCaches(caches);
@@ -268,14 +269,13 @@ int main(int argv, char **argc) {
 	//loadIds(taidfp, caches->taIds);
 	//loadIds(taidfp, caches->teIds);
 	//loadIds(labelindexidfp, caches->lblidxIds);
-	loadIds(lbl_tkn_fp, caches->lbltknIds);
+	loadIds(lbl_tkn_id_fp, caches->lbltknIds);
 
 	//listAllTaIds(caches->taIds);
 	//listAllTaIds(caches->teIds);
 	//listAllTaIds(caches->lblidxIds);
 	listAllTaIds(caches->lbltknIds);
 
-	lbl_tkn_pages = (lbl_tkn_page_t*) malloc(sizeof(lbl_tkn_page_t));
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
 	char label[] = "Microsoft corporation 美国微软公司出品 版权所有";
 	long long tknId = insertLabelToken(10, label, lbl_tkn_id_fp, lbl_tkn_fp);

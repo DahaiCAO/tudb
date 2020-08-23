@@ -38,6 +38,8 @@ void initIdDB(char *path);
 // initialize DB
 void initTimeAxisDB(char *path);
 
+void initDB(char *path);
+
 void initIdCaches(id_caches_t * caches);
 
 void initTaDBMemPages(ta_buf_t* pages, FILE *tadbfp);
