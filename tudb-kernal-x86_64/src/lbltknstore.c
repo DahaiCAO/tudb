@@ -322,21 +322,22 @@ int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen) {
 	return code_convert("gbk", "utf-8", inbuf, inlen, outbuf, outlen);
 }
 
-void convert2Utf8(char *fromstr, char *tostr) {
+void convert2Utf8(char *fromstr, char *tostr, size_t length) {
 	if (!check_utf8(fromstr, strlen(fromstr))) {
 		if (check_gbk(fromstr, strlen(fromstr))
 				|| check_gb2312(fromstr, strlen(fromstr))) {
 			g2u(fromstr, strlen(fromstr), tostr, sizeof(tostr));
 		}
 	} else {
-		//tostr = fromstr;
-		memcpy(tostr, fromstr, strlen(fromstr));
+		//tostr = &fromstr;
+		memcpy(tostr, fromstr, length);
 	}
 }
 
 long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 		FILE *lbl_tkn_fp) {
 	size_t BLOCK_LENGTH = 4;
+	size_t BUFFER_LENGTH = 256;
 	lbl_tkn_record_bytes = 10 * LONG_LONG + 5;
 	lbl_tkn_page_records = 10LL;
 	lbl_tkn_page_bytes = lbl_tkn_record_bytes * lbl_tkn_page_records;
@@ -345,29 +346,57 @@ long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 	lbl_tkn_t **list;
 	if (lbl_tkn_pages != NULL) {
 		char tmpbuf[256] = { 0 };
-		convert2Utf8(label, tmpbuf);
+		convert2Utf8(label, tmpbuf, BUFFER_LENGTH);
 		size_t l = strlen(tmpbuf);
 		if (l > BLOCK_LENGTH) {
-			size_t t = l % BLOCK_LENGTH;
-			if (t > 0) {
-				t = l / BLOCK_LENGTH + 1;
-				list = (lbl_tkn_t**) calloc(t, sizeof(lbl_tkn_t));
-				for (int i = 0; i < t; i++) {
-					char *buf = (char*) calloc(BLOCK_LENGTH, sizeof(int));
-					memcpy(buf, tmpbuf + i * BLOCK_LENGTH, BLOCK_LENGTH);
-					lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
-					tkn->blkContent = buf;
-					tkn->id = NULL_POINTER;
-					tkn->inUse = 0;
-					tkn->len = BLOCK_LENGTH;
-					tkn->page = NULL;
-					tkn->taId = 0;
-					tkn->nxtBlkId = NULL;
-					*list = tkn;
-					list = list + 1;
-					buf = NULL;
-				}
+			size_t s = l / BLOCK_LENGTH;
+			size_t y = l % BLOCK_LENGTH;
+			lbl_tkn_t** p;
+			if (y > 0) {
+				list = (lbl_tkn_t**) calloc(s + 1, sizeof(lbl_tkn_t));
+			} else {
+				list = (lbl_tkn_t**) calloc(s, sizeof(lbl_tkn_t));
 			}
+			p = list;
+			for (int i = 0; i < s; i++) {
+				char *buf = (char*) calloc(BLOCK_LENGTH, sizeof(int));
+				memcpy(buf, tmpbuf + i * BLOCK_LENGTH, BLOCK_LENGTH);
+				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+				tkn->blkContent = buf;
+				tkn->id = NULL_POINTER;
+				tkn->inUse = 0;
+				tkn->len = BLOCK_LENGTH;
+				tkn->page = NULL;
+				tkn->taId = 0;
+				tkn->nxtBlkId = NULL;
+				*p = tkn;
+				p = p + 1;
+				buf = NULL;
+			}
+			if (y > 0) {
+				char *buf = (char*) calloc(BLOCK_LENGTH, sizeof(int));
+				memcpy(buf, tmpbuf + s * BLOCK_LENGTH, l - s * BLOCK_LENGTH);
+				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+				tkn->blkContent = buf;
+				tkn->id = NULL_POINTER;
+				tkn->inUse = 0;
+				tkn->len = l - s * BLOCK_LENGTH;
+				tkn->page = NULL;
+				tkn->taId = 0;
+				tkn->nxtBlkId = NULL;
+				*p = tkn;
+				p = p + 1;
+				buf = NULL;
+			}
+			char *b = (char*) calloc(256, sizeof(char));
+			int j = 0;
+			p = list;
+			while (*(p + j) != NULL) {
+				printf("%d\n", j);
+				j++;
+				//strcat(b, (*(list + i))->blkContent);
+			}
+			printf("%s\n", b);
 		} else {
 			list = (lbl_tkn_t**) calloc(1, sizeof(lbl_tkn_t));
 			lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
