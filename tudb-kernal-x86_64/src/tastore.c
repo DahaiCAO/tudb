@@ -131,7 +131,7 @@ ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
 	return p;
 }
 
-void initTaDBMemPages(ta_buf_t* pages, FILE *tadbfp) {
+void initTaDBMemPages(ta_buf_t *pages, FILE *tadbfp) {
 	unsigned char p[LONG_LONG * 2] = { 0 };
 	unsigned char first[LONG_LONG] = { 0 };
 	unsigned char last[LONG_LONG] = { 0 };
@@ -726,7 +726,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 // search a time stamp in memory pages for inserting action
 void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		evolved_point_t *tmp, evolved_point_t *previous, evolved_point_t *next,
-		tadb_head_t *h, FILE *tadbfp) {
+		tadb_head_t *h, FILE *tadbfp, FILE *taidfp) {
 	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
 	int pagererecords = 10LL; // record counting in one page
 	int pagebytes = recordbytes * pagererecords; // byte counting in one page
@@ -737,7 +737,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 	long long stamp = parseStamp(currpos);
 	if (stamp == 0) {	// this is an empty DB,
 		// so this time stamp will be stored here
-		long long id = getOneId(caches->taIds);
+		long long id = getOneId(taidfp, caches->taIds,
+				TIMEAXIS_ID_QUEUE_LENGTH);
 		tmp->id = id; //
 		tmp->pos = currpos;
 		tmp->nxtTsId = NULL_POINTER;
@@ -759,7 +760,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				if (inuse == 1) {
 					if (prvId == NULL_POINTER) { // the first record
 						if (ts < stamp) { // ts will be the first
-							long long id = getOneId(caches->taIds);
+							long long id = getOneId(taidfp, caches->taIds,
+									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = NULL_POINTER;
 							tmp->nxtTsId = timeaxispages->first;
@@ -775,7 +777,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							h->firstdirty = 1;
 							return;
 						} else if (ts > stamp) { // ts will be the second
-							long long id = getOneId(caches->taIds);
+							long long id = getOneId(taidfp, caches->taIds,
+									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = timeaxispages->first;
 							tmp->nxtTsId = nxtId;
@@ -821,7 +824,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							}
 							continue;
 						} else if (ts > stamp) {
-							long long id = getOneId(caches->taIds);
+							long long id = getOneId(taidfp, caches->taIds,
+									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = next->prvTsId; //
 							tmp->nxtTsId = nxtId; // it is next->id
@@ -861,7 +865,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 				if (nxtId == NULL_POINTER) { // this is last record
 					if (inuse == 1) {
 						if (ts > stamp) { // ts will the last
-							long long id = getOneId(caches->taIds);
+							long long id = getOneId(taidfp, caches->taIds,
+									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = timeaxispages->last;
 							tmp->nxtTsId = NULL_POINTER;
@@ -877,7 +882,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							h->lastdirty = 1;
 							return;
 						} else if (ts < stamp) { // ts will the second last.
-							long long id = getOneId(caches->taIds);
+							long long id = getOneId(taidfp, caches->taIds,
+									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = timeaxispages->last;
@@ -928,7 +934,8 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							}
 							continue;
 						} else if (ts < stamp) {
-							long long id = getOneId(caches->taIds);
+							long long id = getOneId(taidfp, caches->taIds,
+									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = prvId; //
 							tmp->nxtTsId = previous->nxtTsId;
@@ -1558,7 +1565,7 @@ long long deleteEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 	return id;
 }
 
-long long insertEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
+long long insertEvolvedPoint(long long ts, FILE *ta_id_fp, FILE *ta_db_fp) {
 	int recordbytes = 3LL * LONG_LONG + 1LL; // byte counting in one record
 	int pagererecords = 10LL; // record counting in one page
 	int pagebytes = recordbytes * pagererecords; // byte counting in one page
@@ -1592,9 +1599,9 @@ long long insertEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 		next->time = 0;
 		next->id = -3;
 		searchforInsert(ts, timeaxispages->pages->content, timeaxispages->pages,
-				temp, previous, next, head, tadbfp);
+				temp, previous, next, head, ta_db_fp, ta_id_fp);
 		id = commitInsert(ts, previous, temp, next, head, recordbytes,
-				startbyte, pagererecords, pagebytes, tadbfp);
+				startbyte, pagererecords, pagebytes, ta_db_fp);
 		free(temp);
 		free(previous);
 		free(next);
@@ -1602,5 +1609,4 @@ long long insertEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 	}
 	return id;
 }
-
 

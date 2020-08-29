@@ -22,7 +22,7 @@
 
 #include "convert.h"
 #include "macrodef.h"
-#include "taidstore.h"
+#include "tuidstore.h"
 #include "structepdef.h"
 /*
  * text.h

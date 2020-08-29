@@ -23,11 +23,10 @@
 
 #include "convert.h"
 #include "macrodef.h"
-#include "taidstore.h"
-//#include "structepdef.h"
 #include "lblidxstore.h"
 #include "lbltknstore.h"
 #include "init.h"
+#include "tuidstore.h"
 
 /*
  * main.c
@@ -201,12 +200,23 @@
 //
 //}
 
+int cont_str(char *str) {
+    int length = 0;
+    while( *str++ != '\0' )
+        length += 1;
+    return length;
+}
+
 // test label token store
 int main(int argv, char **argc) {
-	//setlocale(LC_ALL, "");
+//	setlocale(LC_ALL, "zh-CN.UTF-8");
 	setvbuf(stdout, NULL, _IONBF, 0);
 	const char *d_path = "D:/tudata/";
-
+	ID_QUEUE_LENGTH = 25;
+	LABEL_ID_QUEUE_LENGTH = 10;
+	TIMEAXIS_ID_QUEUE_LENGTH = 10;
+	LABEL_BLOCK_LENGTH = 64;
+	LABEL_BUFFER_LENGTH = 256;
 
 	//	char *taid;
 //	strcat(taid, path);
@@ -257,28 +267,33 @@ int main(int argv, char **argc) {
 	strcat(lbl_tkn_path, d_path);
 	strcat(lbl_tkn_path, "tustore.element.tdb.labeltoken");
 	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
-
+	// initialize
+	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+	initIdCaches(caches);
 	//initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_tkn_id_path);
 	// initTimeAxisDB(tadb);
 	initDB(lbl_tkn_path);
-	// initialize
-	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
-	initIdCaches(caches);
+	//loadAllIds(taidfp, caches->taIds);
+	//loadAllIds(taidfp, caches->teIds);
+	//loadAllIds(labelindexidfp, caches->lblidxIds);
+	loadAllIds(lbl_tkn_id_fp, caches->lbltknIds, LABEL_ID_QUEUE_LENGTH);
 
-	//loadIds(taidfp, caches->taIds);
-	//loadIds(taidfp, caches->teIds);
-	//loadIds(labelindexidfp, caches->lblidxIds);
-	loadIds(lbl_tkn_id_fp, caches->lbltknIds);
-
-	//listAllTaIds(caches->taIds);
-	//listAllTaIds(caches->teIds);
-	//listAllTaIds(caches->lblidxIds);
-	listAllTaIds(caches->lbltknIds);
+	//listAllIds(caches->taIds);
+	//listAllIds(caches->teIds);
+	//listAllIds(caches->lblidxIds);
+	listAllIds(caches->lbltknIds);
 
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
-	char label[] = "Microsoft corporation 美国微软公司出品 版权所有";
-	long long tknId = insertLabelToken(10, label, lbl_tkn_id_fp, lbl_tkn_fp);
+	char label[256] = "Microsoft corporation 美国微软公司出品版权所有有hdh";
+//	char label1[256] = {0};
+//	code_convert("utf-8", "gbk", label, 256, label1, 256);
+//	printf("%s\n", label);
+//	int len = cont_str(label);
+	lbl_tkn_t **list;
+	long long tknId = insertLabelToken(1, label, list, lbl_tkn_id_fp,
+			lbl_tkn_fp);
+
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_fp);
 	free(lbl_tkn_pages);
@@ -287,73 +302,71 @@ int main(int argv, char **argc) {
 //	char *s = "中国";
 //	char buf[10];
 //	u2g(s, strlen(s), buf, sizeof(buf));
-//
 //	char buf2[10];
 //	g2u(buf, strlen(buf), buf2, sizeof(buf2));
-//    printf("%s\n", "end");
-
+//  printf("%s\n", "end");
 }
 
-/*
+
  // test time axis DB Id
- int main(int argv, char **argc) {
- setvbuf(stdout, NULL, _IONBF, 0);
+/*int main(int argv, char **argc) {
+	setvbuf(stdout, NULL, _IONBF, 0);
+	ID_QUEUE_LENGTH = 5;
+	// get new Id from next free IDs
+	char *ta_id = "D:/tudata/tustore.timeaxis.tdb.id";
+	FILE *ta_id_fp = fopen(ta_id, "rb+");
+	// initialize
+	initIdDB(ta_id);
+	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+	initIdCaches(caches);
+	loadAllIds(ta_id_fp, caches->taIds);
+	//listAllTaIds(caches->taIds);
+	//recycleOneId(14);
+	listAllIds(caches->taIds);
 
- // get new Id from next free IDs
- char *taid = "D:/tudata/tustore.timeaxis.tdb.id";
- FILE *taidfp = fopen(taid, "rb+");
-
- // initialize
- cache = (id_cache_t*) malloc(sizeof(id_cache_t));
- cache->nId = NULL;
- cache->rId = NULL;
-
-
- loadIds(taidfp);
-
- listAllTaIds();
-
- recycleOneId(14);
-
- listAllTaIds();
-
- long long d = getOneId();
- printf("%lld\n", d);
- d = getOneId();
- printf("%lld\n", d);
- d = getOneId();
- printf("%lld\n", d);
-
- // test to get one id.
- //	long long id = getId(taidfp);
- //	 printf("%lld\n", id);
- //	 id = getId(taidfp);
- //	 printf("%lld\n", id);
- //	 id = getId(taidfp);
- //	 printf("%lld\n", id);
- //	 id = getId(taidfp);
- //	 printf("%lld\n", id);
- //	 id = getId(taidfp);
- //	 printf("%lld\n", id);
-
- // test recycle one id
- //	 recycleId(taidfp, 4);
- //	 recycleId(taidfp, 7);
- //	 recycleId(taidfp, 2);
- //	 recycleId(taidfp, 3);
- //	 recycleId(taidfp, 11);
- //	 recycleId(taidfp, 9);
- //	 recycleId(taidfp, 5);
- //	 recycleId(taidfp, 13);
- //	 recycleId(taidfp, 17);
- //	 recycleId(taidfp, 26);
- //
- //	readAllTaIds(taidfp);
- fclose(taidfp);
-
- free(cache);
- printf("End");
-
- }*/
+	long long d = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", d);
+	d = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", d);
+	d = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", d);
+	d = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", d);
+	d = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", d);
+	listAllTaIds(caches->taIds);
+	d = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", d);
+	long long id = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", id);
+	id = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", id);
+	id = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", id);
+	id = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", id);
+	listAllTaIds(caches->taIds);
+	id = getOneId(ta_id_fp, caches->taIds);
+	printf("%lld\n", id);
+*/
+	// test recycle one id
+	//	 recycleId(ta_id_fp, 4);
+	//	 recycleId(ta_id_fp, 7);
+	//	 recycleId(ta_id_fp, 2);
+	//	 recycleId(ta_id_fp, 3);
+	//	 recycleId(ta_id_fp, 11);
+	//	 recycleId(ta_id_fp, 9);
+	//	 recycleId(ta_id_fp, 5);
+	//	 recycleId(ta_id_fp, 13);
+	//	 recycleId(ta_id_fp, 17);
+	//	 recycleId(ta_id_fp, 26);
+	//
+	//	readAllTaIds(ta_id_fp);
+//	fclose(ta_id_fp);
+//
+//	free(caches);
+//	printf("%s\n", "End");
+//
+//}
 
 

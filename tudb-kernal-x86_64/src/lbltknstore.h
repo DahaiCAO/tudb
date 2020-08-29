@@ -18,7 +18,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
+#include <iconv.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
+#include "tuidstore.h"
 #include "structlbltkndef.h"
 #include "macrodef.h"
 /*
@@ -40,12 +45,27 @@ int lbl_tkn_page_records;
 // bytes in one page with label token records
 int lbl_tkn_page_bytes;
 
+size_t LABEL_BLOCK_LENGTH;
+size_t LABEL_BUFFER_LENGTH;
+
 lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start, long long start_no,
 		FILE *lbl_tkn_db_fp);
 
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp);
 
-long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
-		FILE *lbl_tkn_fp);
+int code_convert(char *from_charset, char *to_charset, char *inbuf,
+		size_t inlen, char *outbuf, size_t outlen);
 
+bool check_gb2312(const char *str, size_t length);
+
+int u2g(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
+
+int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
+
+void convert2Utf8(char *fromstr, char *tostr, size_t length);
+
+void commitLabelToken();
+
+long long insertLabelToken(long long ta_id, char *label, lbl_tkn_t **list, FILE *lbl_tkn_id_fp,
+		FILE *lbl_tkn_fp);
 #endif /* LBLTKNSTORE_H_ */

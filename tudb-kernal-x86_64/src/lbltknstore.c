@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 #include "lbltknstore.h"
-#include <stdbool.h>
-#include <iconv.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/stat.h>
 
 /*
  * lbltknstore.c
@@ -334,24 +326,26 @@ void convert2Utf8(char *fromstr, char *tostr, size_t length) {
 	}
 }
 
-long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
-		FILE *lbl_tkn_fp) {
-	size_t BLOCK_LENGTH = 4;
-	size_t BUFFER_LENGTH = 256;
+void commitLabelToken() {
+
+}
+
+long long insertLabelToken(long long ta_id, char *label, lbl_tkn_t **list,
+		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp) {
 	lbl_tkn_record_bytes = 10 * LONG_LONG + 5;
 	lbl_tkn_page_records = 10LL;
 	lbl_tkn_page_bytes = lbl_tkn_record_bytes * lbl_tkn_page_records;
 	long long startbyte = 0LL; // start points in database
 	long long id = NULL_POINTER;
-	lbl_tkn_t **list;
 	if (lbl_tkn_pages != NULL) {
-		char tmpbuf[256] = { 0 };
-		convert2Utf8(label, tmpbuf, BUFFER_LENGTH);
+		unsigned char *tmpbuf = (unsigned char*) calloc(LABEL_BUFFER_LENGTH,
+				sizeof(unsigned char));
+		convert2Utf8(label, tmpbuf, LABEL_BUFFER_LENGTH);
 		size_t l = strlen(tmpbuf);
-		if (l > BLOCK_LENGTH) {
-			size_t s = l / BLOCK_LENGTH;
-			size_t y = l % BLOCK_LENGTH;
-			lbl_tkn_t** p;
+		if (l > LABEL_BLOCK_LENGTH) {
+			size_t s = l / LABEL_BLOCK_LENGTH;
+			size_t y = l % LABEL_BLOCK_LENGTH;
+			lbl_tkn_t **p;
 			if (y > 0) {
 				list = (lbl_tkn_t**) calloc(s + 1, sizeof(lbl_tkn_t));
 			} else {
@@ -359,58 +353,86 @@ long long insertLabelToken(long long ta_id, char *label, FILE *lbl_tkn_id_fp,
 			}
 			p = list;
 			for (int i = 0; i < s; i++) {
-				char *buf = (char*) calloc(BLOCK_LENGTH, sizeof(int));
-				memcpy(buf, tmpbuf + i * BLOCK_LENGTH, BLOCK_LENGTH);
+				unsigned char *buf = (unsigned char*) calloc(LABEL_BLOCK_LENGTH,
+						sizeof(unsigned char));
+				memcpy(buf, tmpbuf + i * LABEL_BLOCK_LENGTH,
+						LABEL_BLOCK_LENGTH);
 				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
 				tkn->blkContent = buf;
 				tkn->id = NULL_POINTER;
-				tkn->inUse = 0;
-				tkn->len = BLOCK_LENGTH;
+				tkn->inUse = 1;
+				tkn->len = LABEL_BLOCK_LENGTH;
 				tkn->page = NULL;
-				tkn->taId = 0;
-				tkn->nxtBlkId = NULL;
+				tkn->taId = ta_id;
+				tkn->nxtBlkId = NULL_POINTER;
 				*p = tkn;
 				p = p + 1;
 				buf = NULL;
 			}
 			if (y > 0) {
-				char *buf = (char*) calloc(BLOCK_LENGTH, sizeof(int));
-				memcpy(buf, tmpbuf + s * BLOCK_LENGTH, l - s * BLOCK_LENGTH);
+				unsigned char *buf = (unsigned char*) calloc(LABEL_BLOCK_LENGTH,
+						sizeof(unsigned char));
+				memcpy(buf, tmpbuf + s * LABEL_BLOCK_LENGTH, y);
 				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
 				tkn->blkContent = buf;
 				tkn->id = NULL_POINTER;
-				tkn->inUse = 0;
-				tkn->len = l - s * BLOCK_LENGTH;
+				tkn->inUse = 1;
+				tkn->len = y;
 				tkn->page = NULL;
-				tkn->taId = 0;
-				tkn->nxtBlkId = NULL;
+				tkn->taId = ta_id;
+				tkn->nxtBlkId = NULL_POINTER;
 				*p = tkn;
 				p = p + 1;
 				buf = NULL;
 			}
-			char *b = (char*) calloc(256, sizeof(char));
+			// assign a ID to every token block
 			int j = 0;
 			p = list;
+			int k = 0;
 			while (*(p + j) != NULL) {
-				printf("%d\n", j);
+				(*(p + j))->id = getOneId(lbl_tkn_id_fp, caches->lbltknIds,
+						LABEL_ID_QUEUE_LENGTH);
+				if (j > 0) {
+					(*(p + j - 1))->nxtBlkId = (*(p + j))->id;
+				} else {
+					id = (*(p + j))->id;
+				}
 				j++;
-				//strcat(b, (*(list + i))->blkContent);
 			}
-			printf("%s\n", b);
+			// combine the label blocks to one label.
+			j = 0;
+			p = list;
+			unsigned char *ct = (unsigned char*) calloc(l + 1,
+					sizeof(unsigned char));
+			k = 0;
+			while (*(p + j) != NULL) {
+				unsigned char *ch = (*(p + j))->blkContent;
+				for (int i = 0; i < (*(p + j))->len; i++) {
+					ct[k] = *(ch + i);
+					k++;
+				}
+				j++;
+			}
+			//printf("%s\n", ct);
+			free(ct);
 		} else {
 			list = (lbl_tkn_t**) calloc(1, sizeof(lbl_tkn_t));
 			lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
-			tkn->blkContent = &tmpbuf;
-			tkn->id = NULL_POINTER;
-			tkn->inUse = 0;
+			tkn->blkContent = tmpbuf;
+			tkn->id = getOneId(lbl_tkn_id_fp, caches->lbltknIds,
+					LABEL_ID_QUEUE_LENGTH);
+			tkn->inUse = 1;
 			tkn->len = strlen(tmpbuf);
 			tkn->page = NULL;
-			tkn->taId = 0;
-			tkn->nxtBlkId = NULL;
+			tkn->taId = ta_id;
+			tkn->nxtBlkId = NULL_POINTER;
 			*list = tkn;
-			list = list + 1;
+			//list = list + 1;
+			id = tkn->id;
+			//printf("%s\n", label);
+			//printf("%s\n", tkn->blkContent);
 		}
-
 	}
+	return id;
 }
 

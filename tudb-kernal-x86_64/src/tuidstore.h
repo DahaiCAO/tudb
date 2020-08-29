@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright 2020 Dahai Cao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,11 +35,19 @@
 #ifndef TAIDSTORE_H_
 #define TAIDSTORE_H_
 
-long long getOneId(id_cache_t *cache);
+size_t ID_QUEUE_LENGTH; // default cache Id capacity. 100 by default.
+size_t LABEL_ID_QUEUE_LENGTH; // label cache Id capacity.
+size_t TIMEAXIS_ID_QUEUE_LENGTH; // time axis cache Id capacity.
 
-void loadIds(FILE *idfp, id_cache_t *cache);
+long long getOneId(FILE *id_fp, id_cache_t *cache, size_t id_length);
 
-void listAllTaIds(id_cache_t *cache);
+void loadAllIds(FILE *id_fp, id_cache_t *cache, size_t id_length);
+
+void loadNewIds(FILE *id_fp, id_cache_t *cache, size_t id_length);
+
+void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length);
+
+void listAllIds(id_cache_t *cache);
 
 void recycleOneId(long long id, id_cache_t *cache);
 
