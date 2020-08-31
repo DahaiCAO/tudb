@@ -39,24 +39,30 @@
 // label token pages by default.
 lbl_tkn_page_t *lbl_tkn_pages;
 // bytes in one label token record
-int lbl_tkn_record_bytes;
-// records in one page with label token records
-int lbl_tkn_page_records;
+size_t lbl_tkn_record_bytes;
+// records in one page with label token records, configurable in .conf file
+size_t LABEL_TOKEN_PAGE_RECORDS;
 // bytes in one page with label token records
-int lbl_tkn_page_bytes;
-
+size_t lbl_tkn_page_bytes;
+// label block length, configurable in .conf file
 size_t LABEL_BLOCK_LENGTH;
+// label buffer length, configurable in .conf file
 size_t LABEL_BUFFER_LENGTH;
 
-lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start, long long start_no,
-		FILE *lbl_tkn_db_fp);
+//
+lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start,
+		long long start_no, FILE *lbl_tkn_db_fp);
 
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp);
 
 int code_convert(char *from_charset, char *to_charset, char *inbuf,
 		size_t inlen, char *outbuf, size_t outlen);
 
-bool check_gb2312(const char *str, size_t length);
+bool check_utf8(unsigned char *str, size_t length);
+
+bool check_gb2312(unsigned char *str, size_t length);
+
+bool check_gbk(unsigned char *str, size_t length);
 
 int u2g(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
 
@@ -64,8 +70,8 @@ int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
 
 void convert2Utf8(char *fromstr, char *tostr, size_t length);
 
-void commitLabelToken();
+void commitLabelToken(lbl_tkn_t **list);
 
-long long insertLabelToken(long long ta_id, char *label, lbl_tkn_t **list, FILE *lbl_tkn_id_fp,
-		FILE *lbl_tkn_fp);
+long long insertLabelToken(long long ta_id, unsigned char *label,
+		lbl_tkn_t **list, FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp);
 #endif /* LBLTKNSTORE_H_ */

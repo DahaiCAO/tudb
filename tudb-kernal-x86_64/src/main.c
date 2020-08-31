@@ -209,7 +209,7 @@ int cont_str(char *str) {
 
 // test label token store
 int main(int argv, char **argc) {
-//	setlocale(LC_ALL, "zh-CN.UTF-8");
+    setlocale(LC_ALL, "zh-CN.UTF-8");
 	setvbuf(stdout, NULL, _IONBF, 0);
 	const char *d_path = "D:/tudata/";
 	ID_QUEUE_LENGTH = 25;
@@ -217,6 +217,9 @@ int main(int argv, char **argc) {
 	TIMEAXIS_ID_QUEUE_LENGTH = 10;
 	LABEL_BLOCK_LENGTH = 64;
 	LABEL_BUFFER_LENGTH = 256;
+	LABEL_TOKEN_PAGE_RECORDS = 10;
+	lbl_tkn_record_bytes = 10 * LONG_LONG + 5;
+	lbl_tkn_page_bytes = lbl_tkn_record_bytes * LABEL_TOKEN_PAGE_RECORDS;
 
 	//	char *taid;
 //	strcat(taid, path);
@@ -285,19 +288,20 @@ int main(int argv, char **argc) {
 	listAllIds(caches->lbltknIds);
 
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
-	char label[256] = "Microsoft corporation 美国微软公司出品版权所有有hdh";
+	unsigned char label[256] = "Microsoft corporation 美国微软公司出品版权所有有hdh";
 //	char label1[256] = {0};
 //	code_convert("utf-8", "gbk", label, 256, label1, 256);
-//	printf("%s\n", label);
+//  printf("%s\n", label);
 //	int len = cont_str(label);
 	lbl_tkn_t **list;
 	long long tknId = insertLabelToken(1, label, list, lbl_tkn_id_fp,
 			lbl_tkn_fp);
-
-	fclose(lbl_tkn_id_fp);
-	fclose(lbl_tkn_fp);
-	free(lbl_tkn_pages);
-	free(caches);
+	commitLabelToken(list);
+//
+//	fclose(lbl_tkn_id_fp);
+//	fclose(lbl_tkn_fp);
+//	free(lbl_tkn_pages);
+//	free(caches);
 
 //	char *s = "中国";
 //	char buf[10];

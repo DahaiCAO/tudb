@@ -40,9 +40,9 @@ typedef struct label_token {
 	long long id; // pointer in DB
 	long long taId; //time axis Id, it is for evolution
 	unsigned char inUse; // 1: in use; otherwise, 0
-	size_t len;
-	struct label_token *nxtBlkId; // next block
-	char *blkContent;
+	unsigned int len;
+	long long nxtBlkId; // next block Id
+	unsigned char *blkContent;
 	lbl_tkn_page_t *page;
 } lbl_tkn_t;
 
