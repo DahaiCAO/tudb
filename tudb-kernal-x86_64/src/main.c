@@ -218,7 +218,9 @@ int main(int argv, char **argc) {
 	LABEL_BLOCK_LENGTH = 64;
 	LABEL_BUFFER_LENGTH = 256;
 	LABEL_TOKEN_PAGE_RECORDS = 10;
-	lbl_tkn_record_bytes = 10 * LONG_LONG + 5;
+	// label bytes length.
+	lbl_tkn_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
+			+ LABEL_BLOCK_LENGTH;
 	lbl_tkn_page_bytes = lbl_tkn_record_bytes * LABEL_TOKEN_PAGE_RECORDS;
 
 	//	char *taid;
@@ -288,7 +290,7 @@ int main(int argv, char **argc) {
 	listAllIds(caches->lbltknIds);
 
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
-	unsigned char label[256] = "Microsoft corporation 美国微软公司出品版权所有有hdh";
+	unsigned char label[256] = "美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup";
 //	char label1[256] = {0};
 //	code_convert("utf-8", "gbk", label, 256, label1, 256);
 //  printf("%s\n", label);
@@ -296,7 +298,7 @@ int main(int argv, char **argc) {
 	lbl_tkn_t **list;
 	long long tknId = insertLabelToken(1, label, list, lbl_tkn_id_fp,
 			lbl_tkn_fp);
-	commitLabelToken(list);
+	commitLabelToken(list, lbl_tkn_fp);
 //
 //	fclose(lbl_tkn_id_fp);
 //	fclose(lbl_tkn_fp);

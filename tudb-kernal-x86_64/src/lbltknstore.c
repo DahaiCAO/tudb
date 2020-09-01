@@ -22,15 +22,16 @@
  * Author: Dahai CAO
  */
 
-// read one label token page
-// start the start pointer in memory
-// start_no the start record id in this page
-// lbl_tkn_db_fp label token DB file
+/* read one label token page
+ * start the start pointer in memory
+ * start_no the start record id in this page
+ * lbl_tkn_db_fp label token DB file
+ */
 lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start,
 		long long start_no, FILE *lbl_tkn_db_fp) {
 	unsigned char *page = (unsigned char*) malloc(
 			sizeof(unsigned char) * lbl_tkn_page_bytes);
-	memset(page, start_no, sizeof(unsigned char) * lbl_tkn_page_bytes);
+	memset(page, 0, sizeof(unsigned char) * lbl_tkn_page_bytes);
 	fseek(lbl_tkn_db_fp, start, SEEK_SET); // start to read from the first record
 	int c;
 	if ((c = fgetc(lbl_tkn_db_fp)) != EOF) {
@@ -315,9 +316,9 @@ int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen) {
 }
 
 void convert2Utf8(char *fromstr, char *tostr, size_t length) {
-	if (!check_utf8(fromstr, strlen(fromstr))) {
-		if (check_gbk(fromstr, strlen(fromstr))
-				|| check_gb2312(fromstr, strlen(fromstr))) {
+	if (!check_utf8(fromstr, strlen((const char*)fromstr))) {
+		if (check_gbk(fromstr, strlen((const char*)fromstr))
+				|| check_gb2312(fromstr, strlen((const char*)fromstr))) {
 			g2u(fromstr, strlen(fromstr), tostr, sizeof(tostr));
 		}
 	} else {
@@ -326,7 +327,7 @@ void convert2Utf8(char *fromstr, char *tostr, size_t length) {
 	}
 }
 
-void commitLabelToken(lbl_tkn_t **list) {
+void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp) {
 	lbl_tkn_t **t = list;
 	int j = 0;
 	// one by one to store label tokens
@@ -335,19 +336,47 @@ void commitLabelToken(lbl_tkn_t **list) {
 		//unsigned char *ch = (*(t + j))->blkContent;
 		lbl_tkn_page_t *ps = lbl_tkn_pages;
 		bool found = false;
-		if (ps != NULL) {
+		unsigned char *pos;
+		while (!found) {
 			while (ps != NULL) {
 				if (ps->startNo < (*(t + j))->id
 						&& (*(t + j))->id
 								< ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
-					// convert label_token to byte array
+					pos = ps->content + ((*(t + j))->id-ps->startNo);
+					// convert label token block to byte array
+					unsigned char ta_ids[LONG_LONG] = {0};
+					LongToByteArray((*(t + j))->taId, ta_ids);// ta_id
+					unsigned char length[LONG] = {0};
+					Integer2Bytes((*(t + j))->len, length);
+					unsigned char nblockId[LONG_LONG] = {0};
+					LongToByteArray((*(t + j))->nxtBlkId, nblockId);// ta_id
+					//(*(t + j))->blkContent;
+					// store label token block
+					memcpy(pos, ta_ids, LONG_LONG);
+					memcpy(pos + LONG_LONG, &(*(t + j))->inUse, 1LL);
+					memcpy(pos + LONG_LONG + 1, length, LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG_LONG, nblockId,
+							LONG_LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG_LONG + LONG_LONG,
+							(*(t + j))->blkContent, (*(t + j))->len);
+					// update to DB
+					fseek(lbl_tkn_db_fp, (*(t + j))->id*lbl_tkn_record_bytes, SEEK_SET); //
+					fwrite(pos, sizeof(unsigned char), lbl_tkn_record_bytes, lbl_tkn_db_fp);
 					found = true;
 					break;
 				}
 				ps = ps->nxtpage;
 			}
 			if (!found) {
-
+				// read a new page
+				long long pagenum = ((*(t + j))->id * lbl_tkn_record_bytes)
+						/ lbl_tkn_page_bytes;
+				long long start = pagenum * lbl_tkn_page_bytes;
+				readOneLabelTokenPage(lbl_tkn_pages, start,
+						pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
+				continue;
+			} else {
+				break;
 			}
 		}
 		j++;
@@ -362,7 +391,7 @@ long long insertLabelToken(long long ta_id, unsigned char *label,
 		unsigned char *tmpbuf = (unsigned char*) calloc(LABEL_BUFFER_LENGTH,
 				sizeof(unsigned char));
 		convert2Utf8((char *)label, (char *)tmpbuf, LABEL_BUFFER_LENGTH);
-		size_t l = strlen(tmpbuf);
+		size_t l = strlen((const char*)tmpbuf);
 		if (l > LABEL_BLOCK_LENGTH) {
 			size_t s = l / LABEL_BLOCK_LENGTH;
 			size_t y = l % LABEL_BLOCK_LENGTH;
@@ -442,7 +471,7 @@ long long insertLabelToken(long long ta_id, unsigned char *label,
 			tkn->id = getOneId(lbl_tkn_id_fp, caches->lbltknIds,
 					LABEL_ID_QUEUE_LENGTH);
 			tkn->inUse = 0x1;
-			tkn->len = strlen(tmpbuf);
+			tkn->len = strlen((const char*)tmpbuf);
 			tkn->page = NULL;
 			tkn->taId = ta_id;
 			tkn->nxtBlkId = NULL_POINTER;

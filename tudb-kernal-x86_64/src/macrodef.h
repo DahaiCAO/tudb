@@ -25,6 +25,7 @@
 #define MACRODEF_H_
 
 #define LONG_LONG 8LL
+#define LONG 4LL
 #define NULL_POINTER -2LL
 #define TA_PAGE_SIZE (LONG_LONG*3LL+1LL)*10LL
 
