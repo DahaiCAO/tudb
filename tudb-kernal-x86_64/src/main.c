@@ -266,12 +266,11 @@ int main(int argv, char **argc) {
 	char *lbl_tkn_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_tkn_id_path, d_path);
 	strcat(lbl_tkn_id_path, "tustore.element.tdb.labeltoken.id");
-	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
 
 	char *lbl_tkn_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_tkn_path, d_path);
 	strcat(lbl_tkn_path, "tustore.element.tdb.labeltoken");
-	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
+
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
 	initIdCaches(caches);
@@ -279,6 +278,8 @@ int main(int argv, char **argc) {
 	initIdDB(lbl_tkn_id_path);
 	// initTimeAxisDB(tadb);
 	initDB(lbl_tkn_path);
+	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
+	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
 	//loadAllIds(taidfp, caches->taIds);
 	//loadAllIds(taidfp, caches->teIds);
 	//loadAllIds(labelindexidfp, caches->lblidxIds);
@@ -290,27 +291,15 @@ int main(int argv, char **argc) {
 	listAllIds(caches->lbltknIds);
 
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
-	unsigned char label[256] = "美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup";
-//	char label1[256] = {0};
-//	code_convert("utf-8", "gbk", label, 256, label1, 256);
-//  printf("%s\n", label);
-//	int len = cont_str(label);
-	lbl_tkn_t **list;
-	long long tknId = insertLabelToken(1, label, list, lbl_tkn_id_fp,
-			lbl_tkn_fp);
+	unsigned char label[256] =
+			"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
+	lbl_tkn_t **list = insertLabelToken(1, label, lbl_tkn_id_fp, lbl_tkn_fp);
+	printf("id= %lld\n", (*list)->id);
 	commitLabelToken(list, lbl_tkn_fp);
-//
-//	fclose(lbl_tkn_id_fp);
-//	fclose(lbl_tkn_fp);
-//	free(lbl_tkn_pages);
-//	free(caches);
-
-//	char *s = "中国";
-//	char buf[10];
-//	u2g(s, strlen(s), buf, sizeof(buf));
-//	char buf2[10];
-//	g2u(buf, strlen(buf), buf2, sizeof(buf2));
-//  printf("%s\n", "end");
+	fclose(lbl_tkn_id_fp);
+	fclose(lbl_tkn_fp);
+	free(lbl_tkn_pages);
+	free(caches);
 }
 
 
@@ -375,4 +364,22 @@ int main(int argv, char **argc) {
 //
 //}
 
-
+//int main(int argv, char **argc) {
+//	char s[20] = "中国dhdhdh";
+//	char s1[5] = "caodh";
+//	char buf[100];
+//	//char buf2[10];
+//	memcpy(buf, s1, strlen(s1));
+//	memcpy(buf+5, s, strlen(s));
+//	printf("%s\n", buf);
+//	char label1[256] = {0};
+//	code_convert("utf-8", "gbk", label, 256, label1, 256);
+//  printf("%s\n", label);
+//	int len = cont_str(label);
+//	char *s = "中国";
+//	char buf[10];
+//	u2g(s, strlen(s), buf, sizeof(buf));
+//	char buf2[10];
+//	g2u(buf, strlen(buf), buf2, sizeof(buf2));
+//  printf("%s\n", "end");
+//}

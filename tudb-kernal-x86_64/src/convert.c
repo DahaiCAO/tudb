@@ -45,3 +45,11 @@ void Integer2Bytes(long value, unsigned char bytes[4]) {
 	bytes[2] = (value >> 8) & 0xFF;
 	bytes[3] = value & 0xFF;
 }
+
+long Bytes2Integer(unsigned char bytes[4]) {
+	int addr = bytes[0] & 0xFF;
+	addr |= ((bytes[1] << 8) & 0xFF00);
+	addr |= ((bytes[2] << 16) & 0xFF0000);
+	addr |= ((bytes[3] << 24) & 0xFF000000);
+	return addr;
+}

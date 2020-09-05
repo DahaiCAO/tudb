@@ -327,19 +327,28 @@ void convert2Utf8(char *fromstr, char *tostr, size_t length) {
 	}
 }
 
+/**
+ * Local variables are automatically freed when the function ends,
+ * you don't need to free them by yourself. You only free dynamically
+ * allocated memory (e.g using malloc) as it's allocated on the heap:
+ * char *arr = malloc(3 * sizeof(char));
+ * strcpy(arr, "bo");
+ * // ...
+ * free(arr);
+ * refer to: https://en.wikipedia.org/wiki/C_dynamic_memory_allocation
+ */
 void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp) {
 	lbl_tkn_t **t = list;
 	int j = 0;
 	// one by one to store label tokens
 	while (*(t + j) != NULL) {
 		// search a label token space for storing label token
-		//unsigned char *ch = (*(t + j))->blkContent;
 		lbl_tkn_page_t *ps = lbl_tkn_pages;
 		bool found = false;
 		unsigned char *pos;
 		while (!found) {
 			while (ps != NULL) {
-				if (ps->startNo < (*(t + j))->id
+				if (ps->startNo <= (*(t + j))->id
 						&& (*(t + j))->id
 								< ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
 					pos = ps->content + ((*(t + j))->id-ps->startNo);
@@ -355,9 +364,9 @@ void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp) {
 					memcpy(pos, ta_ids, LONG_LONG);
 					memcpy(pos + LONG_LONG, &(*(t + j))->inUse, 1LL);
 					memcpy(pos + LONG_LONG + 1, length, LONG);
-					memcpy(pos + LONG_LONG + 1 + LONG_LONG, nblockId,
+					memcpy(pos + LONG_LONG + 1 + LONG, nblockId,
 							LONG_LONG);
-					memcpy(pos + LONG_LONG + 1 + LONG_LONG + LONG_LONG,
+					memcpy(pos + LONG_LONG + 1 + LONG + LONG_LONG,
 							(*(t + j))->blkContent, (*(t + j))->len);
 					// update to DB
 					fseek(lbl_tkn_db_fp, (*(t + j))->id*lbl_tkn_record_bytes, SEEK_SET); //
@@ -371,8 +380,7 @@ void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp) {
 				// read a new page
 				long long pagenum = ((*(t + j))->id * lbl_tkn_record_bytes)
 						/ lbl_tkn_page_bytes;
-				long long start = pagenum * lbl_tkn_page_bytes;
-				readOneLabelTokenPage(lbl_tkn_pages, start,
+				readOneLabelTokenPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
 						pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
 				continue;
 			} else {
@@ -384,10 +392,9 @@ void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp) {
 
 }
 
-long long insertLabelToken(long long ta_id, unsigned char *label,
-		lbl_tkn_t **list, FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp) {
-	long long id = NULL_POINTER;
-	if (lbl_tkn_pages != NULL) {
+lbl_tkn_t ** insertLabelToken(long long ta_id, unsigned char *label,
+		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp) {
+	lbl_tkn_t **list;
 		unsigned char *tmpbuf = (unsigned char*) calloc(LABEL_BUFFER_LENGTH,
 				sizeof(unsigned char));
 		convert2Utf8((char *)label, (char *)tmpbuf, LABEL_BUFFER_LENGTH);
@@ -417,7 +424,7 @@ long long insertLabelToken(long long ta_id, unsigned char *label,
 				tkn->nxtBlkId = NULL_POINTER;
 				*p = tkn;
 				p = p + 1;
-				buf = NULL;
+				//buf = NULL;
 			}
 			if (y > 0) {
 				unsigned char *buf = (unsigned char*) calloc(LABEL_BLOCK_LENGTH,
@@ -433,7 +440,7 @@ long long insertLabelToken(long long ta_id, unsigned char *label,
 				tkn->nxtBlkId = NULL_POINTER;
 				*p = tkn;
 				p = p + 1;
-				buf = NULL;
+				//buf = NULL;
 			}
 			// assign a ID to every token block
 			int j = 0;
@@ -443,27 +450,11 @@ long long insertLabelToken(long long ta_id, unsigned char *label,
 						LABEL_ID_QUEUE_LENGTH);
 				if (j > 0) {
 					(*(p + j - 1))->nxtBlkId = (*(p + j))->id;
-				} else {
-					id = (*(p + j))->id;
+				//} else {
+				//	id = (*(p + j))->id;
 				}
 				j++;
 			}
-			// combine the label blocks to one label.
-//			j = 0;
-//			p = list;
-//			unsigned char *ct = (unsigned char*) calloc(l + 1,
-//					sizeof(unsigned char));
-//			int k = 0;
-//			while (*(p + j) != NULL) {
-//				unsigned char *ch = (*(p + j))->blkContent;
-//				for (int i = 0; i < (*(p + j))->len; i++) {
-//					ct[k] = *(ch + i);
-//					k++;
-//				}
-//				j++;
-//			}
-//			printf("%s\n", ct);
-//			free(ct);
 		} else {
 			list = (lbl_tkn_t**) calloc(1, sizeof(lbl_tkn_t));
 			lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
@@ -476,11 +467,86 @@ long long insertLabelToken(long long ta_id, unsigned char *label,
 			tkn->taId = ta_id;
 			tkn->nxtBlkId = NULL_POINTER;
 			*list = tkn;
-			id = tkn->id;
-			//printf("%s\n", label);
-			//printf("%s\n", tkn->blkContent);
+		}
+	return list;
+}
+
+unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
+	lbl_tkn_t **list;
+	lbl_tkn_page_t *ps = lbl_tkn_pages;
+	unsigned char *pos;
+	long long tId = id;
+	int i = 0;
+	while (tId != NULL_POINTER) {
+		while (ps != NULL) {
+			if (ps->startNo <= tId
+					&& tId < ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
+				pos = ps->content + (tId - ps->startNo);
+				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+				unsigned char *buf = (unsigned char*) calloc(
+						lbl_tkn_record_bytes, sizeof(unsigned char));
+				memcpy(buf, pos, lbl_tkn_record_bytes);
+
+				unsigned char ta_ids[LONG_LONG] = { 0 };
+				memcpy(ta_ids, pos, LONG_LONG);
+				tkn->taId = ByteArrayToLong(ta_ids); // ta id
+
+				tkn->inUse = *(pos + LONG_LONG); // in use
+
+				unsigned char length[LONG] = { 0 };
+				memcpy(length, pos + LONG_LONG + 1, LONG);
+				tkn->len = Bytes2Integer(length); // block length
+
+				unsigned char nblockId[LONG_LONG] = { 0 };
+				memcpy(nblockId, (pos + LONG_LONG + 1 + LONG - 1), LONG_LONG);
+				tkn->nxtBlkId = ByteArrayToLong(nblockId); // next block id
+
+				unsigned char blockContent[LABEL_BLOCK_LENGTH] = { 0 }; // block content
+				memcpy(blockContent, pos + LONG_LONG + 1 + LONG + LONG_LONG,
+						tkn->len);
+				tkn->blkContent = &blockContent;
+				*(list + i) = buf;
+				i++;
+				if (tkn->nxtBlkId == NULL_POINTER) {
+					break;
+				} else {
+					tId = tkn->nxtBlkId;
+					continue;
+				}
+			}
+			ps = ps->nxtpage;
+		}
+		if (tId != NULL_POINTER) {
+			// read a new page
+			long long pagenum = (tId * lbl_tkn_record_bytes)
+					/ lbl_tkn_page_bytes;
+			readOneLabelTokenPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
+					pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
+			continue;
+		} else {
+			break;
 		}
 	}
-	return id;
+	// combine the label blocks to one label string.
+	int j = 0;
+	lbl_tkn_t **p = list;
+	int l = 0;
+	while (*(p + j) != NULL) { // calculate label string length
+		l = l + (*(p + j))->len;
+		j++;
+	}
+	unsigned char *ct = (unsigned char*) calloc(l + 1, sizeof(unsigned char));
+	int k = 0;
+	j = 0;
+	p = list;
+	while (*(p + j) != NULL) { // put all block content into one buffer
+		unsigned char *ch = (*(p + j))->blkContent;
+		for (int i = 0; i < (*(p + j))->len; i++) {
+			ct[k] = *(ch + i);
+			k++;
+		}
+		j++;
+	}
+	return ct;
 }
 

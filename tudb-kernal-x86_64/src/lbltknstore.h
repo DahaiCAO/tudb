@@ -72,6 +72,8 @@ void convert2Utf8(char *fromstr, char *tostr, size_t length);
 
 void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp);
 
-long long insertLabelToken(long long ta_id, unsigned char *label,
-		lbl_tkn_t **list, FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp);
+unsigned char * findLabelToken(long long id, FILE *lbl_tkn_fp);
+
+lbl_tkn_t ** insertLabelToken(long long ta_id, unsigned char *label,
+		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp);
 #endif /* LBLTKNSTORE_H_ */
