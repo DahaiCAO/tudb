@@ -291,11 +291,14 @@ int main(int argv, char **argc) {
 	listAllIds(caches->lbltknIds);
 
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
-	unsigned char label[256] =
-			"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
-	lbl_tkn_t **list = insertLabelToken(1, label, lbl_tkn_id_fp, lbl_tkn_fp);
-	printf("id= %lld\n", (*list)->id);
-	commitLabelToken(list, lbl_tkn_fp);
+	//unsigned char label[256] =
+	//		"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
+	//lbl_tkn_t **list = insertLabelToken(1, label, lbl_tkn_id_fp, lbl_tkn_fp);
+	//printf("id= %lld\n", (*list)->id);
+	//commitLabelToken(list, lbl_tkn_fp);
+	//listAllIds(caches->lbltknIds);
+	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
+	printf("%s\n", slabel);
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_fp);
 	free(lbl_tkn_pages);
@@ -381,5 +384,14 @@ int main(int argv, char **argc) {
 //	u2g(s, strlen(s), buf, sizeof(buf));
 //	char buf2[10];
 //	g2u(buf, strlen(buf), buf2, sizeof(buf2));
-//  printf("%s\n", "end");
+//	int in = 65536888;
+//	unsigned char s[4] = {0};
+//	Integer2Bytes(in, s);
+//	int out = Bytes2Integer(s);
+//  printf("%d\n", out);
+//	unsigned char s1[8] = {0};
+//	long long in1 = 2898767637766;
+//	LongToByteArray(in1, s1);
+//	long long out1 = ByteArrayToLong(s1);
+//	printf("%lld\n", out1);
 //}

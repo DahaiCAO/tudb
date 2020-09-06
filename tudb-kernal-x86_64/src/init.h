@@ -42,6 +42,4 @@ void initDB(char *path);
 
 void initIdCaches(id_caches_t * caches);
 
-void initTaDBMemPages(ta_buf_t* pages, FILE *tadbfp);
-
 #endif /* INIT_H_ */

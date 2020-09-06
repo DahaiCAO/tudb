@@ -32,8 +32,8 @@ void LongToByteArray(long long value, unsigned char buffer[]);
 long long ByteArrayToLong(unsigned char buffer[]);
 
 // convert integer to bytes
-void Integer2Bytes(long value, unsigned char bytes[4]);
+void Integer2Bytes(int value, unsigned char bytes[4]);
 
-long Bytes2Integer(unsigned char bytes[4]);
+int Bytes2Integer(unsigned char bytes[4]);
 
 #endif /* CONVERT_H_ */

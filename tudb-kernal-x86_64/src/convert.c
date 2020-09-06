@@ -39,14 +39,15 @@ long long ByteArrayToLong(unsigned char buffer[]) {
 }
 
 // Convert integer to byte array
-void Integer2Bytes(long value, unsigned char bytes[4]) {
-	bytes[0] = (value >> 24) & 0xFF;
-	bytes[1] = (value >> 16) & 0xFF;
-	bytes[2] = (value >> 8) & 0xFF;
-	bytes[3] = value & 0xFF;
+void Integer2Bytes(int value, unsigned char bytes[4]) {
+	bytes[0] = 0xFF & value;
+	bytes[1] = (0xFF00 & value) >> 8;
+	bytes[2] = (0xFF0000 & value) >> 16;
+	bytes[3] = (0xFF000000 & value) >> 24;
+	return;
 }
 
-long Bytes2Integer(unsigned char bytes[4]) {
+int Bytes2Integer(unsigned char bytes[4]) {
 	int addr = bytes[0] & 0xFF;
 	addr |= ((bytes[1] << 8) & 0xFF00);
 	addr |= ((bytes[2] << 16) & 0xFF0000);
