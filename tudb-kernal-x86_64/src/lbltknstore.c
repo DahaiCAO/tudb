@@ -68,38 +68,38 @@ void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp) {
 	readOneLabelTokenPage(pages, 0LL, 0LL, lbl_tkn_db_fp);
 }
 
-int UnicodeToUtf8(char *pInput, char *pOutput) {
-	int len = 0; //记录转换后的Utf8字符串的字节数
-	while (*pInput) { //处理一个unicode字符
-		char low = *pInput; //取出unicode字符的低8位
-		pInput++;
-		char high = *pInput; //取出unicode字符的高8位
-		int w = high << 8;
-		unsigned wchar = (high << 8) + low; //高8位和低8位组成一个unicode字符,加法运算级别高
-		if (wchar <= 0x7F) { //英文字符
-			pOutput[len] = (char) wchar;  //取wchar的低8位
-			len++;
-		} else if (wchar >= 0x80 && wchar <= 0x7FF) { //可以转换成双字节pOutput字符
-			pOutput[len] = 0xc0 | ((wchar >> 6) & 0x1f); //取出unicode编码低6位后的5位，填充到110yyyyy 10zzzzzz 的yyyyy中
-			len++;
-			pOutput[len] = 0x80 | (wchar & 0x3f); //取出unicode编码的低6位，填充到110yyyyy 10zzzzzz 的zzzzzz中
-			len++;
-		} else if (wchar >= 0x800 && wchar < 0xFFFF) { //可以转换成3个字节的pOutput字符
-			pOutput[len] = 0xe0 | ((wchar >> 12) & 0x0f); //高四位填入1110xxxx 10yyyyyy 10zzzzzz中的xxxx
-			len++;
-			pOutput[len] = 0x80 | ((wchar >> 6) & 0x3f); //中间6位填入1110xxxx 10yyyyyy 10zzzzzz中的yyyyyy
-			len++;
-			pOutput[len] = 0x80 | (wchar & 0x3f); //低6位填入1110xxxx 10yyyyyy 10zzzzzz中的zzzzzz
-			len++;
-		} else { //对于其他字节数的unicode字符不进行处理
-			return -1;
-		}
-		pInput++; //处理下一个unicode字符
-	}
-	//utf8字符串后面，有个\0
-	pOutput[len] = 0;
-	return len;
-}
+//int UnicodeToUtf8(char *pInput, char *pOutput) {
+//	int len = 0; //记录转换后的Utf8字符串的字节数
+//	while (*pInput) { //处理一个unicode字符
+//		char low = *pInput; //取出unicode字符的低8位
+//		pInput++;
+//		char high = *pInput; //取出unicode字符的高8位
+//		int w = high << 8;
+//		unsigned wchar = (high << 8) + low; //高8位和低8位组成一个unicode字符,加法运算级别高
+//		if (wchar <= 0x7F) { //英文字符
+//			pOutput[len] = (char) wchar;  //取wchar的低8位
+//			len++;
+//		} else if (wchar >= 0x80 && wchar <= 0x7FF) { //可以转换成双字节pOutput字符
+//			pOutput[len] = 0xc0 | ((wchar >> 6) & 0x1f); //取出unicode编码低6位后的5位，填充到110yyyyy 10zzzzzz 的yyyyy中
+//			len++;
+//			pOutput[len] = 0x80 | (wchar & 0x3f); //取出unicode编码的低6位，填充到110yyyyy 10zzzzzz 的zzzzzz中
+//			len++;
+//		} else if (wchar >= 0x800 && wchar < 0xFFFF) { //可以转换成3个字节的pOutput字符
+//			pOutput[len] = 0xe0 | ((wchar >> 12) & 0x0f); //高四位填入1110xxxx 10yyyyyy 10zzzzzz中的xxxx
+//			len++;
+//			pOutput[len] = 0x80 | ((wchar >> 6) & 0x3f); //中间6位填入1110xxxx 10yyyyyy 10zzzzzz中的yyyyyy
+//			len++;
+//			pOutput[len] = 0x80 | (wchar & 0x3f); //低6位填入1110xxxx 10yyyyyy 10zzzzzz中的zzzzzz
+//			len++;
+//		} else { //对于其他字节数的unicode字符不进行处理
+//			return -1;
+//		}
+//		pInput++; //处理下一个unicode字符
+//	}
+//	//utf8字符串后面，有个\0
+//	pOutput[len] = 0;
+//	return len;
+//}
 
 /*************************************************************************************************
  * 将UTF8编码转换成Unicode（UCS-2LE）编码  低地址存低位字节
@@ -109,48 +109,48 @@ int UnicodeToUtf8(char *pInput, char *pOutput) {
  * 返回值：转换后的Unicode字符串的字节数，如果出错则返回-1
  **************************************************************************************************/
 //utf8转unicode
-int Utf8ToUnicode(char *pInput, char *pOutput) {
-	int outputSize = 0; //记录转换后的Unicode字符串的字节数
-	while (*pInput) {
-		if (*pInput > 0x00 && *pInput <= 0x7F) { //处理单字节UTF8字符（英文字母、数字）
-			*pOutput = *pInput;
-			pOutput++;
-			*pOutput = 0; //小端法表示，在高地址填补0
-		} else if (((*pInput) & 0xE0) == 0xC0) { //处理双字节UTF8字符
-			char high = *pInput;
-			pInput++;
-			char low = *pInput;
-			if ((low & 0xC0) != 0x80) { //检查是否为合法的UTF8字符表示
-				return -1; //如果不是则报错
-			}
-			*pOutput = (high << 6) + (low & 0x3F);
-			pOutput++;
-			*pOutput = (high >> 2) & 0x07;
-		} else if (((*pInput) & 0xF0) == 0xE0) { //处理三字节UTF8字符
-			char high = *pInput;
-			pInput++;
-			char middle = *pInput;
-			pInput++;
-			char low = *pInput;
-			if (((middle & 0xC0) != 0x80) || ((low & 0xC0) != 0x80)) {
-				return -1;
-			}
-			*pOutput = (middle << 6) + (low & 0x3F); //取出middle的低两位与low的低6位，组合成unicode字符的低8位
-			pOutput++;
-			*pOutput = (high << 4) + ((middle >> 2) & 0x0F); //取出high的低四位与middle的中间四位，组合成unicode字符的高8位
-		} else { //对于其他字节数的UTF8字符不进行处理
-			return -1;
-		}
-		pInput++; //处理下一个utf8字符
-		pOutput++;
-		outputSize += 2;
-	}
-	//unicode字符串后面，有两个\0
-	*pOutput = 0;
-	pOutput++;
-	*pOutput = 0;
-	return outputSize;
-}
+//int Utf8ToUnicode(char *pInput, char *pOutput) {
+//	int outputSize = 0; //记录转换后的Unicode字符串的字节数
+//	while (*pInput) {
+//		if (*pInput > 0x00 && *pInput <= 0x7F) { //处理单字节UTF8字符（英文字母、数字）
+//			*pOutput = *pInput;
+//			pOutput++;
+//			*pOutput = 0; //小端法表示，在高地址填补0
+//		} else if (((*pInput) & 0xE0) == 0xC0) { //处理双字节UTF8字符
+//			char high = *pInput;
+//			pInput++;
+//			char low = *pInput;
+//			if ((low & 0xC0) != 0x80) { //检查是否为合法的UTF8字符表示
+//				return -1; //如果不是则报错
+//			}
+//			*pOutput = (high << 6) + (low & 0x3F);
+//			pOutput++;
+//			*pOutput = (high >> 2) & 0x07;
+//		} else if (((*pInput) & 0xF0) == 0xE0) { //处理三字节UTF8字符
+//			char high = *pInput;
+//			pInput++;
+//			char middle = *pInput;
+//			pInput++;
+//			char low = *pInput;
+//			if (((middle & 0xC0) != 0x80) || ((low & 0xC0) != 0x80)) {
+//				return -1;
+//			}
+//			*pOutput = (middle << 6) + (low & 0x3F); //取出middle的低两位与low的低6位，组合成unicode字符的低8位
+//			pOutput++;
+//			*pOutput = (high << 4) + ((middle >> 2) & 0x0F); //取出high的低四位与middle的中间四位，组合成unicode字符的高8位
+//		} else { //对于其他字节数的UTF8字符不进行处理
+//			return -1;
+//		}
+//		pInput++; //处理下一个utf8字符
+//		pOutput++;
+//		outputSize += 2;
+//	}
+//	//unicode字符串后面，有两个\0
+//	*pOutput = 0;
+//	pOutput++;
+//	*pOutput = 0;
+//	return outputSize;
+//}
 
 //bool check_ascii(const char *str, size_t length) {
 //	size_t i = 0;
@@ -400,7 +400,7 @@ void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp) {
 
 }
 
-lbl_tkn_t** insertLabelToken(long long ta_id, unsigned char *label,
+lbl_tkn_t** divideLabelTokens(long long ta_id, unsigned char *label,
 		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_fp) {
 	lbl_tkn_t **list;
 	unsigned char *tmpbuf = (unsigned char*) calloc(LABEL_BUFFER_LENGTH,
@@ -478,12 +478,12 @@ lbl_tkn_t** insertLabelToken(long long ta_id, unsigned char *label,
 	return list;
 }
 
-unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
+static lbl_tkn_t ** searchLabelTokenList(long long id, int *i, FILE *lbl_tkn_db_fp) {
 	lbl_tkn_t **list = NULL;
 	lbl_tkn_page_t *ps = lbl_tkn_pages;
 	unsigned char *pos;
 	long long tId = id;
-	int i = 0;
+	//int i = 0;
 	while (tId != NULL_POINTER) {
 		while (ps != NULL) {
 			if (ps->startNo <= tId
@@ -513,11 +513,11 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 				memcpy(blockContent, buf + LONG_LONG + 1 + LONG + LONG_LONG,
 						tkn->len);
 				tkn->blkContent = blockContent;
-				list = realloc(list, sizeof(lbl_tkn_t) * (i + 1));
-				*(list + i) = tkn;
+				list = realloc(list, sizeof(lbl_tkn_t) * ((*i) + 1));
+				*(list + *i) = tkn;
 				free(buf);
 				buf = NULL;
-				i++;
+				(*i)++;
 				tId = tkn->nxtBlkId;
 				if (tId == NULL_POINTER) {
 					break;
@@ -538,11 +538,76 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 			break;
 		}
 	}
+	return list;
+}
+
+unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
+//	lbl_tkn_t **list = NULL;
+//	lbl_tkn_page_t *ps = lbl_tkn_pages;
+//	unsigned char *pos;
+//	long long tId = id;
+//	int i = 0;
+//	while (tId != NULL_POINTER) {
+//		while (ps != NULL) {
+//			if (ps->startNo <= tId
+//					&& tId < ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
+//				pos = ps->content + (tId - ps->startNo) * lbl_tkn_record_bytes;
+//				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+//				unsigned char *buf = (unsigned char*) calloc(
+//						lbl_tkn_record_bytes, sizeof(unsigned char));
+//				memcpy(buf, pos, lbl_tkn_record_bytes);
+//
+//				unsigned char ta_ids[LONG_LONG] = { 0 };
+//				memcpy(ta_ids, buf, LONG_LONG);
+//				tkn->taId = ByteArrayToLong(ta_ids); // ta id
+//
+//				tkn->inUse = *(buf + LONG_LONG); // in use
+//
+//				unsigned char length[LONG] = { 0 };
+//				memcpy(length, buf + LONG_LONG + 1, LONG);
+//				tkn->len = Bytes2Integer(length); // block length
+//
+//				unsigned char nblockId[LONG_LONG] = { 0 };
+//				memcpy(nblockId, (buf + LONG_LONG + 1 + LONG), LONG_LONG);
+//				tkn->nxtBlkId = ByteArrayToLong(nblockId); // next block id
+//
+//				unsigned char *blockContent = (unsigned char*) calloc(
+//						LABEL_BLOCK_LENGTH, sizeof(unsigned char)); // block content
+//				memcpy(blockContent, buf + LONG_LONG + 1 + LONG + LONG_LONG,
+//						tkn->len);
+//				tkn->blkContent = blockContent;
+//				list = realloc(list, sizeof(lbl_tkn_t) * (i + 1));
+//				*(list + i) = tkn;
+//				free(buf);
+//				buf = NULL;
+//				i++;
+//				tId = tkn->nxtBlkId;
+//				if (tId == NULL_POINTER) {
+//					break;
+//				} else {
+//					continue;
+//				}
+//			}
+//			ps = ps->nxtpage;
+//		}
+//		if (tId != NULL_POINTER) {
+//			// read a new page
+//			long long pagenum = (tId * lbl_tkn_record_bytes)
+//					/ lbl_tkn_page_bytes;
+//			readOneLabelTokenPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
+//					pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
+//			continue;
+//		} else {
+//			break;
+//		}
+//	}
+	int c = 0;
+	lbl_tkn_t **list = searchLabelTokenList(id, &c, lbl_tkn_db_fp);
 	// combine the label blocks to one label string.
 	int j = 0;
 	lbl_tkn_t **p = list;
 	int l = 0; // i means realloc times
-	while (j < i) { // calculate label string length
+	while (j < c) { // calculate label string length
 		l = l + (*(p + j))->len;
 		j++;
 	}
@@ -550,7 +615,7 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 	int k = 0;
 	j = 0;
 	p = list;
-	while (j < i) { // put all block content into one buffer
+	while (j < c) { // put all block content into one buffer
 		unsigned char *ch = (*(p + j))->blkContent;
 		for (int i = 0; i < (*(p + j))->len; i++) {
 			ct[k] = *(ch + i);
@@ -558,83 +623,103 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 		}
 		j++;
 	}
+	free(list);
 	return ct;
 }
 
 void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
-	lbl_tkn_t **list = NULL;
-	lbl_tkn_page_t *ps = lbl_tkn_pages;
-	unsigned char *pos;
-	long long tId = id;
-	int i = 0;
-	while (tId != NULL_POINTER) {
-		while (ps != NULL) {
-			if (ps->startNo <= tId
-					&& tId < ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
-				pos = ps->content + (tId - ps->startNo) * lbl_tkn_record_bytes;
-				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
-				tkn->id = tId;
-				unsigned char *buf = (unsigned char*) calloc(
-						lbl_tkn_record_bytes, sizeof(unsigned char));
-				memcpy(buf, pos, lbl_tkn_record_bytes);
-
-				unsigned char ta_ids[LONG_LONG] = { 0 };
-				memcpy(ta_ids, buf, LONG_LONG);
-				tkn->taId = ByteArrayToLong(ta_ids); // ta id
-
-				tkn->inUse = *(buf + LONG_LONG); // in use
-
-				unsigned char length[LONG] = { 0 };
-				memcpy(length, buf + LONG_LONG + 1, LONG);
-				tkn->len = Bytes2Integer(length); // block length
-
-				unsigned char nblockId[LONG_LONG] = { 0 };
-				memcpy(nblockId, (buf + LONG_LONG + 1 + LONG), LONG_LONG);
-				tkn->nxtBlkId = ByteArrayToLong(nblockId); // next block id
-
-				unsigned char *blockContent = (unsigned char*) calloc(
-						LABEL_BLOCK_LENGTH, sizeof(unsigned char)); // block content
-				memcpy(blockContent, buf + LONG_LONG + 1 + LONG + LONG_LONG,
-						tkn->len);
-				tkn->blkContent = blockContent;
-				tkn->page = ps;
-				list = realloc(list, sizeof(lbl_tkn_t) * (i + 1));
-				*(list + i) = tkn;
-				free(buf);
-				buf = NULL;
-				i++;
-				tId = tkn->nxtBlkId;
-				if (tId == NULL_POINTER) {
-					break;
-				} else {
-					continue;
-				}
-			}
-			ps = ps->nxtpage;
-		}
-		if (tId != NULL_POINTER) {
-			// read a new page
-			long long pagenum = (tId * lbl_tkn_record_bytes)
-					/ lbl_tkn_page_bytes;
-			readOneLabelTokenPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
-					pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
-			continue;
-		} else {
-			break;
-		}
-	}
+//	lbl_tkn_t **list = NULL;
+//	lbl_tkn_page_t *ps = lbl_tkn_pages;
+//	unsigned char *pos;
+//	long long tId = id;
+//	int i = 0;
+//	while (tId != NULL_POINTER) {
+//		while (ps != NULL) {
+//			if (ps->startNo <= tId
+//					&& tId < ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
+//				pos = ps->content + (tId - ps->startNo) * lbl_tkn_record_bytes;
+//				lbl_tkn_t *tkn = (lbl_tkn_t*) malloc(sizeof(lbl_tkn_t));
+//				tkn->id = tId;
+//				unsigned char *buf = (unsigned char*) calloc(
+//						lbl_tkn_record_bytes, sizeof(unsigned char));
+//				memcpy(buf, pos, lbl_tkn_record_bytes);
+//
+//				unsigned char ta_ids[LONG_LONG] = { 0 };
+//				memcpy(ta_ids, buf, LONG_LONG);
+//				tkn->taId = ByteArrayToLong(ta_ids); // ta id
+//
+//				tkn->inUse = *(buf + LONG_LONG); // in use
+//
+//				unsigned char length[LONG] = { 0 };
+//				memcpy(length, buf + LONG_LONG + 1, LONG);
+//				tkn->len = Bytes2Integer(length); // block length
+//
+//				unsigned char nblockId[LONG_LONG] = { 0 };
+//				memcpy(nblockId, (buf + LONG_LONG + 1 + LONG), LONG_LONG);
+//				tkn->nxtBlkId = ByteArrayToLong(nblockId); // next block id
+//
+//				unsigned char *blockContent = (unsigned char*) calloc(
+//						LABEL_BLOCK_LENGTH, sizeof(unsigned char)); // block content
+//				memcpy(blockContent, buf + LONG_LONG + 1 + LONG + LONG_LONG,
+//						tkn->len);
+//				tkn->blkContent = blockContent;
+//				tkn->page = ps;
+//				list = realloc(list, sizeof(lbl_tkn_t) * (i + 1));
+//				*(list + i) = tkn;
+//				free(buf);
+//				buf = NULL;
+//				i++;
+//				tId = tkn->nxtBlkId;
+//				if (tId == NULL_POINTER) {
+//					break;
+//				} else {
+//					continue;
+//				}
+//			}
+//			ps = ps->nxtpage;
+//		}
+//		if (tId != NULL_POINTER) {
+//			// read a new page
+//			long long pagenum = (tId * lbl_tkn_record_bytes)
+//					/ lbl_tkn_page_bytes;
+//			readOneLabelTokenPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
+//					pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
+//			continue;
+//		} else {
+//			break;
+//		}
+//	}
+	int c = 0;
+	lbl_tkn_t **list = searchLabelTokenList(id, &c, lbl_tkn_db_fp);
 	int j = 0;
 	lbl_tkn_t **p = list;
 	// i means realloc times
-	while (j < i) { // calculate label string length
-		//l = l + (*(p + j))->len;
+	while (j < c) { // calculate label string length
 		unsigned char *pos = ((*(p + j))->page)->content
 				+ ((*(p + j))->id - ((*(p + j))->page)->startNo)
 						* lbl_tkn_record_bytes;
 		*(pos + LONG_LONG) = 0x0;
 		recycleOneId((*(p + j))->id, caches->lbltknIds);
+		// update to DB
+		fseek(lbl_tkn_db_fp, (*(p + j))->id * lbl_tkn_record_bytes + LONG_LONG,
+				SEEK_SET);
+		unsigned char inuse[1] = { 0x0 };
+		fwrite(inuse, sizeof(unsigned char), 1, lbl_tkn_db_fp);
 		pos = NULL;
 		j++;
 	}
+	free(list);
 	p = NULL;
+	list = NULL;
+}
+
+void updateLabelToken(long long ta_id, long long id, unsigned char *label,
+		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_db_fp) {
+	int c = 0;
+	lbl_tkn_t **list = searchLabelTokenList(id, &c, lbl_tkn_db_fp);
+	int j = 0;
+	//lbl_tkn_t **p = list;
+	lbl_tkn_t **newlist = divideLabelTokens(ta_id, label, lbl_tkn_id_fp,
+			lbl_tkn_db_fp);
+
 }
