@@ -293,14 +293,19 @@ int main(int argv, char **argc) {
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
 	//unsigned char label[256] =
 	//		"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
-	//lbl_tkn_t **list = divideLabelTokens(1, label, lbl_tkn_id_fp, lbl_tkn_fp);
+	//lbl_tkn_t **list = divideLabelTokens(label);
 	//printf("id= %lld\n", (*list)->id);
-	//commitLabelToken(list, lbl_tkn_fp);
+	//commitLabelToken(1, list, lbl_tkn_fp, lbl_tkn_id_fp);
 	//listAllIds(caches->lbltknIds);
-	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
-	printf("%s\n", slabel);
+	//unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
+	//printf("%s\n", slabel);
 	//deleteLabelToken(0, lbl_tkn_fp);
 	//listAllIds(caches->lbltknIds);
+	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司";
+	int c = 0;
+	lbl_tkn_t **list = searchLabelTokenList(0, &c, lbl_tkn_fp);
+	lbl_tkn_t **newlist = divideLabelTokens(label2);
+	commitUpdateLabelToken(list, newlist, c, lbl_tkn_id_fp, lbl_tkn_fp);
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_fp);
 	free(lbl_tkn_pages);
