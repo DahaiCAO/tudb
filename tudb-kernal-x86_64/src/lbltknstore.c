@@ -593,7 +593,7 @@ void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 		pos = NULL;
 		j++;
 	}
-	free(list);
+	//free(list);
 	p = NULL;
 	list = NULL;
 }
@@ -601,6 +601,8 @@ void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 // this update operation is used to update and override new label to old label
 void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_db_fp) {
+	// c is old list length
+	// j is new list length
 	lbl_tkn_t **l = list;
 	lbl_tkn_t **t = newlist;
 	int j = 0;
@@ -644,12 +646,74 @@ void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 		}
 	}
 	// store new list to DB
-	if (c < j) { // the new list is longer than the old list
-
-	} else if (c > j) { // the new list is shorter than the old list
-
-	} else if (c == j) { // the new list is equal to old list
-
+	k = 0;
+	// one by one to store label tokens
+	while (*(t + k) != NULL) {
+		// search a label token space for storing label token
+		lbl_tkn_page_t *ps = lbl_tkn_pages;
+		bool found = false;
+		unsigned char *pos;
+		while (!found) {
+			while (ps != NULL) {
+				if (ps->startNo <= (*(t + k))->id
+						&& (*(t + k))->id
+								< ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
+					pos = ps->content
+							+ ((*(t + k))->id - ps->startNo)
+									* lbl_tkn_record_bytes;
+					// convert label token block to byte array
+					unsigned char length[LONG] = { 0 };
+					Integer2Bytes((*(t + k))->len, length);
+					unsigned char nblockId[LONG_LONG] = { 0 };
+					LongToByteArray((*(t + k))->nxtBlkId, nblockId); // next block Id
+					memcpy(pos + LONG_LONG + 1, length, LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG, nblockId,
+					LONG_LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG + LONG_LONG,
+							(*(t + k))->blkContent, (*(t + k))->len);
+					// update to DB
+					fseek(lbl_tkn_db_fp, (*(t + k))->id * lbl_tkn_record_bytes,
+					SEEK_SET); //
+					fwrite(pos + LONG_LONG + 1, sizeof(unsigned char),
+							lbl_tkn_record_bytes - (LONG_LONG + 1),
+							lbl_tkn_db_fp);
+					pos = NULL;
+					found = true;
+					break;
+				}
+				ps = ps->nxtpage;
+			}
+			if (!found) {
+				// read a new page
+				long long pagenum = ((*(t + k))->id * lbl_tkn_record_bytes)
+						/ lbl_tkn_page_bytes;
+				readOneLabelTokenPage(lbl_tkn_pages,
+						pagenum * lbl_tkn_page_bytes,
+						pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
+				continue;
+			} else {
+				ps = NULL;
+				break;
+			}
+		}
+		k++;
+	}
+	if (c > j) { // the new list is shorter than the old list
+		while (k < c) {
+			unsigned char *pos = ((*(l + k))->page)->content
+					+ ((*(l + k))->id - ((*(l + k))->page)->startNo)
+							* lbl_tkn_record_bytes;
+			*(pos + LONG_LONG) = 0x0;
+			recycleOneId((*(l + k))->id, caches->lbltknIds);
+			// update to DB
+			fseek(lbl_tkn_db_fp,
+					(*(l + k))->id * lbl_tkn_record_bytes + LONG_LONG,
+					SEEK_SET);
+			unsigned char inuse[1] = { 0x0 };
+			fwrite(inuse, sizeof(unsigned char), 1, lbl_tkn_db_fp);
+			pos = NULL;
+			k++;
+		}
 	}
 	l = NULL;
 	t = NULL;
