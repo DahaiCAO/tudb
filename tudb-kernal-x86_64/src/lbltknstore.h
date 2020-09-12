@@ -70,9 +70,12 @@ int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
 
 void convert2Utf8(char *fromstr, char *tostr, size_t length);
 
-void commitLabelToken(lbl_tkn_t **list, FILE *lbl_tkn_db_fp);
+void commitLabelToken(long long ta_id, lbl_tkn_t **list, FILE *lbl_tkn_db_fp,
+		FILE *lbl_tkn_id_fp);
 
 unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp);
+
+lbl_tkn_t ** searchLabelTokenList(long long id, int *i, FILE *lbl_tkn_db_fp);
 
 lbl_tkn_t** divideLabelTokens(unsigned char *label);
 
@@ -80,5 +83,7 @@ void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp);
 
 void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_db_fp);
+
+void combineLabelTokens(lbl_tkn_t **list, int length);
 
 #endif /* LBLTKNSTORE_H_ */

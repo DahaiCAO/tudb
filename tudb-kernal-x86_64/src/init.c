@@ -36,6 +36,26 @@ void initIdDB(char *path) {
 	}
 }
 
+void initIds(FILE *id_fp) {
+	if (id_fp != NULL) {
+		// initializes Id DB
+		unsigned char nIds[LONG_LONG] = { 0L };
+		unsigned char lastrIds[LONG_LONG] = { 0L };
+		unsigned char rIds[LONG_LONG] = { 0L };
+		long long nId = 2LL;
+		long long lastrId = 2LL;
+		long long rId = 1;
+		LongToByteArray(nId, nIds); // convert
+		LongToByteArray(lastrId, lastrIds); // convert
+		LongToByteArray(rId, rIds); // convert
+		fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
+		fwrite(nIds, sizeof(unsigned char), LONG_LONG, id_fp);
+		fwrite(lastrIds, sizeof(unsigned char), LONG_LONG, id_fp);
+		fwrite(rIds, sizeof(unsigned char), LONG_LONG, id_fp);
+	}
+}
+
+// create and initialize new Tu time axis DB file
 void initTimeAxisDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
 		FILE *tadbfp = fopen(path, "wb+");
@@ -50,9 +70,12 @@ void initTimeAxisDB(char *path) {
 	}
 }
 
+// create and initialize new Tu DB file
 void initDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
-		FILE *tadbfp = fopen(path, "wb+");
+		// create a new Tu DB file
+		FILE *tudbfp = fopen(path, "wb+");
+		fclose(tudbfp);
 	}
 }
 

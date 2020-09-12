@@ -40,6 +40,8 @@ void initTimeAxisDB(char *path);
 
 void initDB(char *path);
 
+void initIds(FILE *id_fp);
+
 void initIdCaches(id_caches_t * caches);
 
 #endif /* INIT_H_ */

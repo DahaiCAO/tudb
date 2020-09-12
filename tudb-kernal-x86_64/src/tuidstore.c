@@ -29,16 +29,11 @@ long long getOneId(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 	if (cache->rId != NULL) {
 		id_t *p = cache->rId;
 		if (p != NULL) {
-			while (p->nxt != NULL) {
-				if (p->nxt->nxt == NULL) {
-					break;
-				}
-				p = p->nxt;
-			}
+			long long r = p->id;
+			cache->rId = p->nxt;
+			p = NULL;
+			return r;
 		}
-		long long r = p->id;
-		p = NULL;
-		return r;
 	}
 	if (cache->nId == NULL) {
 		loadNewIds(id_fp, cache, id_length);
@@ -49,9 +44,6 @@ long long getOneId(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 		cache->nId = p->nxt;
 		p = NULL;
 		return r;
-	} else {
-		p = NULL;
-		return 0;
 	}
 	return 0;
 }
@@ -181,8 +173,8 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 			fwrite(buf, sizeof(unsigned char), rest, id_fp);
 			free(buf);
 			// reset reused Id at the 8th byte
-			fseek(id_fp, LONG_LONG, SEEK_SET);
 			memset(ids, 0, LONG_LONG);
+			fseek(id_fp, LONG_LONG, SEEK_SET);
 			fwrite(ids, sizeof(unsigned char), LONG_LONG, id_fp);
 		}
 	}
