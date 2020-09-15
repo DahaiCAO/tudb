@@ -27,7 +27,7 @@
  * start_no the start record id in this page
  * lbl_tkn_db_fp label token DB file
  */
-lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start,
+static lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start,
 		long long start_no, FILE *lbl_tkn_db_fp) {
 	unsigned char *page = (unsigned char*) malloc(
 			sizeof(unsigned char) * lbl_tkn_page_bytes);
@@ -297,11 +297,15 @@ int code_convert(char *from_charset, char *to_charset, char *inbuf,
 	if (cd == 0)
 		return -1;
 	memset(outbuf, 0, outlen);
-	if (iconv(cd, pin, &inlen, pout, &outlen) == -1)
+	if (iconv(cd, pin, &inlen, pout, &outlen) == -1) {
+		pin = NULL;
+		pout = NULL;
 		return -1;
+	}
 	iconv_close(cd);
 	*pout = '\0';
-
+	pin = NULL;
+	pout = NULL;
 	return 0;
 }
 
@@ -389,6 +393,7 @@ void commitLabelToken(long long ta_id, lbl_tkn_t **list, FILE *lbl_tkn_db_fp,
 					fwrite(pos, sizeof(unsigned char), lbl_tkn_record_bytes,
 							lbl_tkn_db_fp);
 					found = true;
+					pos = NULL;
 					break;
 				}
 				ps = ps->nxtpage;
@@ -402,11 +407,13 @@ void commitLabelToken(long long ta_id, lbl_tkn_t **list, FILE *lbl_tkn_db_fp,
 						pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_tkn_db_fp);
 				continue;
 			} else {
+				ps = NULL;
 				break;
 			}
 		}
 		j++;
 	}
+	t = NULL;
 }
 
 lbl_tkn_t** divideLabelTokens(unsigned char *label) {
@@ -472,14 +479,14 @@ lbl_tkn_t** divideLabelTokens(unsigned char *label) {
 		*list = tkn;
 		tkn = NULL;
 	}
-	//free(tmpbuf);
 	tmpbuf = NULL;
 	return list;
 }
 
-lbl_tkn_t ** searchLabelTokenList(long long id, int *i, FILE *lbl_tkn_db_fp) {
+lbl_tkn_t ** searchLabelTokenList(long long id, FILE *lbl_tkn_db_fp) {
 	lbl_tkn_t **list = NULL;
 	lbl_tkn_page_t *ps = lbl_tkn_pages;
+	int i = 1;
 	unsigned char *pos;
 	long long tId = id;
 	while (tId != NULL_POINTER) {
@@ -512,13 +519,14 @@ lbl_tkn_t ** searchLabelTokenList(long long id, int *i, FILE *lbl_tkn_db_fp) {
 				memcpy(blockContent, buf + LONG_LONG + 1 + LONG + LONG_LONG,
 						tkn->len);
 				tkn->blkContent = blockContent;
-				list = realloc(list, sizeof(lbl_tkn_t) * ((*i) + 1));
-				*(list + *i) = tkn;
+				list = (lbl_tkn_t **)realloc(list, sizeof(lbl_tkn_t**) * i);
+				*(list + i - 1) = tkn;
 				free(buf);
 				buf = NULL;
-				(*i)++;
+				i++;
 				tId = tkn->nxtBlkId;
 				tkn = NULL;
+				blockContent = NULL;
 				if (tId == NULL_POINTER) {
 					break;
 				} else {
@@ -538,19 +546,19 @@ lbl_tkn_t ** searchLabelTokenList(long long id, int *i, FILE *lbl_tkn_db_fp) {
 			break;
 		}
 	}
+	*(list + i - 1) = 0;
 	ps = NULL;
 	pos = NULL;
 	return list;
 }
 
 unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
-	int c = 0;
-	lbl_tkn_t **list = searchLabelTokenList(id, &c, lbl_tkn_db_fp);
+	lbl_tkn_t **list = searchLabelTokenList(id, lbl_tkn_db_fp);
 	// combine the label blocks to one label string.
 	int j = 0;
 	lbl_tkn_t **p = list;
 	int l = 0; // i means realloc times
-	while (j < c) { // calculate label string length
+	while (*(p + j)) { // calculate label string length
 		l = l + (*(p + j))->len;
 		j++;
 	}
@@ -558,7 +566,7 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 	int k = 0;
 	j = 0;
 	p = list;
-	while (j < c) { // put all block content into one buffer
+	while (*(p + j)) { // put all block content into one buffer
 		unsigned char *ch = (*(p + j))->blkContent;
 		for (int i = 0; i < (*(p + j))->len; i++) {
 			ct[k] = *(ch + i);
@@ -566,17 +574,17 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 		}
 		j++;
 	}
-	free(list);
+	p = NULL;
+	deallocLabelTokenList(list);
 	return ct;
 }
 
 void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
-	int c = 0;
-	lbl_tkn_t **list = searchLabelTokenList(id, &c, lbl_tkn_db_fp);
+	lbl_tkn_t **list = searchLabelTokenList(id, lbl_tkn_db_fp);
 	int j = 0;
 	lbl_tkn_t **p = list;
 	// i means realloc times
-	while (j < c) { // calculate label string length
+	while (*(p + j)) { // calculate label string length
 		unsigned char *pos = ((*(p + j))->page)->content
 				+ ((*(p + j))->id - ((*(p + j))->page)->startNo)
 						* lbl_tkn_record_bytes;
@@ -590,7 +598,7 @@ void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 		pos = NULL;
 		j++;
 	}
-	//free(list);
+	deallocLabelTokenList(list);
 	p = NULL;
 	list = NULL;
 }
@@ -732,7 +740,7 @@ void combineLabelTokens(lbl_tkn_t **list, int length) {
 	unsigned char *ct = (unsigned char*) calloc(length + 1,
 			sizeof(unsigned char));
 	int k = 0;
-	while (*(p + j) != NULL) {
+	while (*(p + j)) {
 		unsigned char *ch = (*(p + j))->blkContent;
 		for (int i = 0; i < (*(p + j))->len; i++) {
 			ct[k] = *(ch + i);
@@ -742,4 +750,32 @@ void combineLabelTokens(lbl_tkn_t **list, int length) {
 	}
 	printf("%s\n", ct);
 	free(ct);
+	ct = NULL;
+	p = NULL;
+}
+
+// deallocate label token list
+void deallocLabelTokenList(lbl_tkn_t **list) {
+	int j = 0;
+	while (*(list + j)) {
+		free((*(list + j))->blkContent);
+		(*(list + j))->page = NULL;
+		free(*(list + j));
+		j++;
+	}
+	free(list);
+}
+
+// deallocate label token memory pages
+void deallocLabelTokenPages(lbl_tkn_page_t *pages) {
+	lbl_tkn_page_t *p;
+	while (pages) {
+		p = pages;
+		pages = pages->nxtpage;
+		free(p->content);
+		p->prvpage = NULL;
+		p->nxtpage = NULL;
+		free(p);
+		p = NULL;
+	}
 }

@@ -25,14 +25,15 @@
 // initialize DB
 void initIdDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
-		FILE *taidfp = fopen(path, "wb+");
+		FILE *ta_id_fp = fopen(path, "wb+");
 		// initializes Id DB
 		unsigned char zero[LONG_LONG] = { 0L };
-		fseek(taidfp, 0L, SEEK_SET); // move file pointer to file head
-		fwrite(zero, sizeof(unsigned char), LONG_LONG, taidfp);
+		fseek(ta_id_fp, 0L, SEEK_SET); // move file pointer to file head
+		fwrite(zero, sizeof(unsigned char), LONG_LONG, ta_id_fp);
 		//fseek(taidfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
-		fwrite(zero, sizeof(unsigned char), LONG_LONG, taidfp);
-		fclose(taidfp);
+		fwrite(zero, sizeof(unsigned char), LONG_LONG, ta_id_fp);
+		fclose(ta_id_fp);
+		ta_id_fp = NULL;
 	}
 }
 
@@ -67,6 +68,7 @@ void initTimeAxisDB(char *path) {
 		//fseek(tadbfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
 		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
 		fclose(tadbfp);
+		tadbfp = NULL;
 	}
 }
 
@@ -76,6 +78,7 @@ void initDB(char *path) {
 		// create a new Tu DB file
 		FILE *tudbfp = fopen(path, "wb+");
 		fclose(tudbfp);
+		tudbfp = NULL;
 	}
 }
 
@@ -92,4 +95,9 @@ void initIdCaches(id_caches_t * caches) {
 	caches->lbltknIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
 	caches->lbltknIds->nId = NULL;
 	caches->lbltknIds->rId = NULL;
+}
+
+void init() {
+
+
 }

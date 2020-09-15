@@ -34,6 +34,7 @@ long long ByteArrayToLong(unsigned char buffer[]);
 // convert integer to bytes
 void Integer2Bytes(int value, unsigned char bytes[4]);
 
+// convert byte array to integer
 int Bytes2Integer(unsigned char bytes[4]);
 
 #endif /* CONVERT_H_ */

@@ -44,4 +44,6 @@ void initIds(FILE *id_fp);
 
 void initIdCaches(id_caches_t * caches);
 
+void init();
+
 #endif /* INIT_H_ */

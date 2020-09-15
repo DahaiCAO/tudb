@@ -49,10 +49,6 @@ size_t LABEL_BLOCK_LENGTH;
 // label buffer length, configurable in .conf file
 size_t LABEL_BUFFER_LENGTH;
 
-//
-lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long start,
-		long long start_no, FILE *lbl_tkn_db_fp);
-
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp);
 
 int code_convert(char *from_charset, char *to_charset, char *inbuf,
@@ -75,7 +71,7 @@ void commitLabelToken(long long ta_id, lbl_tkn_t **list, FILE *lbl_tkn_db_fp,
 
 unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp);
 
-lbl_tkn_t ** searchLabelTokenList(long long id, int *i, FILE *lbl_tkn_db_fp);
+lbl_tkn_t ** searchLabelTokenList(long long id, FILE *lbl_tkn_db_fp);
 
 lbl_tkn_t** divideLabelTokens(unsigned char *label);
 
@@ -85,5 +81,9 @@ void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_db_fp);
 
 void combineLabelTokens(lbl_tkn_t **list, int length);
+
+void deallocLabelTokenList(lbl_tkn_t **list);
+
+void deallocLabelTokenPages(lbl_tkn_page_t *pages);
 
 #endif /* LBLTKNSTORE_H_ */
