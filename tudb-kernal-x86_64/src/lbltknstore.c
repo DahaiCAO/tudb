@@ -427,9 +427,9 @@ lbl_tkn_t** divideLabelTokens(unsigned char *label) {
 		size_t y = l % LABEL_BLOCK_LENGTH;
 		lbl_tkn_t **p;
 		if (y > 0) {
-			list = (lbl_tkn_t**) calloc(s + 1, sizeof(lbl_tkn_t));
+			list = (lbl_tkn_t**) calloc(s + 1, sizeof(lbl_tkn_t*));
 		} else {
-			list = (lbl_tkn_t**) calloc(s, sizeof(lbl_tkn_t));
+			list = (lbl_tkn_t**) calloc(s, sizeof(lbl_tkn_t*));
 		}
 		p = list;
 		for (int i = 0; i < s; i++) {
@@ -519,7 +519,7 @@ lbl_tkn_t ** searchLabelTokenList(long long id, FILE *lbl_tkn_db_fp) {
 				memcpy(blockContent, buf + LONG_LONG + 1 + LONG + LONG_LONG,
 						tkn->len);
 				tkn->blkContent = blockContent;
-				list = (lbl_tkn_t **)realloc(list, sizeof(lbl_tkn_t**) * i);
+				list = (lbl_tkn_t **)realloc(list, sizeof(lbl_tkn_t*) * i);
 				*(list + i - 1) = tkn;
 				free(buf);
 				buf = NULL;
@@ -546,7 +546,7 @@ lbl_tkn_t ** searchLabelTokenList(long long id, FILE *lbl_tkn_db_fp) {
 			break;
 		}
 	}
-	*(list + i - 1) = 0;
+	*(list + i - 1) = 0;// add one zero after the last element.
 	ps = NULL;
 	pos = NULL;
 	return list;
@@ -557,8 +557,8 @@ unsigned char* findLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 	// combine the label blocks to one label string.
 	int j = 0;
 	lbl_tkn_t **p = list;
-	int l = 0; // i means realloc times
-	while (*(p + j)) { // calculate label string length
+	int l = 0;
+	while (*(p + j)) { // calculate total label string length
 		l = l + (*(p + j))->len;
 		j++;
 	}
@@ -583,8 +583,7 @@ void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 	lbl_tkn_t **list = searchLabelTokenList(id, lbl_tkn_db_fp);
 	int j = 0;
 	lbl_tkn_t **p = list;
-	// i means realloc times
-	while (*(p + j)) { // calculate label string length
+	while (*(p + j)) {
 		unsigned char *pos = ((*(p + j))->page)->content
 				+ ((*(p + j))->id - ((*(p + j))->page)->startNo)
 						* lbl_tkn_record_bytes;
@@ -758,12 +757,14 @@ void combineLabelTokens(lbl_tkn_t **list, int length) {
 void deallocLabelTokenList(lbl_tkn_t **list) {
 	int j = 0;
 	while (*(list + j)) {
-		free((*(list + j))->blkContent);
+		free((void *)(*(list + j))->blkContent);
+		(*(list + j))->blkContent = NULL;
 		(*(list + j))->page = NULL;
 		free(*(list + j));
 		j++;
 	}
 	free(list);
+	list = NULL;
 }
 
 // deallocate label token memory pages
@@ -778,4 +779,5 @@ void deallocLabelTokenPages(lbl_tkn_page_t *pages) {
 		free(p);
 		p = NULL;
 	}
+	pages = NULL;
 }

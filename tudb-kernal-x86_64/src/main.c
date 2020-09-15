@@ -291,12 +291,9 @@ int main(int argv, char **argc) {
 	//listAllIds(caches->taIds);
 	//listAllIds(caches->teIds);
 	//listAllIds(caches->lblidxIds);
-	//listAllIds(caches->lbltknIds);
+	listAllIds(caches->lbltknIds);
 
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
-
-
-
 	// -- insert operation
 //	unsigned char label[256] =
 //			"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
@@ -305,21 +302,20 @@ int main(int argv, char **argc) {
 //	commitLabelToken(1, list, lbl_tkn_fp, lbl_tkn_id_fp);
 //	listAllIds(caches->lbltknIds);
 //	// -- query operation
-//	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
-//	printf("%s\n", slabel);
+	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
+	printf("%s\n", slabel);
 //	// -- deletion operation
 //	deleteLabelToken(0, lbl_tkn_fp);
 //	listAllIds(caches->lbltknIds);
 //	// -- update operation
 //	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
-	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
+//	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
 //	lbl_tkn_t **newlist = divideLabelTokens(label2);
-
-	int k = 0; // i means realloc times
-	while (*(list11 + k)) { // calculate label string length
-		printf("num = %d\n", k);
-		k++;
-	}
+//	int k = 0; // i means realloc times
+//	while (*(list11 + k)) { // calculate label string length
+//		printf("num = %d\n", k);
+//		k++;
+//	}
 
 	// combine the label blocks to one label.
 //	commitUpdateLabelToken(list11, c, newlist, lbl_tkn_id_fp, lbl_tkn_fp);
@@ -328,10 +324,10 @@ int main(int argv, char **argc) {
 //	unsigned char *slabel1 = findLabelToken(0, lbl_tkn_fp);
 //	printf("%s\n", slabel1);
 
+	deallocLabelTokenPages(lbl_tkn_pages);
+	free(caches);
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_fp);
-	free(lbl_tkn_pages);
-	free(caches);
 }
 
 
