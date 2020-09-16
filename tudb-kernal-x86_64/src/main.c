@@ -302,11 +302,11 @@ int main(int argv, char **argc) {
 //	commitLabelToken(1, list, lbl_tkn_fp, lbl_tkn_id_fp);
 //	listAllIds(caches->lbltknIds);
 //	// -- query operation
-	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
-	printf("%s\n", slabel);
+//	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
+//	printf("%s\n", slabel);
 //	// -- deletion operation
-//	deleteLabelToken(0, lbl_tkn_fp);
-//	listAllIds(caches->lbltknIds);
+	deleteLabelToken(0, lbl_tkn_fp);
+	listAllIds(caches->lbltknIds);
 //	// -- update operation
 //	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
 //	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
@@ -433,6 +433,7 @@ int main(int argv, char **argc) {
 //	printf("\n");
 //	free(pn);
 
+	// pointer testing
 //	int i = 1;
 //	int * list=NULL;
 //	while(i<10) {
@@ -447,23 +448,31 @@ int main(int argv, char **argc) {
 //		i++;
 //	}
 
+	// double pointer testing
 //	int i = 1;
 //	int **list = NULL;
 //	while (i < 10) {
-//		list = (int**) realloc(list, i * sizeof(int**));
-//		int *p = malloc(sizeof(int));
+//		list = (int**) realloc(list, i * sizeof(int*));
+//		int *p = (int *)malloc(sizeof(int));
 //		*p = i;
 //		*(list + i - 1) = p;
 //		i++;
 //	}
-//	*(list + i - 1) = 0;
+//	list = (int**) realloc(list, i * sizeof(int*)); // add a zero after the last element
+//	*(list + i - 1) = 0x0;
 //	printf("i = %d\n", i);
 //	i = 0;
 //	while (*(list + i)) { // calculate label string length
 //		printf("num = %d\n", **(list + i));
 //		i++;
 //	}
+//	// free double pointer
+//	int j = 0;
+//	while (*(list + j)) {
+//		free(*(list + j));
+//		j++;
+//	}
+//	realloc(list, 0);
+//	list = NULL;
 //	return 0;
-//
-//
 //}

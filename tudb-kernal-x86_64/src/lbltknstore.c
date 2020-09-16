@@ -546,6 +546,7 @@ lbl_tkn_t ** searchLabelTokenList(long long id, FILE *lbl_tkn_db_fp) {
 			break;
 		}
 	}
+	list = (lbl_tkn_t **)realloc(list, sizeof(lbl_tkn_t*) * i);
 	*(list + i - 1) = 0;// add one zero after the last element.
 	ps = NULL;
 	pos = NULL;
