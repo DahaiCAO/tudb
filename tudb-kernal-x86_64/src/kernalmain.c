@@ -25,8 +25,8 @@
 #include "macrodef.h"
 #include "lblidxstore.h"
 #include "lbltknstore.h"
-#include "init.h"
 #include "tuidstore.h"
+#include "tastore.h"
 
 /*
  * main.c
@@ -34,6 +34,98 @@
  * Created on: 2020年7月20日
  * Author: Dahai CAO
  */
+
+// initialize DB
+void initIdDB(char *path) {
+	if ((access(path, F_OK)) == -1) {
+		FILE *ta_id_fp = fopen(path, "wb+");
+		// initializes Id DB
+		unsigned char zero[LONG_LONG] = { 0L };
+		fseek(ta_id_fp, 0L, SEEK_SET); // move file pointer to file head
+		fwrite(zero, sizeof(unsigned char), LONG_LONG, ta_id_fp);
+		//fseek(taidfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
+		fwrite(zero, sizeof(unsigned char), LONG_LONG, ta_id_fp);
+		fclose(ta_id_fp);
+		ta_id_fp = NULL;
+	}
+}
+
+void initIds(FILE *id_fp) {
+	if (id_fp != NULL) {
+		// initializes Id DB
+		unsigned char nIds[LONG_LONG] = { 0L };
+		//unsigned char lastrIds[LONG_LONG] = { 0L };
+		//unsigned char rIds[LONG_LONG] = { 0L };
+		long long nId = 2LL;
+		//long long lastrId = 0LL;
+		//long long rId = 0;
+		LongToByteArray(nId, nIds); // convert
+		//LongToByteArray(lastrId, lastrIds); // convert
+		//LongToByteArray(rId, rIds); // convert
+		fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
+		fwrite(nIds, sizeof(unsigned char), LONG_LONG, id_fp);
+		//fwrite(lastrIds, sizeof(unsigned char), LONG_LONG, id_fp);
+		//fwrite(rIds, sizeof(unsigned char), LONG_LONG, id_fp);
+	}
+}
+
+// create and initialize new Tu time axis DB file
+void initTimeAxisDB(char *path) {
+	if ((access(path, F_OK)) == -1) {
+		FILE *tadbfp = fopen(path, "wb+");
+		// initializes Id DB
+		unsigned char n2[LONG_LONG] = { 0L };
+		LongToByteArray(NULL_POINTER, n2); // convert
+		fseek(tadbfp, 0L, SEEK_SET); // move file pointer to file head
+		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
+		//fseek(tadbfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
+		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
+		fclose(tadbfp);
+		tadbfp = NULL;
+	}
+}
+
+// create and initialize new Tu DB file
+void initDB(char *path) {
+	if ((access(path, F_OK)) == -1) {
+		// create a new Tu DB file
+		FILE *tudbfp = fopen(path, "wb+");
+		fclose(tudbfp);
+		tudbfp = NULL;
+	}
+}
+
+void initIdCaches(id_caches_t * caches) {
+	caches->taIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->taIds->nId = NULL;
+	caches->taIds->rId = NULL;
+	caches->teIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->teIds->nId = NULL;
+	caches->teIds->rId = NULL;
+	caches->lblidxIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lblidxIds->nId = NULL;
+	caches->lblidxIds->rId = NULL;
+	caches->lbltknIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lbltknIds->nId = NULL;
+	caches->lbltknIds->rId = NULL;
+}
+
+void init() {
+	ID_QUEUE_LENGTH = 25;
+	LABEL_ID_QUEUE_LENGTH = 10;
+	TIMEAXIS_ID_QUEUE_LENGTH = 10;
+	LABEL_BLOCK_LENGTH = 64;
+	LABEL_BUFFER_LENGTH = 256;
+	LABEL_TOKEN_PAGE_RECORDS = 10;
+	// label bytes length.
+	lbl_tkn_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
+			+ LABEL_BLOCK_LENGTH;
+	lbl_tkn_page_bytes = lbl_tkn_record_bytes * LABEL_TOKEN_PAGE_RECORDS;
+
+}
+
+
+
 // testing program for B tree for time axis DB
 //int main(int argv, char **argc) {
 //	setvbuf(stdout, NULL, _IONBF, 0);
@@ -213,16 +305,7 @@ int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
 	const char *d_path = "D:/tudata/";
-	ID_QUEUE_LENGTH = 25;
-	LABEL_ID_QUEUE_LENGTH = 10;
-	TIMEAXIS_ID_QUEUE_LENGTH = 10;
-	LABEL_BLOCK_LENGTH = 64;
-	LABEL_BUFFER_LENGTH = 256;
-	LABEL_TOKEN_PAGE_RECORDS = 10;
-	// label bytes length.
-	lbl_tkn_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
-			+ LABEL_BLOCK_LENGTH;
-	lbl_tkn_page_bytes = lbl_tkn_record_bytes * LABEL_TOKEN_PAGE_RECORDS;
+	init();
 
 	//	char *taid;
 //	strcat(taid, path);
@@ -281,7 +364,7 @@ int main(int argv, char **argc) {
 	initDB(lbl_tkn_path);
 	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
 	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
-	// initIds(lbl_tkn_id_fp);
+	initIds(lbl_tkn_id_fp);
 
 	//loadAllIds(taidfp, caches->taIds);
 	//loadAllIds(taidfp, caches->teIds);
@@ -305,24 +388,22 @@ int main(int argv, char **argc) {
 //	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
 //	printf("%s\n", slabel);
 //	// -- deletion operation
-	deleteLabelToken(0, lbl_tkn_fp);
-	listAllIds(caches->lbltknIds);
-//	// -- update operation
-//	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
-//	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
-//	lbl_tkn_t **newlist = divideLabelTokens(label2);
-//	int k = 0; // i means realloc times
-//	while (*(list11 + k)) { // calculate label string length
-//		printf("num = %d\n", k);
-//		k++;
-//	}
-
-	// combine the label blocks to one label.
-//	commitUpdateLabelToken(list11, c, newlist, lbl_tkn_id_fp, lbl_tkn_fp);
+//	deleteLabelToken(0, lbl_tkn_fp);
 //	listAllIds(caches->lbltknIds);
-//
-//	unsigned char *slabel1 = findLabelToken(0, lbl_tkn_fp);
-//	printf("%s\n", slabel1);
+	// -- update operation
+	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
+	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
+	lbl_tkn_t **newlist = divideLabelTokens(label2);
+	int k = 0; // i means realloc times
+	while (*(list11 + k)) { // calculate label string length
+		printf("num = %d\n", k);
+		k++;
+	}
+	// combine the label blocks to one label.
+	commitUpdateLabelToken(list11, newlist, lbl_tkn_id_fp, lbl_tkn_fp);
+	listAllIds(caches->lbltknIds);
+	unsigned char *slabel1 = findLabelToken(0, lbl_tkn_fp);
+	printf("%s\n", slabel1);
 
 	deallocLabelTokenPages(lbl_tkn_pages);
 	free(caches);
@@ -458,7 +539,7 @@ int main(int argv, char **argc) {
 //		*(list + i - 1) = p;
 //		i++;
 //	}
-//	list = (int**) realloc(list, i * sizeof(int*)); // add a zero after the last element
+//	(list + i - 1) = (int**) realloc(list, i * sizeof(int*)); // add a zero after the last element
 //	*(list + i - 1) = 0x0;
 //	printf("i = %d\n", i);
 //	i = 0;

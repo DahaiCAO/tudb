@@ -125,6 +125,7 @@ ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
 		}
 		pp->nxtpage = p;
 		p->prvpage = pp;
+		pp = NULL;
 	} else {
 		timeaxispages->pages = p;
 	}
@@ -457,6 +458,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 			bf->id = tmp->id;
 			bf->nxt = NULL;
 			buf = bf;
+			bf = NULL;
 		}
 		return;
 	}
@@ -490,6 +492,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 								bf->nxt = buf; // insert into head
 								buf = bf;
 							}
+							bf = NULL;
 						}
 						return;
 					} else {
@@ -505,6 +508,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 									bf->nxt = buf;
 									buf = bf;
 								}
+								bf = NULL;
 							}
 							next->prvTsId = prvId; //
 							// lookup backwards
@@ -554,6 +558,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 								bf->id = previous->nxtTsId;
 								bf->nxt = NULL;
 								p->nxt = bf;
+								bf = NULL;
 							}
 						}
 						return;
@@ -572,6 +577,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 									bf->id = previous->nxtTsId;
 									bf->nxt = NULL;
 									p->nxt = bf;
+									bf = NULL;
+									p = NULL;
 								}
 							}
 							previous->nxtTsId = nxtId; //
@@ -618,6 +625,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 							bf->nxt = buf; // insert into head
 							buf = bf;
 						}
+						bf = NULL;
 						break;
 					} else {
 						if (mints <= stamp) {
@@ -630,6 +638,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 								bf->nxt = buf;
 								buf = bf;
 							}
+							bf = NULL;
 							// lookup backwards
 							next->prvTsId = prvId; //
 							long long prv = cpage->start
@@ -677,6 +686,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 							bf->id = previous->nxtTsId;
 							bf->nxt = NULL;
 							p->nxt = bf;
+							bf = NULL;
+							p = NULL;
 						}
 					} else {
 						if (maxts >= stamp) {
@@ -692,6 +703,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 								bf->id = previous->nxtTsId;
 								bf->nxt = NULL;
 								p->nxt = bf;
+								p = NULL;
+								bf = NULL;
 							}
 							previous->nxtTsId = nxtId; //
 							long long nxt = cpage->start
@@ -1473,9 +1486,9 @@ void queryEvolvedPoints(long long mints, long long maxts, idbuf_t *buf,
 		next->id = -3;
 		searchforQueryBetween(mints, maxts, buf, timeaxispages->pages->content,
 				timeaxispages->pages, temp, previous, next, tadbfp);
-		free(temp);
-		free(previous);
-		free(next);
+		deallocEvolvedPoint(temp);
+		deallocEvolvedPoint(previous);
+		deallocEvolvedPoint(next);
 	}
 }
 
@@ -1511,9 +1524,9 @@ long long queryEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 		searchforQueryEP(ts, timeaxispages->pages->content,
 				timeaxispages->pages, temp, previous, next, tadbfp);
 		id = temp->id;
-		free(temp);
-		free(previous);
-		free(next);
+		deallocEvolvedPoint(temp);
+		deallocEvolvedPoint(previous);
+		deallocEvolvedPoint(next);
 		return id;
 	}
 	return NULL_POINTER;
@@ -1557,9 +1570,9 @@ long long deleteEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 				temp, previous, next, head, tadbfp);
 		id = commitDelete(ts, previous, temp, next, head, recordbytes,
 				startbyte, pagererecords, pagebytes, tadbfp);
-		free(temp);
-		free(previous);
-		free(next);
+		deallocEvolvedPoint(temp);
+		deallocEvolvedPoint(previous);
+		deallocEvolvedPoint(next);
 		free(head);
 	}
 	return id;
@@ -1602,11 +1615,48 @@ long long insertEvolvedPoint(long long ts, FILE *ta_id_fp, FILE *ta_db_fp) {
 				temp, previous, next, head, ta_db_fp, ta_id_fp);
 		id = commitInsert(ts, previous, temp, next, head, recordbytes,
 				startbyte, pagererecords, pagebytes, ta_db_fp);
-		free(temp);
-		free(previous);
-		free(next);
+		deallocEvolvedPoint(temp);
+		deallocEvolvedPoint(previous);
+		deallocEvolvedPoint(next);
 		free(head);
 	}
 	return id;
+}
+
+void deallocEvolvedPoint(evolved_point_t *p) {
+	p->pos = NULL;
+	p->page = NULL;
+	free(p);
+	p = NULL;
+}
+
+void deallocTimeAxisBuf(idbuf_t *head) {
+	idbuf_t *p = NULL;
+	while (head->nxt) {
+		p = head->nxt;
+		head->nxt = p->nxt;
+		p->nxt = NULL;
+		free(p);
+	}
+	free(head);
+	head = NULL;
+	p = NULL;
+}
+
+void deallocTimeAxisPages(ta_buf_t *mempages) {
+	ta_page_t *head = mempages->pages;
+	ta_page_t *p = NULL;
+	while (head->nxtpage) {
+		p = head->nxtpage;
+		head->nxtpage = p->nxtpage;
+		free(p->content);
+		p->nxtpage = NULL;
+		p->nxtpage = NULL;
+		free(p);
+	}
+	free(head);
+	mempages->pages = NULL;
+	free(mempages);
+	mempages = NULL;
 }
 

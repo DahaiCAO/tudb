@@ -77,7 +77,7 @@ lbl_tkn_t** divideLabelTokens(unsigned char *label);
 
 void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp);
 
-void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
+void commitUpdateLabelToken(lbl_tkn_t **list, lbl_tkn_t **newlist,
 		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_db_fp);
 
 void combineLabelTokens(lbl_tkn_t **list, int length);

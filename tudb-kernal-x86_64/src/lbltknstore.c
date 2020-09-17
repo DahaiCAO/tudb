@@ -57,6 +57,7 @@ static lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long st
 		}
 		pp->nxtpage = p;
 		p->prvpage = pp;
+		pp = NULL;
 	} else {
 		lbl_tkn_pages = p;
 	}
@@ -427,9 +428,9 @@ lbl_tkn_t** divideLabelTokens(unsigned char *label) {
 		size_t y = l % LABEL_BLOCK_LENGTH;
 		lbl_tkn_t **p;
 		if (y > 0) {
-			list = (lbl_tkn_t**) calloc(s + 1, sizeof(lbl_tkn_t*));
+			list = (lbl_tkn_t**) calloc(s + 2, sizeof(lbl_tkn_t*));// one more for 0x0
 		} else {
-			list = (lbl_tkn_t**) calloc(s, sizeof(lbl_tkn_t*));
+			list = (lbl_tkn_t**) calloc(s + 1, sizeof(lbl_tkn_t*));// one more for 0x0
 		}
 		p = list;
 		for (int i = 0; i < s; i++) {
@@ -547,7 +548,7 @@ lbl_tkn_t ** searchLabelTokenList(long long id, FILE *lbl_tkn_db_fp) {
 		}
 	}
 	list = (lbl_tkn_t **)realloc(list, sizeof(lbl_tkn_t*) * i);
-	*(list + i - 1) = 0;// add one zero after the last element.
+	*(list + i - 1) = 0x0;// add one zero after the last element.
 	ps = NULL;
 	pos = NULL;
 	return list;
@@ -604,16 +605,20 @@ void deleteLabelToken(long long id, FILE *lbl_tkn_db_fp) {
 }
 
 // this update operation is used to update and override new label to old label
-void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
+void commitUpdateLabelToken(lbl_tkn_t **list, lbl_tkn_t **newlist,
 		FILE *lbl_tkn_id_fp, FILE *lbl_tkn_db_fp) {
 	// c is old list length
 	// j is new list length
 	lbl_tkn_t **l = list;
 	lbl_tkn_t **t = newlist;
+	int c = 0;
 	int j = 0;
 	// get the new list length;
 	while (*(t + j) != NULL) {
 		j++;
+	}
+	while (*(l + c) != NULL) {
+		c++;
 	}
 	//printf("%d\n", j);
 	int k = 0;
@@ -622,6 +627,7 @@ void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 			if (k < c) {
 				(*(t + k))->id = (*(l + k))->id;
 				(*(t + k))->taId = (*(l + k))->taId;
+				(*(t + k))->nxtBlkId = (*(l + k))->nxtBlkId;
 			} else {
 				(*(t + k))->id = getOneId(lbl_tkn_id_fp, caches->lbltknIds,
 						LABEL_ID_QUEUE_LENGTH);
@@ -636,6 +642,7 @@ void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 			if (*(t + k) != NULL) {
 				(*(t + k))->id = (*(l + k))->id;
 				(*(t + k))->taId = (*(l + k))->taId;
+				(*(t + k))->nxtBlkId = (*(l + k))->nxtBlkId;
 			} else {
 				(*(l + k))->inUse = 0x0;
 				if (k == j) {
@@ -649,6 +656,7 @@ void commitUpdateLabelToken(lbl_tkn_t **list, int c, lbl_tkn_t **newlist,
 			if (*(t + k) != NULL) {
 				(*(t + k))->id = (*(l + k))->id;
 				(*(t + k))->taId = (*(l + k))->taId;
+				(*(t + k))->nxtBlkId = (*(l + k))->nxtBlkId;
 			}
 			k++;
 		}

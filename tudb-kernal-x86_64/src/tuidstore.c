@@ -73,6 +73,7 @@ void loadNewIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 			p->nxt = (id_t*) malloc(sizeof(id_t));
 			p->nxt->id = newid;
 			p->nxt->nxt = NULL;
+			p = NULL;
 		} else {
 			cache->nId = (id_t*) malloc(sizeof(id_t));
 			cache->nId->id = newid;
@@ -124,6 +125,7 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 					p->nxt = (id_t*) malloc(sizeof(id_t));
 					p->nxt->id = d;
 					p->nxt->nxt = NULL;
+					p = NULL;
 				} else {
 					cache->rId = (id_t*) malloc(sizeof(id_t));
 					cache->rId->id = d;
@@ -162,6 +164,7 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 					p->nxt = (id_t*) malloc(sizeof(id_t));
 					p->nxt->id = d;
 					p->nxt->nxt = NULL;
+					p = NULL;
 				} else {
 					cache->rId = (id_t*) malloc(sizeof(id_t));
 					cache->rId->id = d;
@@ -190,6 +193,7 @@ void recycleOneId(long long id, id_cache_t *cache) {
 		p->nxt = (id_t*) malloc(sizeof(id_t));
 		p->nxt->id = id;
 		p->nxt->nxt = NULL;
+		p = NULL;
 	} else {
 		cache->rId = (id_t*) malloc(sizeof(id_t));
 		cache->rId->id = id;
@@ -213,6 +217,7 @@ void listAllIds(id_cache_t *cache) {
 		p = p->nxt;
 		i++;
 	}
+	p = NULL;
 	printf("------------\n");
 	printf("New Id queue length:%d\n", i);
 
@@ -231,6 +236,7 @@ void listAllIds(id_cache_t *cache) {
 		p1 = p1->nxt;
 		i1++;
 	}
+	p1 = NULL;
 	printf("------------\n");
 	printf("Reused Id queue length:%d\n", i1);
 }
