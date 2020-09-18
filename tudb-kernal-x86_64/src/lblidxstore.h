@@ -13,7 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
 
+#include "structlblidxdef.h"
+#include "macrodef.h"
 /*
  * lblidxstore.h
  *
@@ -24,11 +31,16 @@
 #ifndef LBLIDXSTORE_H_
 #define LBLIDXSTORE_H_
 
+// label index pages by default.
+lbl_idx_page_t *lbl_idx_pages;
 // bytes in one label index record
-int lbl_idx_record_bytes = 2 * LONG_LONG + 4;
-// records in one page with label index records
-int lbl_idx_page_records = 10LL;
+size_t lbl_idx_record_bytes;
+// records in one page with label index records, configurable in .conf file
+size_t LABEL_INDEX_PAGE_RECORDS;
 // bytes in one page with label index records
-int lbl_idx_page_bytes;
+size_t lbl_idx_page_bytes;
+// label index page's expire time in memory
+int LABEL_INDEX_PAGE_EXPIRE_TIME;
+
 
 #endif /* LBLIDXSTORE_H_ */

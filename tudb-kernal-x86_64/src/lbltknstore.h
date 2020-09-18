@@ -48,6 +48,8 @@ size_t lbl_tkn_page_bytes;
 size_t LABEL_BLOCK_LENGTH;
 // label buffer length, configurable in .conf file
 size_t LABEL_BUFFER_LENGTH;
+// label token page's expire time in memory
+int LABEL_TOKEN_PAGE_EXPIRE_TIME;
 
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp);
 

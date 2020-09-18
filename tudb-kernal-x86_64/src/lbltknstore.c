@@ -41,7 +41,7 @@ static lbl_tkn_page_t* readOneLabelTokenPage(lbl_tkn_page_t *pages, long long st
 
 	lbl_tkn_page_t *p = (lbl_tkn_page_t*) malloc(sizeof(lbl_tkn_page_t));
 	p->dirty = 0;
-	p->expiretime = 10; // 10 minutes
+	p->expiretime = LABEL_TOKEN_PAGE_EXPIRE_TIME; // 10 minutes
 	p->startNo = start_no;
 	p->hit = 0;
 	p->nxtpage = NULL;

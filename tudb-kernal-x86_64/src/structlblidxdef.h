@@ -41,7 +41,9 @@ typedef struct label_index {
 	long long lblCount; // It counts the usage of the label token in whole Tu DB
 	long long lblTknId; //
 	int codingType;
+	long length;
+	long long taId;
 	lbl_idx_page_t *page;
-} lbl_index_t;
+} lbl_idx_t;
 
 #endif /* STRUCTLBLIDXDEF_H_ */

@@ -54,3 +54,10 @@ int Bytes2Integer(unsigned char bytes[4]) {
 	addr |= ((bytes[3] << 24) & 0xFF000000);
 	return addr;
 }
+
+int cont_str(char *str) {
+    int length = 0;
+    while( *str++ != '\0' )
+        length += 1;
+    return length;
+}
