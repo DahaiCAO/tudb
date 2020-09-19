@@ -27,7 +27,7 @@
 // start the start pointer in memory
 // start_no the start record id in this page
 // lbl_idx_db_fp label index DB file
-lbl_idx_page_t* readOneLabelIndexPage(lbl_tkn_page_t *pages, long long start,
+lbl_idx_page_t* readOneLabelIndexPage(lbl_idx_page_t *pages, long long start,
 		long long start_no, FILE *lbl_idx_db_fp) {
 	unsigned char *page = (unsigned char*) malloc(
 			sizeof(unsigned char) * lbl_idx_page_bytes);
@@ -81,35 +81,45 @@ lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
 	return idx;
 }
 
-// search one Id in all memory pages
-lbl_idx_page_t* findLabelIndexPage(long long id) {
-	lbl_idx_page_t *page = lbl_idx_pages;
-	if (page != NULL) {
-		while (page != NULL) {
-			long long pos = 16LL + id * (3 * LONG_LONG + 1);// ?
-			if (pos >= page->start && pos < page->end) {
-				return page;
-			} else {
-				page = page->nxtpage;
-			}
-		}
-	}
-	return NULL;
-}
-
-// search one page that contain the specified Id.
-lbl_idx_page_t* searchLabelIndexPage(long long id, int recordbytes, long long startbyte,
-		int pagererecords, int pagebytes, FILE *tadbfp) {
-	lbl_idx_page_t *nxtp = findLabelIndexPage(id);
-	if (nxtp == NULL) {
-		long long pagenum = (id * recordbytes) / pagebytes;
-		long long start = pagenum * pagebytes + startbyte;
-		nxtp = readOneLabelIndexPage(start, pagenum * pagererecords, tadbfp);
-	}
-	return nxtp;
-}
-
 void commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp) {
 	idx->id = getOneId(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
+	lbl_idx_page_t p = searchLabelIndexPage(idx->id, lbl_idx_record_bytes, 0LL,
+			LABEL_INDEX_PAGE_RECORDS, lbl_idx_page_bytes, lbl_idx_db_fp);
+	lbl_idx_page_t *ps = lbl_idx_pages;
+	bool found = false;
+	unsigned char *pos;
+	while (!found) {
+		while (ps != NULL) {
+			if (ps->startNo <= idx->id
+					&& idx->id < ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
+				pos = ps->content
+						+ (idx->id - ps->startNo) * lbl_idx_record_bytes;
+				unsigned char ta_ids[LONG_LONG] = { 0 };
+				LongToByteArray(idx->taId, ta_ids);			// ta Id
+				unsigned char length[LONG] = { 0 };
+				Integer2Bytes(idx->length, length); // length
+				unsigned char count[LONG_LONG] = { 0 };
+				LongToByteArray(idx->lblCount, count);// label counting
+				unsigned char coding[LONG] = { 0 };
+				Integer2Bytes(idx->codingType, coding);
+				unsigned char tknIds[LONG_LONG] = { 0 };
+				LongToByteArray(idx->lblTknId, tknIds);
+
+				break;
+			}
+			ps = ps->nxtpage;
+		}
+		if (!found) {
+			// read a new page
+			long long pagenum = (idx->id * lbl_tkn_record_bytes)
+					/ lbl_tkn_page_bytes;
+			readOneLabelIndexPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
+					pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_idx_db_fp);
+			continue;
+		} else {
+			ps = NULL;
+			break;
+		}
+	}
 
 }

@@ -117,10 +117,21 @@ void init() {
 	LABEL_BLOCK_LENGTH = 64;
 	LABEL_BUFFER_LENGTH = 256;
 	LABEL_TOKEN_PAGE_RECORDS = 10;
+	// label token page's expire time in memory
+	LABEL_TOKEN_PAGE_EXPIRE_TIME = 10;
+	// records in one page with label index records, configurable in .conf file
+	LABEL_INDEX_PAGE_RECORDS = 10;
+	// label index page's expire time in memory
+	LABEL_INDEX_PAGE_EXPIRE_TIME = 10;
+
 	// label bytes length.
 	lbl_tkn_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
 			+ LABEL_BLOCK_LENGTH;
 	lbl_tkn_page_bytes = lbl_tkn_record_bytes * LABEL_TOKEN_PAGE_RECORDS;
+	// bytes in one label index record
+	lbl_idx_record_bytes = 4 * LONG_LONG;
+	// bytes in one page with label index records
+	lbl_idx_page_bytes = lbl_idx_record_bytes * LABEL_INDEX_PAGE_RECORDS;
 
 }
 

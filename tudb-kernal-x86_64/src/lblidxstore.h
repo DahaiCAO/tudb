@@ -18,6 +18,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "structlblidxdef.h"
 #include "macrodef.h"
