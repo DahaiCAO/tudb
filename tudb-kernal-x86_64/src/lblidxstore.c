@@ -81,8 +81,9 @@ lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
 	return idx;
 }
 
-void commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp) {
-	idx->id = getOneId(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
+long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp) {
+	long long id = getOneId(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
+	idx->id = id;
 	lbl_idx_page_t p = searchLabelIndexPage(idx->id, lbl_idx_record_bytes, 0LL,
 			LABEL_INDEX_PAGE_RECORDS, lbl_idx_page_bytes, lbl_idx_db_fp);
 	lbl_idx_page_t *ps = lbl_idx_pages;
@@ -99,12 +100,23 @@ void commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp) 
 				unsigned char length[LONG] = { 0 };
 				Integer2Bytes(idx->length, length); // length
 				unsigned char count[LONG_LONG] = { 0 };
-				LongToByteArray(idx->lblCount, count);// label counting
+				LongToByteArray(idx->lblCount, count); // label counting
 				unsigned char coding[LONG] = { 0 };
 				Integer2Bytes(idx->codingType, coding);
 				unsigned char tknIds[LONG_LONG] = { 0 };
 				LongToByteArray(idx->lblTknId, tknIds);
-
+				memcpy(pos, ta_ids, LONG_LONG);
+				memcpy(pos + LONG_LONG, tknIds, LONG_LONG);
+				memcpy(pos + LONG_LONG + LONG_LONG, length, LONG);
+				memcpy(pos + LONG_LONG + LONG_LONG + LONG, coding, LONG);
+				memcpy(pos + LONG_LONG + LONG_LONG + LONG_LONG, count,
+				LONG_LONG);
+				fseek(lbl_idx_db_fp, idx->id * lbl_idx_record_bytes,
+				SEEK_SET); //
+				fwrite(pos, sizeof(unsigned char), lbl_idx_record_bytes,
+						lbl_idx_db_fp);
+				found = true;
+				pos = NULL;
 				break;
 			}
 			ps = ps->nxtpage;
@@ -121,5 +133,8 @@ void commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp) 
 			break;
 		}
 	}
-
+	idx->page = NULL;
+	free(idx);
+	return id;
 }
+
