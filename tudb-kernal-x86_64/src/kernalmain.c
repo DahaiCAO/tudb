@@ -95,27 +95,30 @@ void initDB(char *path) {
 	}
 }
 
-void initIdCaches(id_caches_t * caches) {
-	caches->taIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
-	caches->taIds->nId = NULL;
-	caches->taIds->rId = NULL;
-	caches->teIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
-	caches->teIds->nId = NULL;
-	caches->teIds->rId = NULL;
-	caches->lblidxIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
-	caches->lblidxIds->nId = NULL;
-	caches->lblidxIds->rId = NULL;
-	caches->lbltknIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
-	caches->lbltknIds->nId = NULL;
-	caches->lbltknIds->rId = NULL;
-}
+
 
 void init() {
 	ID_QUEUE_LENGTH = 25;
 	LABEL_ID_QUEUE_LENGTH = 10;
 	TIMEAXIS_ID_QUEUE_LENGTH = 10;
+
+	// time axis record byte array length
+	tm_axis_record_bytes = 3 * LONG_LONG + 1;
+	// time axis memory page records, configurable in .conf file
+	TIME_AXIS_PAGE_RECORDS = 10;
+	// time axis page byte array length
+	tm_axis_page_bytes = tm_axis_record_bytes * TIME_AXIS_PAGE_RECORDS;
+	// time axis DB start points in database
+	tm_axis_db_start_byte = 16LL;
+	// time axis page expiration time (minutes), configurable in .conf file
+	TIME_AXIS_PAGE_EXPIRE_TIME = 10;
+
+
+	// label token block size
 	LABEL_BLOCK_LENGTH = 64;
+	// label token buffer size
 	LABEL_BUFFER_LENGTH = 256;
+	// label token page size in memory
 	LABEL_TOKEN_PAGE_RECORDS = 10;
 	// label token page's expire time in memory
 	LABEL_TOKEN_PAGE_EXPIRE_TIME = 10;
@@ -333,31 +336,29 @@ int main(int argv, char **argc) {
 //	strcat(tedb, "tustore.element.tdb");
 //	FILE *tedbfp = fopen(tedb, "rb+");
 //
-//	char *labelsid;
-//	strcat(labelsid, path);
-//	strcat(labelsid, "tustore.element.tdb.labels.id");
-//	FILE *labelsidfp = fopen(labelsid, "rb+");
-//
-//	char *labels;
-//	strcat(labels, path);
-//	strcat(labels, "tustore.element.tdb.labels");
-//	FILE *labelsfp = fopen(labels, "rb+");
+	char *lbls_id_path = (char*) calloc(256, sizeof(char));
+	strcat(lbls_id_path, d_path);
+	strcat(lbls_id_path, "tustore.element.labels.tdb.id");
 
-	char *lbl_idx_id_path;
+	char *lbls_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbls_db_path, d_path);
+	strcat(lbls_db_path, "tustore.element.labels.tdb");
+
+	char *lbl_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_idx_id_path, d_path);
 	strcat(lbl_idx_id_path, "tustore.label.index.tdb.id");
 
-	char *lbl_idx_path;
-	strcat(lbl_idx_path, d_path);
-	strcat(lbl_idx_path, "tustore.label.index.tdb");
+	char *lbl_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_idx_db_path, d_path);
+	strcat(lbl_idx_db_path, "tustore.label.index.tdb");
 
 	char *lbl_tkn_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_tkn_id_path, d_path);
 	strcat(lbl_tkn_id_path, "tustore.label.token.tdb.id");
 
-	char *lbl_tkn_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_tkn_path, d_path);
-	strcat(lbl_tkn_path, "tustore.label.token.tdb");
+	char *lbl_tkn_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_tkn_db_path, d_path);
+	strcat(lbl_tkn_db_path, "tustore.label.token.tdb");
 
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
@@ -366,13 +367,17 @@ int main(int argv, char **argc) {
 	initIdDB(lbl_tkn_id_path);
 
 	// initTimeAxisDB(tadb);
-	initDB(lbl_idx_path);
-	initDB(lbl_tkn_path);
+	initDB(lbl_idx_db_path);
+	initDB(lbl_tkn_db_path);
+	initDB(lbls_db_path);
 
-	FILE *lbl_idx_fp = fopen(lbl_idx_path, "rb+");
+	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
-	FILE *lbl_tkn_fp = fopen(lbl_tkn_path, "rb+");
 	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
+
+	FILE *lbls_db_fp = fopen(lbls_db_path, "rb+");
+	FILE *lbl_idx_db_fp = fopen(lbl_idx_db_path, "rb+");
+	FILE *lbl_tkn_db_fp = fopen(lbl_tkn_db_path, "rb+");
 	//initIds(lbl_tkn_id_fp);
 
 	//loadAllIds(taidfp, caches->taIds);
@@ -385,8 +390,9 @@ int main(int argv, char **argc) {
 	listAllIds(caches->lblidxIds);
 	listAllIds(caches->lbltknIds);
 
-	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_fp);
-	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_fp);
+	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
+	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_db_fp);
+
 	// -- insert operation
 //	unsigned char label[256] =
 //			"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
@@ -420,9 +426,9 @@ int main(int argv, char **argc) {
 
 
 
-	free(caches);
+	deallocIdCaches(caches);
 	fclose(lbl_tkn_id_fp);
-	fclose(lbl_tkn_fp);
+	fclose(lbl_tkn_db_fp);
 }
 
 
@@ -571,3 +577,5 @@ int main(int argv, char **argc) {
 //	list = NULL;
 //	return 0;
 //}
+
+

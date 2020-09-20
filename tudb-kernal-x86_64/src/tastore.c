@@ -118,7 +118,7 @@ ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
 	p->start = start;
 	p->end = start + TA_PAGE_SIZE;
 
-	ta_page_t *pp = timeaxispages->pages;
+	ta_page_t *pp = tm_axis_pages->pages;
 	if (pp != NULL) {
 		while (pp->nxtpage != NULL) {
 			pp = pp->nxtpage;
@@ -127,7 +127,7 @@ ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp) {
 		p->prvpage = pp;
 		pp = NULL;
 	} else {
-		timeaxispages->pages = p;
+		tm_axis_pages->pages = p;
 	}
 	return p;
 }
@@ -227,7 +227,7 @@ void putStamp(evolved_point_t *ep) {
 
 // search one Id in all memory pages
 ta_page_t* findPage(long long id) {
-	ta_page_t *page = timeaxispages->pages;
+	ta_page_t *page = tm_axis_pages->pages;
 	if (page != NULL) {
 		while (page != NULL) {
 			long long pos = 16LL + id * (3 * LONG_LONG + 1);
@@ -243,10 +243,10 @@ ta_page_t* findPage(long long id) {
 
 // show all records in the memory pages
 void showAllPages() {
-	ta_page_t *page = timeaxispages->pages;
+	ta_page_t *page = tm_axis_pages->pages;
 	printf("----DB Head----\n");
-	printf("First Id:%d\n", timeaxispages->first);
-	printf("Last Id:%d\n", timeaxispages->last);
+	printf("First Id:%d\n", tm_axis_pages->first);
+	printf("Last Id:%d\n", tm_axis_pages->last);
 	if (page != NULL) {
 		while (page != NULL) {
 			printf("----Page head----\n");
@@ -299,10 +299,6 @@ ta_page_t* searchPage(long long id, int recordbytes, long long startbyte,
 void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		evolved_point_t *tmp, evolved_point_t *previous, evolved_point_t *next,
 		FILE *tadbfp) {
-	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
-	int pagererecords = 10LL; // record counting in one page
-	int pagebytes = recordbytes * pagererecords; // byte counting in one page
-	long long startbyte = 16LL; // start points in database
 	// current record, it may be previous/next record
 	long long prvId = parsePrvId(currpos);
 	long long nxtId = parseNxtId(currpos);
@@ -323,7 +319,7 @@ void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->id = NULL_POINTER;
 							return;
 						} else if (ts == stamp) { // ts is just the first
-							tmp->id = timeaxispages->first;
+							tmp->id = tm_axis_pages->first;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
 							tmp->time = ts;
@@ -336,18 +332,21 @@ void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->prvTsId = prvId; //
 							// lookup backwards
 							long long prv = currpage->start
-									+ (prvId - currpage->startNo) * recordbytes;
+									+ (prvId - currpage->startNo)
+											* tm_axis_record_bytes;
 							if (prv >= currpage->start && prv < currpage->end) { // in this page
 								currpos = currpage->content
 										+ (prvId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								currpage = searchPage(prvId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								currpage = searchPage(prvId,
+										tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								currpos = currpage->content
 										+ (prvId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (ts > stamp) {
@@ -364,7 +363,7 @@ void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 						}
 					}
 				} else {
-					currpos += recordbytes;
+					currpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
@@ -381,7 +380,7 @@ void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->id = NULL_POINTER; // not found
 							return;
 						} else if (ts == stamp) { // ts is just the last
-							tmp->id = timeaxispages->last;
+							tmp->id = tm_axis_pages->last;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
 							tmp->time = ts;
@@ -393,18 +392,21 @@ void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 						if (ts > stamp) {
 							previous->nxtTsId = nxtId; //
 							long long nxt = currpage->start
-									+ (nxtId - currpage->startNo) * recordbytes;
+									+ (nxtId - currpage->startNo)
+											* tm_axis_record_bytes;
 							if (nxt >= currpage->start && nxt < currpage->end) { // in this page
 								currpos = currpage->content
 										+ (nxtId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								currpage = searchPage(nxtId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								currpage = searchPage(nxtId,
+										tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								currpos = currpage->content
 										+ (nxtId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (ts < stamp) {
@@ -421,16 +423,17 @@ void searchforQueryEP(long long ts, unsigned char *currpos, ta_page_t *currpage,
 						}
 					}
 				} else {
-					currpos += recordbytes;
+					currpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
 		} else if (ts == stamp) {
 			// tmp is the current record
-			ta_page_t *nxtpaage = searchPage(nxtId, recordbytes, startbyte,
-					pagererecords, pagebytes, tadbfp);
+			ta_page_t *nxtpaage = searchPage(nxtId, tm_axis_record_bytes,
+					tm_axis_db_start_byte, TIME_AXIS_PAGE_RECORDS,
+					tm_axis_page_bytes, tadbfp);
 			unsigned char *nxtpos = nxtpaage->content
-					+ (nxtId - nxtpaage->startNo) * recordbytes;
+					+ (nxtId - nxtpaage->startNo) * tm_axis_record_bytes;
 			long long curId = parsePrvId(nxtpos);
 			tmp->id = curId;
 			tmp->time = ts;
@@ -451,8 +454,8 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 	if (mints > maxts) {
 		return;
 	} else if (mints == maxts) {
-		searchforQueryEP(mints, timeaxispages->pages->content,
-				timeaxispages->pages, tmp, previous, next, tadbfp);
+		searchforQueryEP(mints, tm_axis_pages->pages->content,
+				tm_axis_pages->pages, tmp, previous, next, tadbfp);
 		if (tmp->id != NULL_POINTER) {
 			idbuf_t *bf = (idbuf_t*) malloc(sizeof(idbuf_t));
 			bf->id = tmp->id;
@@ -462,10 +465,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 		}
 		return;
 	}
-	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
-	int pagererecords = 10LL; // record counting in one page
-	int pagebytes = recordbytes * pagererecords; // byte counting in one page
-	long long startbyte = 16LL; // start points in database
+
 	// current record, it may be previous/next record
 	long long prvId = parsePrvId(currpos);
 	long long nxtId = parseNxtId(currpos);
@@ -513,18 +513,21 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 							next->prvTsId = prvId; //
 							// lookup backwards
 							long long prv = currpage->start
-									+ (prvId - currpage->startNo) * recordbytes;
+									+ (prvId - currpage->startNo)
+											* tm_axis_record_bytes;
 							if (prv >= currpage->start && prv < currpage->end) { // in this page
 								currpos = currpage->content
 										+ (prvId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								currpage = searchPage(prvId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								currpage = searchPage(prvId,
+										tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								currpos = currpage->content
 										+ (prvId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (mints > stamp) {
@@ -532,7 +535,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 						}
 					}
 				} else {
-					currpos += recordbytes;
+					currpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
@@ -583,18 +586,21 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 							}
 							previous->nxtTsId = nxtId; //
 							long long nxt = currpage->start
-									+ (nxtId - currpage->startNo) * recordbytes;
+									+ (nxtId - currpage->startNo)
+											* tm_axis_record_bytes;
 							if (nxt >= currpage->start && nxt < currpage->end) { // in this page
 								currpos = currpage->content
 										+ (nxtId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								currpage = searchPage(nxtId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								currpage = searchPage(nxtId,
+										tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								currpos = currpage->content
 										+ (nxtId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (maxts < stamp) {
@@ -602,7 +608,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 						}
 					}
 				} else {
-					currpos += recordbytes;
+					currpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
@@ -642,18 +648,20 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 							// lookup backwards
 							next->prvTsId = prvId; //
 							long long prv = cpage->start
-									+ (prvId - cpage->startNo) * recordbytes;
+									+ (prvId - cpage->startNo)
+											* tm_axis_record_bytes;
 							if (prv >= cpage->start && prv < cpage->end) { // in this page
 								cpos = cpage->content
 										+ (prvId - cpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								cpage = searchPage(prvId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								cpage = searchPage(prvId, tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								cpos = cpage->content
 										+ (prvId - cpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (mints > stamp) {
@@ -661,7 +669,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 						}
 					}
 				} else {
-					cpos += recordbytes;
+					cpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
@@ -708,18 +716,20 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 							}
 							previous->nxtTsId = nxtId; //
 							long long nxt = cpage->start
-									+ (nxtId - cpage->startNo) * recordbytes;
+									+ (nxtId - cpage->startNo)
+											* tm_axis_record_bytes;
 							if (nxt >= cpage->start && nxt < cpage->end) { // in this page
 								cpos = cpage->content
 										+ (nxtId - cpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								cpage = searchPage(nxtId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								cpage = searchPage(nxtId, tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								cpos = cpage->content
 										+ (nxtId - cpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (maxts < stamp) {
@@ -727,7 +737,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 						}
 					}
 				} else {
-					cpos += recordbytes;
+					cpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
@@ -740,10 +750,7 @@ void searchforQueryBetween(long long mints, long long maxts, idbuf_t *buf,
 void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 		evolved_point_t *tmp, evolved_point_t *previous, evolved_point_t *next,
 		tadb_head_t *h, FILE *tadbfp, FILE *taidfp) {
-	int recordbytes = 3 * LONG_LONG + 1; // byte counting in one record
-	int pagererecords = 10LL; // record counting in one page
-	int pagebytes = recordbytes * pagererecords; // byte counting in one page
-	long long startbyte = 16LL; // start points in database
+
 	// current record, it may be previous/next record
 	long long prvId = parsePrvId(currpos);
 	long long nxtId = parseNxtId(currpos);
@@ -777,11 +784,11 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = NULL_POINTER;
-							tmp->nxtTsId = timeaxispages->first;
+							tmp->nxtTsId = tm_axis_pages->first;
 							tmp->page = NULL;
 							tmp->pos = NULL;
 
-							next->id = timeaxispages->first;
+							next->id = tm_axis_pages->first;
 							next->prvTsId = id; // the current will be the second
 							next->pos = currpos;
 							next->page = currpage;
@@ -793,12 +800,12 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							long long id = getOneId(taidfp, caches->taIds,
 									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
-							tmp->prvTsId = timeaxispages->first;
+							tmp->prvTsId = tm_axis_pages->first;
 							tmp->nxtTsId = nxtId;
 							tmp->page = NULL;
 							tmp->pos = NULL;
 
-							previous->id = timeaxispages->first;
+							previous->id = tm_axis_pages->first;
 							previous->nxtTsId = id;
 							previous->pos = currpos;
 							previous->page = currpage;
@@ -807,7 +814,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->prvTsId = id;
 							return;
 						} else if (ts == stamp) { // ts is the first, no actions
-							tmp->id = timeaxispages->first;
+							tmp->id = tm_axis_pages->first;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
 							tmp->time = ts;
@@ -822,18 +829,21 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->page = currpage;
 							// lookup backwards
 							long long prv = currpage->start
-									+ (prvId - currpage->startNo) * recordbytes;
+									+ (prvId - currpage->startNo)
+											* tm_axis_record_bytes;
 							if (prv >= currpage->start && prv < currpage->end) { // in this page
 								currpos = currpage->content
 										+ (prvId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								currpage = searchPage(prvId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								currpage = searchPage(prvId,
+										tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								currpos = currpage->content
 										+ (prvId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (ts > stamp) {
@@ -864,7 +874,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 						}
 					}
 				} else {
-					currpos += recordbytes;
+					currpos += tm_axis_record_bytes;
 					continue;
 				}
 			}
@@ -881,12 +891,12 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							long long id = getOneId(taidfp, caches->taIds,
 									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
-							tmp->prvTsId = timeaxispages->last;
+							tmp->prvTsId = tm_axis_pages->last;
 							tmp->nxtTsId = NULL_POINTER;
 							tmp->pos = NULL;
 							tmp->page = NULL;
 
-							previous->id = timeaxispages->last;
+							previous->id = tm_axis_pages->last;
 							previous->nxtTsId = id; //
 							previous->pos = currpos;
 							previous->page = currpage;
@@ -899,7 +909,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 									TIMEAXIS_ID_QUEUE_LENGTH);
 							tmp->id = id; //
 							tmp->prvTsId = prvId;
-							tmp->nxtTsId = timeaxispages->last;
+							tmp->nxtTsId = tm_axis_pages->last;
 							tmp->page = NULL;
 							tmp->pos = NULL;
 
@@ -912,7 +922,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							next->page = currpage;
 							return;
 						} else if (ts == stamp) {
-							tmp->id = timeaxispages->last;
+							tmp->id = tm_axis_pages->last;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
 							tmp->time = ts;
@@ -921,7 +931,7 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos -= recordbytes;
+						currpos -= tm_axis_record_bytes;
 						continue;
 					}
 				} else {
@@ -932,18 +942,21 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							previous->page = currpage;
 
 							long long nxt = currpage->start
-									+ (nxtId - currpage->startNo) * recordbytes;
+									+ (nxtId - currpage->startNo)
+											* tm_axis_record_bytes;
 							if (nxt >= currpage->start && nxt < currpage->end) { // in this page
 								currpos = currpage->content
 										+ (nxtId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							} else { // not in this page
-								currpage = searchPage(nxtId, recordbytes,
-										startbyte, pagererecords, pagebytes,
-										tadbfp);
+								currpage = searchPage(nxtId,
+										tm_axis_record_bytes,
+										tm_axis_db_start_byte,
+										TIME_AXIS_PAGE_RECORDS,
+										tm_axis_page_bytes, tadbfp);
 								currpos = currpage->content
 										+ (nxtId - currpage->startNo)
-												* recordbytes;
+												* tm_axis_record_bytes;
 							}
 							continue;
 						} else if (ts < stamp) {
@@ -974,17 +987,18 @@ void searchforInsert(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							return;
 						}
 					} else {
-						currpos += recordbytes;
+						currpos += tm_axis_record_bytes;
 						continue;
 					}
 				}
 			}
 		} else if (ts == stamp) { // found
 			// tmp is the current record
-			ta_page_t *nxtpaage = searchPage(nxtId, recordbytes, startbyte,
-					pagererecords, pagebytes, tadbfp);
+			ta_page_t *nxtpaage = searchPage(nxtId, tm_axis_record_bytes,
+					tm_axis_db_start_byte, TIME_AXIS_PAGE_RECORDS,
+					tm_axis_page_bytes, tadbfp);
 			unsigned char *nxtpos = nxtpaage->content
-					+ (nxtId - nxtpaage->startNo) * recordbytes;
+					+ (nxtId - nxtpaage->startNo) * tm_axis_record_bytes;
 			long long curId = parsePrvId(nxtpos);
 			tmp->id = curId;
 			tmp->time = ts;
@@ -1025,7 +1039,7 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->id = NULL_POINTER;
 							return;
 						} else if (ts == stamp) { // ts is just the first
-							tmp->id = timeaxispages->first;
+							tmp->id = tm_axis_pages->first;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
 							tmp->time = ts;
@@ -1108,7 +1122,7 @@ void searchforDelete(long long ts, unsigned char *currpos, ta_page_t *currpage,
 							tmp->id = NULL_POINTER; // not found
 							return;
 						} else if (ts == stamp) { // ts is just the last
-							tmp->id = timeaxispages->last;
+							tmp->id = tm_axis_pages->last;
 							tmp->prvTsId = prvId;
 							tmp->nxtTsId = nxtId;
 							tmp->time = ts;
@@ -1250,10 +1264,10 @@ long long commitInsert(long long ts, evolved_point_t *p, evolved_point_t *t,
 		n->page->hit++;
 	}
 	if (h->firstdirty == 1) {
-		timeaxispages->first = h->first;
+		tm_axis_pages->first = h->first;
 	}
 	if (h->lastdirty == 1) {
-		timeaxispages->last = h->last;
+		tm_axis_pages->last = h->last;
 	}
 
 	// write to DB file
@@ -1343,10 +1357,10 @@ long long commitDelete(long long ts, evolved_point_t *p, evolved_point_t *t,
 			n->page->hit++;
 		}
 		if (h->firstdirty == 1) {
-			timeaxispages->first = h->first;
+			tm_axis_pages->first = h->first;
 		}
 		if (h->lastdirty == 1) {
-			timeaxispages->last = h->last;
+			tm_axis_pages->last = h->last;
 		}
 //
 		if (t->page->dirty == 1) {
@@ -1462,7 +1476,7 @@ void showAllTimeAxis(FILE *tadbfp) {
 // query one set of IDs between minimum time stamp and maximum time stamp
 void queryEvolvedPoints(long long mints, long long maxts, idbuf_t *buf,
 		FILE *taidfp, FILE *tadbfp) {
-	if (timeaxispages->pages != NULL) {
+	if (tm_axis_pages->pages != NULL) {
 		evolved_point_t *temp = (evolved_point_t*) malloc(
 				sizeof(evolved_point_t));
 		temp->inuse = 1;
@@ -1484,8 +1498,8 @@ void queryEvolvedPoints(long long mints, long long maxts, idbuf_t *buf,
 		next->nxtTsId = -3;
 		next->time = 0;
 		next->id = -3;
-		searchforQueryBetween(mints, maxts, buf, timeaxispages->pages->content,
-				timeaxispages->pages, temp, previous, next, tadbfp);
+		searchforQueryBetween(mints, maxts, buf, tm_axis_pages->pages->content,
+				tm_axis_pages->pages, temp, previous, next, tadbfp);
 		deallocEvolvedPoint(temp);
 		deallocEvolvedPoint(previous);
 		deallocEvolvedPoint(next);
@@ -1499,7 +1513,7 @@ long long queryEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 //	int pagebytes = recordbytes * pagererecords; // byte counting in one page
 //	long long startbyte = 16LL; // start points in database
 	long long id = NULL_POINTER;
-	if (timeaxispages->pages != NULL) {
+	if (tm_axis_pages->pages != NULL) {
 		evolved_point_t *temp = (evolved_point_t*) malloc(
 				sizeof(evolved_point_t));
 		temp->inuse = 1;
@@ -1521,8 +1535,8 @@ long long queryEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 		next->nxtTsId = -3;
 		next->time = 0;
 		next->id = -3;
-		searchforQueryEP(ts, timeaxispages->pages->content,
-				timeaxispages->pages, temp, previous, next, tadbfp);
+		searchforQueryEP(ts, tm_axis_pages->pages->content,
+				tm_axis_pages->pages, temp, previous, next, tadbfp);
 		id = temp->id;
 		deallocEvolvedPoint(temp);
 		deallocEvolvedPoint(previous);
@@ -1544,7 +1558,7 @@ long long deleteEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 	head->firstdirty = 0;
 	head->last = -3;
 	head->lastdirty = 0;
-	if (timeaxispages->pages != NULL) {
+	if (tm_axis_pages->pages != NULL) {
 		evolved_point_t *temp = (evolved_point_t*) malloc(
 				sizeof(evolved_point_t));
 		temp->inuse = 1;
@@ -1566,7 +1580,7 @@ long long deleteEvolvedPoint(long long ts, FILE *taidfp, FILE *tadbfp) {
 		next->nxtTsId = -3;
 		next->time = 0;
 		next->id = -3;
-		searchforDelete(ts, timeaxispages->pages->content, timeaxispages->pages,
+		searchforDelete(ts, tm_axis_pages->pages->content, tm_axis_pages->pages,
 				temp, previous, next, head, tadbfp);
 		id = commitDelete(ts, previous, temp, next, head, recordbytes,
 				startbyte, pagererecords, pagebytes, tadbfp);
@@ -1589,7 +1603,7 @@ long long insertEvolvedPoint(long long ts, FILE *ta_id_fp, FILE *ta_db_fp) {
 	head->firstdirty = 0;
 	head->last = -3;
 	head->lastdirty = 0;
-	if (timeaxispages->pages != NULL) {
+	if (tm_axis_pages->pages != NULL) {
 		evolved_point_t *temp = (evolved_point_t*) malloc(
 				sizeof(evolved_point_t));
 		temp->inuse = 1;
@@ -1611,7 +1625,7 @@ long long insertEvolvedPoint(long long ts, FILE *ta_id_fp, FILE *ta_db_fp) {
 		next->nxtTsId = -3;
 		next->time = 0;
 		next->id = -3;
-		searchforInsert(ts, timeaxispages->pages->content, timeaxispages->pages,
+		searchforInsert(ts, tm_axis_pages->pages->content, tm_axis_pages->pages,
 				temp, previous, next, head, ta_db_fp, ta_id_fp);
 		id = commitInsert(ts, previous, temp, next, head, recordbytes,
 				startbyte, pagererecords, pagebytes, ta_db_fp);

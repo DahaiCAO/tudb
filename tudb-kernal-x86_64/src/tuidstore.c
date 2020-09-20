@@ -335,3 +335,52 @@ void listAllIds(id_cache_t *cache) {
  printf("------------\n");
  printf("Reused Id queue length:%d\n", (i - 2));
  }*/
+
+void deallocIdCache(id_t *ids) {
+	id_t *p;
+	while (ids) {
+		p = ids;
+		ids = ids->nxt;
+		free(p);
+		p = NULL;
+	}
+	ids = NULL;
+}
+
+void initIdCaches(id_caches_t * caches) {
+	caches->taIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->taIds->nId = NULL;
+	caches->taIds->rId = NULL;
+	caches->teIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->teIds->nId = NULL;
+	caches->teIds->rId = NULL;
+	caches->lblidxIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lblidxIds->nId = NULL;
+	caches->lblidxIds->rId = NULL;
+	caches->lbltknIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lbltknIds->nId = NULL;
+	caches->lbltknIds->rId = NULL;
+	caches->lblsIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->lblsIds->nId = NULL;
+	caches->lblsIds->rId = NULL;
+
+}
+
+void deallocIdCaches(id_caches_t * caches) {
+	deallocIdCache(caches->taIds->nId);
+	deallocIdCache(caches->taIds->rId);
+	free(caches->taIds);
+	deallocIdCache(caches->teIds->nId);
+	deallocIdCache(caches->teIds->rId);
+	free(caches->teIds);
+	deallocIdCache(caches->lblidxIds->nId);
+	deallocIdCache(caches->lblidxIds->rId);
+	free(caches->lblidxIds);
+	deallocIdCache(caches->lbltknIds->nId);
+	deallocIdCache(caches->lbltknIds->rId);
+	free(caches->lbltknIds);
+	deallocIdCache(caches->lblsIds->nId);
+	deallocIdCache(caches->lblsIds->rId);
+	free(caches->lblsIds);
+	free(caches);
+}

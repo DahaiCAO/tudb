@@ -40,6 +40,7 @@ typedef struct id_caches {
 	id_cache_t *teIds;
 	id_cache_t *lblidxIds;
 	id_cache_t *lbltknIds;
+	id_cache_t *lblsIds;
 } id_caches_t;
 
 id_caches_t *caches;

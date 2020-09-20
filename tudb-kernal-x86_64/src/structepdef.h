@@ -60,8 +60,6 @@ typedef struct ta_buf {
 	ta_page_t *pages; // 10 pages by default.
 } ta_buf_t;
 
-ta_buf_t *timeaxispages;
-
 typedef struct idbuf {
 	long long id;
 	struct idbuf *nxt;

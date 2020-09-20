@@ -33,7 +33,21 @@
 
 #ifndef TASTORE_H_
 #define TASTORE_H_
-// read one page
+
+// time axis memory pages
+ta_buf_t *tm_axis_pages;
+// time axis record byte array length
+size_t tm_axis_record_bytes;
+// time axis memory page records, configurable in .conf file
+size_t TIME_AXIS_PAGE_RECORDS;
+// time axis page byte array length
+size_t tm_axis_page_bytes;
+// start points in database of time axis
+long long tm_axis_db_start_byte;
+// time axis page expiration time (minutes), configurable in .conf file
+int TIME_AXIS_PAGE_EXPIRE_TIME;
+
+// read one time axis page
 ta_page_t* readOnePage(long long start, long long startNo, FILE *tadbfp);
 
 void initTaDBMemPages(ta_buf_t *pages, FILE *tadbfp);
@@ -109,13 +123,6 @@ void deallocEvolvedPoint(evolved_point_t *p);
 void deallocTimeAxisBuf(idbuf_t *head);
 
 void deallocTimeAxisPages(ta_buf_t *pages);
-
-
-
-
-
-
-
 
 
 #endif /* TEXT_H_ */
