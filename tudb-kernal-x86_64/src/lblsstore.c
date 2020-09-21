@@ -68,7 +68,7 @@ void initLabelsDBMemPages(lbls_page_t *pages, FILE *lbls_db_fp) {
 
 lbls_t** insertLabels(long long ta_id, long long * lblIdxIds) {
 	int count = 0;
-	long long *p = &lblIdxIds;
+	long long *p = lblIdxIds;
 	while (*p) {
 		count++;
 	}
