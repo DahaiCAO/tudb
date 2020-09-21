@@ -21,7 +21,7 @@
  * Author: Dahai CAO
  */
 
-#include "lblidxstore.h";
+#include "lblidxstore.h"
 
 // read one label index page
 // start the start pointer in memory
@@ -81,18 +81,18 @@ lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
 	return idx;
 }
 
-long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp) {
-	long long id = getOneId(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
+long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
+		FILE *lbl_idx_id_fp) {
+	long long id = getOneId(lbl_idx_id_fp, caches->lblidxIds,
+			LABEL_ID_QUEUE_LENGTH);
 	idx->id = id;
-	lbl_idx_page_t p = searchLabelIndexPage(idx->id, lbl_idx_record_bytes, 0LL,
-			LABEL_INDEX_PAGE_RECORDS, lbl_idx_page_bytes, lbl_idx_db_fp);
 	lbl_idx_page_t *ps = lbl_idx_pages;
 	bool found = false;
 	unsigned char *pos;
 	while (!found) {
 		while (ps != NULL) {
 			if (ps->startNo <= idx->id
-					&& idx->id < ps->startNo + LABEL_TOKEN_PAGE_RECORDS) {
+					&& idx->id < ps->startNo + LABEL_INDEX_PAGE_RECORDS) {
 				pos = ps->content
 						+ (idx->id - ps->startNo) * lbl_idx_record_bytes;
 				unsigned char ta_ids[LONG_LONG] = { 0 };
@@ -123,10 +123,10 @@ long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp, FILE *lbl_idx_id
 		}
 		if (!found) {
 			// read a new page
-			long long pagenum = (idx->id * lbl_tkn_record_bytes)
-					/ lbl_tkn_page_bytes;
-			readOneLabelIndexPage(lbl_tkn_pages, pagenum * lbl_tkn_page_bytes,
-					pagenum * LABEL_TOKEN_PAGE_RECORDS, lbl_idx_db_fp);
+			long long pagenum = (idx->id * lbl_idx_record_bytes)
+					/ lbl_idx_page_bytes;
+			readOneLabelIndexPage(lbl_idx_pages, pagenum * lbl_idx_page_bytes,
+					pagenum * LABEL_INDEX_PAGE_RECORDS, lbl_idx_db_fp);
 			continue;
 		} else {
 			ps = NULL;

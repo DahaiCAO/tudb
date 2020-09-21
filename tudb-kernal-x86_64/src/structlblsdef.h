@@ -42,7 +42,7 @@ typedef struct labels {
 	long long prvLblsId; //
 	long long taId;
 	unsigned char inuse;
-	long long lblIdxId; //
+	long long lblIdxId; //s
 	lbls_page_t *page;
 } lbls_t;
 

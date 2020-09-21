@@ -382,7 +382,8 @@ int main(int argv, char **argc) {
 
 	//loadAllIds(taidfp, caches->taIds);
 	//loadAllIds(taidfp, caches->teIds);
-	loadAllIds(lbl_idx_id_fp, caches->lblidxIds);
+	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
 	loadAllIds(lbl_tkn_id_fp, caches->lbltknIds, LABEL_ID_QUEUE_LENGTH);
 
 	//listAllIds(caches->taIds);
