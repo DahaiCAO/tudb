@@ -66,20 +66,102 @@ void initLabelsDBMemPages(lbls_page_t *pages, FILE *lbls_db_fp) {
 	readOneLabelsPage(pages, 0LL, 0LL, lbls_db_fp);
 }
 
-lbls_t** insertLabels(long long ta_id, long long * lblIdxIds) {
+lbls_t** insertLabels(long long *lblIdxIds) {
 	int count = 0;
 	long long *p = lblIdxIds;
 	while (*p) {
 		count++;
+		p++;
 	}
-	lbls_t **lbls = (lbls_t**) calloc(count, sizeof(lbls_t*));
-	for (int i=0;i<count;i++) {
-		lbls_t *idx = (lbls_t*) malloc(sizeof(lbls_t));
-		idx->id = NULL_POINTER;
+	p = lblIdxIds;
+	lbls_t **labels = (lbls_t**) calloc(count, sizeof(lbls_t*));
+	for (int i = 0; i < count; i++) {
+		lbls_t *lbls = (lbls_t*) malloc(sizeof(lbls_t));
+		lbls->id = NULL_POINTER;
+		lbls->inUse = 1;
+		lbls->lblIdxId = *p;
+		lbls->prvLblsId = NULL_POINTER;
+		lbls->nxtLblsId = NULL_POINTER;
+		lbls->taId = 0;
+		lbls->page = NULL;
+		*(labels + i) = lbls;
+		p++;
+	}
+	return labels;
+}
 
-		idx->taId = ta_id;
-		idx->page = NULL;
-		*(lbls+i)=idx;
+void commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
+		FILE *lbls_id_fp) {
+	lbls_t **t;
+	// assign a ID to every token block
+	int j = 0;
+	t = labels;
+	while (*(t + j) != NULL) {
+		(*(t + j))->id = getOneId(lbls_id_fp, caches->lblsIds,
+				LABEL_ID_QUEUE_LENGTH);
+		if (j > 0) {
+			(*(t + j - 1))->nxtLblsId = (*(t + j))->id;
+			(*(t + j))->prvLblsId = (*(t + j - 1))->id;
+		}
+		j++;
 	}
-	return lbls;
+	t = labels;
+	j = 0;
+	// one by one to store label tokens
+	while (*(t + j) != NULL) {
+		// search a label token space for storing label token
+		lbls_page_t *ps = lbls_pages;
+		bool found = false;
+		unsigned char *pos;
+		while (!found) {
+			while (ps != NULL) {
+				if (ps->startNo <= (*(t + j))->id
+						&& (*(t + j))->id < ps->startNo + LABELS_PAGE_RECORDS) {
+					pos = ps->content
+							+ ((*(t + j))->id - ps->startNo)
+									* lbls_record_bytes;
+					// convert label token block to byte array
+					unsigned char ta_ids[LONG_LONG] = { 0 };
+					LongToByteArray(ta_id, ta_ids);			// ta Id
+					unsigned char prvLblsId[LONG_LONG] = { 0 };
+					LongToByteArray((*(t + j))->prvLblsId, prvLblsId);// previous labels Id
+					unsigned char nxtLblsId[LONG_LONG] = { 0 };
+					LongToByteArray((*(t + j))->nxtLblsId, nxtLblsId);// next labels Id
+					unsigned char inuse[1] = { (*(t + j))->inUse };
+					unsigned char lblidxId[LONG_LONG] = { 0 };
+					LongToByteArray((*(t + j))->lblIdxId, lblidxId);// label index Id
+					memcpy(pos, inuse, 1LL);
+					memcpy(pos + 1, ta_ids, LONG_LONG);
+					memcpy(pos + LONG_LONG + 1, prvLblsId, LONG_LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG_LONG, nxtLblsId,
+							LONG_LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG_LONG + LONG_LONG,
+							lblidxId, LONG_LONG);
+					// update to DB
+					fseek(lbls_db_fp, (*(t + j))->id * lbls_record_bytes,
+					SEEK_SET); //
+					fwrite(pos, sizeof(unsigned char), lbls_record_bytes,
+							lbls_db_fp);
+					found = true;
+					pos = NULL;
+					break;
+				}
+				ps = ps->nxtpage;
+			}
+			if (!found) {
+				// read a new page
+				long long pagenum = ((*(t + j))->id * lbls_record_bytes)
+						/ lbls_page_bytes;
+				readOneLabelsPage(lbls_pages, pagenum * lbls_page_bytes,
+						pagenum * LABELS_PAGE_RECORDS, lbls_db_fp);
+				continue;
+			} else {
+				ps = NULL;
+				break;
+			}
+		}
+		j++;
+	}
+	t = NULL;
+
 }

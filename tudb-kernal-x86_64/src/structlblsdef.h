@@ -41,7 +41,7 @@ typedef struct labels {
 	long long nxtLblsId; // It counts the usage of the label token in whole Tu DB
 	long long prvLblsId; //
 	long long taId;
-	unsigned char inuse;
+	unsigned char inUse;
 	long long lblIdxId; //s
 	lbls_page_t *page;
 } lbls_t;

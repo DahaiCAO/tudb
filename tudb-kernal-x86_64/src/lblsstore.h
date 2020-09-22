@@ -46,6 +46,14 @@ size_t lbls_page_bytes;
 // labels page's expire time in memory
 int LABELS_PAGE_EXPIRE_TIME;
 
+lbls_page_t* readOneLabelsPage(lbls_page_t *pages, long long start,
+		long long start_no, FILE *lbls_db_fp);
 
+void initLabelsDBMemPages(lbls_page_t *pages, FILE *lbls_db_fp);
+
+lbls_t** insertLabels(long long *lblIdxIds);
+
+void commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
+		FILE *lbls_id_fp);
 
 #endif /* LBLSSTORE_H_ */
