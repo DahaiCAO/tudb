@@ -51,6 +51,12 @@ void listAllIds(id_cache_t *cache);
 
 void recycleOneId(long long id, id_cache_t *cache);
 
+void deallocIdCache(id_t *ids);
+
+void initIdCaches(id_caches_t * caches);
+
+void deallocIdCaches(id_caches_t * caches);
+
 //long long getId(FILE *idfp);
 //
 //void recycleId(FILE *idfp, long long id);

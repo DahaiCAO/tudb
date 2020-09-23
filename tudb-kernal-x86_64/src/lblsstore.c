@@ -90,8 +90,9 @@ lbls_t** insertLabels(long long *lblIdxIds) {
 	return labels;
 }
 
-void commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
+long long commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 		FILE *lbls_id_fp) {
+	long long id = 0;
 	lbls_t **t;
 	// assign a ID to every token block
 	int j = 0;
@@ -102,6 +103,8 @@ void commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 		if (j > 0) {
 			(*(t + j - 1))->nxtLblsId = (*(t + j))->id;
 			(*(t + j))->prvLblsId = (*(t + j - 1))->id;
+		} else {
+			id = (*(t + j))->id;
 		}
 		j++;
 	}
@@ -130,10 +133,10 @@ void commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 					unsigned char inuse[1] = { (*(t + j))->inUse };
 					unsigned char lblidxId[LONG_LONG] = { 0 };
 					LongToByteArray((*(t + j))->lblIdxId, lblidxId);// label index Id
-					memcpy(pos, inuse, 1LL);
-					memcpy(pos + 1, ta_ids, LONG_LONG);
-					memcpy(pos + LONG_LONG + 1, prvLblsId, LONG_LONG);
-					memcpy(pos + LONG_LONG + 1 + LONG_LONG, nxtLblsId,
+					memcpy(pos, ta_ids, LONG_LONG);
+					memcpy(pos + LONG_LONG, inuse, 1LL);
+					memcpy(pos + LONG_LONG + 1, nxtLblsId, LONG_LONG);
+					memcpy(pos + LONG_LONG + 1 + LONG_LONG, prvLblsId,
 							LONG_LONG);
 					memcpy(pos + LONG_LONG + 1 + LONG_LONG + LONG_LONG,
 							lblidxId, LONG_LONG);
@@ -163,5 +166,5 @@ void commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 		j++;
 	}
 	t = NULL;
-
+	return id;
 }

@@ -25,6 +25,7 @@
 #include "macrodef.h"
 #include "lblidxstore.h"
 #include "lbltknstore.h"
+#include "lblsstore.h"
 #include "tuidstore.h"
 #include "tastore.h"
 
@@ -307,6 +308,35 @@ void init() {
 //}
 
 
+//void labelTokenOperationTest() {
+	// -- insert operation
+//	lbl_tkn_t **list = divideLabelTokens(label);
+//	printf("id= %lld\n", (*list)->id);
+//	commitLabelToken(1, list, lbl_tkn_fp, lbl_tkn_id_fp);
+//	listAllIds(caches->lbltknIds);
+//	// -- query operation
+//	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
+//	printf("%s\n", slabel);
+//	// -- deletion operation
+//	deleteLabelToken(0, lbl_tkn_fp);
+//	listAllIds(caches->lbltknIds);
+	// -- update operation
+//	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
+//	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
+//	lbl_tkn_t **newlist = divideLabelTokens(label2);
+//	int k = 0; // i means realloc times
+//	while (*(list11 + k)) { // calculate label string length
+//		printf("num = %d\n", k);
+//		k++;
+//	}
+//	// combine the label blocks to one label.
+//	commitUpdateLabelToken(list11, newlist, lbl_tkn_id_fp, lbl_tkn_fp);
+//	listAllIds(caches->lbltknIds);
+//	unsigned char *slabel1 = findLabelToken(0, lbl_tkn_fp);
+//	printf("%s\n", slabel1);
+//}
+
+
 
 // test label token store
 int main(int argv, char **argc) {
@@ -363,13 +393,15 @@ int main(int argv, char **argc) {
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
 	initIdCaches(caches);
+
+	initIdDB(lbls_id_path);
 	initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_tkn_id_path);
 
 	// initTimeAxisDB(tadb);
+	initDB(lbls_db_path);
 	initDB(lbl_idx_db_path);
 	initDB(lbl_tkn_db_path);
-	initDB(lbls_db_path);
 
 	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
@@ -388,48 +420,73 @@ int main(int argv, char **argc) {
 
 	//listAllIds(caches->taIds);
 	//listAllIds(caches->teIds);
+	listAllIds(caches->lblsIds);
 	listAllIds(caches->lblidxIds);
 	listAllIds(caches->lbltknIds);
 
+	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
 	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
 	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_db_fp);
 
 	// -- insert operation
-//	unsigned char label[256] =
-//			"美利坚Microsoft corporation 美国yes微软公司jet出hit品版权所有cup I am so 美丽！";
-//	lbl_tkn_t **list = divideLabelTokens(label);
-//	printf("id= %lld\n", (*list)->id);
-//	commitLabelToken(1, list, lbl_tkn_fp, lbl_tkn_id_fp);
-//	listAllIds(caches->lbltknIds);
-//	// -- query operation
-//	unsigned char *slabel = findLabelToken(0, lbl_tkn_fp);
-//	printf("%s\n", slabel);
-//	// -- deletion operation
-//	deleteLabelToken(0, lbl_tkn_fp);
-//	listAllIds(caches->lbltknIds);
-	// -- update operation
-//	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
-//	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
-//	lbl_tkn_t **newlist = divideLabelTokens(label2);
-//	int k = 0; // i means realloc times
-//	while (*(list11 + k)) { // calculate label string length
-//		printf("num = %d\n", k);
-//		k++;
-//	}
-//	// combine the label blocks to one label.
-//	commitUpdateLabelToken(list11, newlist, lbl_tkn_id_fp, lbl_tkn_fp);
-//	listAllIds(caches->lbltknIds);
-//	unsigned char *slabel1 = findLabelToken(0, lbl_tkn_fp);
-//	printf("%s\n", slabel1);
-//
-//	deallocLabelTokenPages(lbl_tkn_pages);
+	long long ta_id = 1LL;
+	unsigned char *labels[] =
+			{ "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
+	long long **idList;
+	int i = 0;
+	while (labels[i]) {
+		i++;
+	}
+	idList = (long long **)calloc(i+1, sizeof(long long *));
+	i = 0;
+	while (labels[i]) {
+		unsigned char *label = labels[i];
+		// insert into label token DB
+		lbl_tkn_t **list = divideLabelTokens(label);
+		commitLabelToken(ta_id, list, lbl_tkn_db_fp, lbl_tkn_id_fp);
+		// insert into label index DB
+		lbl_idx_t* idx= insertLabelIndex(ta_id, *list[0]->id, strlen(labels), 0);
+		long long idxId = commitLabelIndex(idx, lbl_idx_db_fp, lbl_idx_id_fp);
+		*idList[i] = idxId;
+		deallocLabelTokenList(list);
+		label = NULL;
+		i++;
+	}
+	// insert into labels DB
+	lbls_t ** lbls = insertLabels(idList);
+	commitLabels(ta_id, lbls, lbls_db_fp, lbls_id_fp);
 
 
 
-
+	deallocLabelsPages(lbls_pages);
+	deallocLabelIndexPages(lbl_idx_pages);
+	deallocLabelTokenPages(lbl_tkn_pages);
 	deallocIdCaches(caches);
+	free(lbls_id_path);
+	free(lbls_db_path);
+	free(lbl_idx_id_path);
+	free(lbl_idx_db_path);
+	free(lbl_tkn_id_path);
+	free(lbl_tkn_db_path);
+	fclose(lbls_db_fp);
+	fclose(lbls_id_fp);
+	fclose(lbl_idx_id_fp);
+	fclose(lbl_idx_db_fp);
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_db_fp);
+	lbls_id_path = NULL;
+	lbls_db_path = NULL;
+	lbl_idx_id_path = NULL;
+	lbl_idx_db_path = NULL;
+	lbl_tkn_id_path = NULL;
+	lbl_tkn_db_path = NULL;
+	lbls_db_fp = NULL;
+	lbls_id_fp = NULL;
+	lbl_idx_id_fp = NULL;
+	lbl_idx_db_fp = NULL;
+	lbl_tkn_id_fp = NULL;
+	lbl_tkn_db_fp = NULL;
+	return 0;
 }
 
 
@@ -576,6 +633,17 @@ int main(int argv, char **argc) {
 //	}
 //	realloc(list, 0);
 //	list = NULL;
+	// -- insert operation
+//	char *labels[] =
+//			{ "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
+//	long long **idList;
+//	int i = 0;
+//	while (labels[i]) {
+//		char *cur = labels[i];
+//		cur = NULL;
+//		i++;
+//	}
+//
 //	return 0;
 //}
 
