@@ -66,26 +66,18 @@ void initLabelsDBMemPages(lbls_page_t *pages, FILE *lbls_db_fp) {
 	readOneLabelsPage(pages, 0LL, 0LL, lbls_db_fp);
 }
 
-lbls_t** insertLabels(long long *lblIdxIds) {
-	int count = 0;
-	long long *p = lblIdxIds;
-	while (*p) {
-		count++;
-		p++;
-	}
-	p = lblIdxIds;
-	lbls_t **labels = (lbls_t**) calloc(count, sizeof(lbls_t*));
-	for (int i = 0; i < count; i++) {
+lbls_t** insertLabels(long long *lblIdxIds, int lblIdxLength) {
+	lbls_t **labels = (lbls_t**) calloc(lblIdxLength + 1, sizeof(lbls_t*));
+	for (int i = 0; i < lblIdxLength; i++) {
 		lbls_t *lbls = (lbls_t*) malloc(sizeof(lbls_t));
 		lbls->id = NULL_POINTER;
 		lbls->inUse = 1;
-		lbls->lblIdxId = *p;
+		lbls->lblIdxId = lblIdxIds[i];
 		lbls->prvLblsId = NULL_POINTER;
 		lbls->nxtLblsId = NULL_POINTER;
 		lbls->taId = 0;
 		lbls->page = NULL;
 		*(labels + i) = lbls;
-		p++;
 	}
 	return labels;
 }
@@ -137,7 +129,7 @@ long long commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 					memcpy(pos + LONG_LONG, inuse, 1LL);
 					memcpy(pos + LONG_LONG + 1, nxtLblsId, LONG_LONG);
 					memcpy(pos + LONG_LONG + 1 + LONG_LONG, prvLblsId,
-							LONG_LONG);
+					LONG_LONG);
 					memcpy(pos + LONG_LONG + 1 + LONG_LONG + LONG_LONG,
 							lblidxId, LONG_LONG);
 					// update to DB
@@ -167,4 +159,18 @@ long long commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 	}
 	t = NULL;
 	return id;
+}
+
+void deallocLabelsPages(lbls_page_t *pages) {
+	lbls_page_t *p;
+	while (pages) {
+		p = pages;
+		pages = pages->nxtpage;
+		free(p->content);
+		p->prvpage = NULL;
+		p->nxtpage = NULL;
+		free(p);
+		p = NULL;
+	}
+	pages = NULL;
 }

@@ -70,7 +70,7 @@ void initLabelIndexDBMemPages(lbl_idx_page_t *pages, FILE *lbl_idx_db_fp) {
 
 lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
 		int codingtype) {
-	lbl_idx_t *idx = (lbl_idx_t*) malloc(sizeof(lbl_idx_t*));
+	lbl_idx_t *idx = (lbl_idx_t*) malloc(sizeof(lbl_idx_t));
 	idx->id = NULL_POINTER;
 	idx->codingType = codingtype;
 	idx->lblCount = 1;
@@ -138,3 +138,16 @@ long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
 	return id;
 }
 
+void deallocLabelIndexPages(lbl_idx_page_t *pages) {
+	lbl_idx_page_t *p;
+	while (pages) {
+		p = pages;
+		pages = pages->nxtpage;
+		free(p->content);
+		p->prvpage = NULL;
+		p->nxtpage = NULL;
+		free(p);
+		p = NULL;
+	}
+	pages = NULL;
+}

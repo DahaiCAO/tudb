@@ -51,9 +51,11 @@ lbls_page_t* readOneLabelsPage(lbls_page_t *pages, long long start,
 
 void initLabelsDBMemPages(lbls_page_t *pages, FILE *lbls_db_fp);
 
-lbls_t** insertLabels(long long *lblIdxIds);
+lbls_t** insertLabels(long long *lblIdxIds, int count);
 
 long long commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 		FILE *lbls_id_fp);
+
+void deallocLabelsPages(lbls_page_t *pages);
 
 #endif /* LBLSSTORE_H_ */

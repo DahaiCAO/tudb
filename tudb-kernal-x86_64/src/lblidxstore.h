@@ -55,5 +55,6 @@ lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
 long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
 		FILE *lbl_idx_id_fp);
 
+void deallocLabelIndexPages(lbl_idx_page_t *pages);
 
 #endif /* LBLIDXSTORE_H_ */
