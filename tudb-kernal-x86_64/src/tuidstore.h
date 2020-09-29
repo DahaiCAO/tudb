@@ -37,6 +37,7 @@
 
 size_t ID_QUEUE_LENGTH; // default cache Id capacity. 100 by default.
 size_t LABEL_ID_QUEUE_LENGTH; // label cache Id capacity.
+size_t KEY_ID_QUEUE_LENGTH; // key cache Id capacity.
 size_t TIMEAXIS_ID_QUEUE_LENGTH; // time axis cache Id capacity.
 
 long long getOneId(FILE *id_fp, id_cache_t *cache, size_t id_length);

@@ -363,7 +363,12 @@ void initIdCaches(id_caches_t * caches) {
 	caches->lblsIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
 	caches->lblsIds->nId = NULL;
 	caches->lblsIds->rId = NULL;
-
+	caches->keyidxIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->keyidxIds->nId = NULL;
+	caches->keyidxIds->rId = NULL;
+	caches->keyblkIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
+	caches->keyblkIds->nId = NULL;
+	caches->keyblkIds->rId = NULL;
 }
 
 void deallocIdCaches(id_caches_t * caches) {
@@ -382,5 +387,11 @@ void deallocIdCaches(id_caches_t * caches) {
 	deallocIdCache(caches->lblsIds->nId);
 	deallocIdCache(caches->lblsIds->rId);
 	free(caches->lblsIds);
+	deallocIdCache(caches->keyidxIds->nId);
+	deallocIdCache(caches->keyidxIds->rId);
+	free(caches->keyidxIds);
+	deallocIdCache(caches->keyblkIds->nId);
+	deallocIdCache(caches->keyblkIds->rId);
+	free(caches->keyblkIds);
 	free(caches);
 }

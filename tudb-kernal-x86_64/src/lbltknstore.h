@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include "utf8convert.h"
 #include "tuidstore.h"
 #include "structlbltkndef.h"
 #include "macrodef.h"
@@ -52,21 +53,6 @@ size_t LABEL_BUFFER_LENGTH;
 int LABEL_TOKEN_PAGE_EXPIRE_TIME;
 
 void initLabelTokenDBMemPages(lbl_tkn_page_t *pages, FILE *lbl_tkn_db_fp);
-
-int code_convert(char *from_charset, char *to_charset, char *inbuf,
-		size_t inlen, char *outbuf, size_t outlen);
-
-bool check_utf8(unsigned char *str, size_t length);
-
-bool check_gb2312(unsigned char *str, size_t length);
-
-bool check_gbk(unsigned char *str, size_t length);
-
-int u2g(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
-
-int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
-
-void convert2Utf8(char *fromstr, char *tostr, size_t length);
 
 void commitLabelToken(long long ta_id, lbl_tkn_t **list, FILE *lbl_tkn_db_fp,
 		FILE *lbl_tkn_id_fp);

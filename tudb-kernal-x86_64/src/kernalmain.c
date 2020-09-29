@@ -101,6 +101,7 @@ void initDB(char *path) {
 void init() {
 	ID_QUEUE_LENGTH = 25;
 	LABEL_ID_QUEUE_LENGTH = 10;
+	KEY_ID_QUEUE_LENGTH = 10;
 	TIMEAXIS_ID_QUEUE_LENGTH = 10;
 
 	// time axis record byte array length
@@ -113,7 +114,6 @@ void init() {
 	tm_axis_db_start_byte = 16LL;
 	// time axis page expiration time (minutes), configurable in .conf file
 	TIME_AXIS_PAGE_EXPIRE_TIME = 10;
-
 
 	// label token block size
 	LABEL_BLOCK_LENGTH = 64;
@@ -398,8 +398,8 @@ int main(int argv, char **argc) {
 //	strcat(tedb, path);
 //	strcat(tedb, "tustore.element.tdb");
 //	FILE *tedbfp = fopen(tedb, "rb+");
-//
-	char *lbls_id_path = (char*) calloc(256, sizeof(char));
+    // label array
+ 	char *lbls_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbls_id_path, d_path);
 	strcat(lbls_id_path, "tustore.element.labels.tdb.id");
 
@@ -407,6 +407,7 @@ int main(int argv, char **argc) {
 	strcat(lbls_db_path, d_path);
 	strcat(lbls_db_path, "tustore.element.labels.tdb");
 
+	// label name
 	char *lbl_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_idx_id_path, d_path);
 	strcat(lbl_idx_id_path, "tustore.label.index.tdb.id");
@@ -422,19 +423,39 @@ int main(int argv, char **argc) {
 	char *lbl_tkn_db_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_tkn_db_path, d_path);
 	strcat(lbl_tkn_db_path, "tustore.label.token.tdb");
+	// property name
+	char *key_idx_id_path = (char*) calloc(256, sizeof(char));
+	strcat(key_idx_id_path, d_path);
+	strcat(key_idx_id_path, "tustore.property.keyindex.tdb.id");
 
+	char *key_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(key_idx_db_path, d_path);
+	strcat(key_idx_db_path, "tustore.property.keyindex.tdb");
+
+	char *key_blk_id_path = (char*) calloc(256, sizeof(char));
+	strcat(key_blk_id_path, d_path);
+	strcat(key_blk_id_path, "tustore.property.keyblock.tdb.id");
+
+	char *key_blk_db_path = (char*) calloc(256, sizeof(char));
+	strcat(key_blk_db_path, d_path);
+	strcat(key_blk_db_path, "tustore.property.keyblock.tdb");
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
 	initIdCaches(caches);
 
+	// initialized Id DB
 	initIdDB(lbls_id_path);
 	initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_tkn_id_path);
-
+	initIdDB(key_idx_id_path);
+	initIdDB(key_blk_id_path);
+	// initialized DB
 	initTaDB(ta_db_path);
 	initDB(lbls_db_path);
 	initDB(lbl_idx_db_path);
 	initDB(lbl_tkn_db_path);
+	initDB(key_idx_db_path);
+	initDB(key_blk_db_path);
 
 	FILE *ta_id_fp = fopen(ta_id_path, "rb+");
 	FILE *ta_db_fp = fopen(ta_db_path, "rb+");
@@ -442,10 +463,14 @@ int main(int argv, char **argc) {
 	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
 	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
+	FILE *key_idx_id_fp = fopen(key_idx_id_path, "rb+");
+	FILE *key_blk_id_fp = fopen(key_blk_id_path, "rb+");
 
 	FILE *lbls_db_fp = fopen(lbls_db_path, "rb+");
 	FILE *lbl_idx_db_fp = fopen(lbl_idx_db_path, "rb+");
 	FILE *lbl_tkn_db_fp = fopen(lbl_tkn_db_path, "rb+");
+	FILE *key_idx_db_fp = fopen(key_idx_db_path, "rb+");
+	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
 	//initIds(lbl_tkn_id_fp);
 
 	loadAllIds(ta_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
@@ -484,6 +509,8 @@ int main(int argv, char **argc) {
 	free(lbl_idx_db_path);
 	free(lbl_tkn_id_path);
 	free(lbl_tkn_db_path);
+	free(key_blk_id_path);
+	free(key_blk_db_path);
 	free(ta_id_path);
 	free(ta_db_path);
 
@@ -493,6 +520,8 @@ int main(int argv, char **argc) {
 	fclose(lbl_idx_db_fp);
 	fclose(lbl_tkn_id_fp);
 	fclose(lbl_tkn_db_fp);
+	fclose(key_blk_id_fp);
+	fclose(key_blk_db_fp);
 	fclose(ta_id_fp);
 	fclose(ta_db_fp);
 
@@ -502,6 +531,8 @@ int main(int argv, char **argc) {
 	lbl_idx_db_path = NULL;
 	lbl_tkn_id_path = NULL;
 	lbl_tkn_db_path = NULL;
+	key_blk_id_path = NULL;
+	key_blk_db_path = NULL;
 	ta_id_path = NULL;
 	ta_db_path = NULL;
 
@@ -511,6 +542,8 @@ int main(int argv, char **argc) {
 	lbl_idx_db_fp = NULL;
 	lbl_tkn_id_fp = NULL;
 	lbl_tkn_db_fp = NULL;
+	key_blk_id_fp = NULL;
+	key_blk_db_fp = NULL;
 	ta_id_fp = NULL;
 	ta_db_fp = NULL;
 	return 0;
