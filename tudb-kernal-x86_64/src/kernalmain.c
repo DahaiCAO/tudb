@@ -22,10 +22,11 @@
 #include <locale.h>
 
 #include "convert.h"
+#include "lblblkstore.h"
 #include "macrodef.h"
 #include "lblidxstore.h"
-#include "lbltknstore.h"
 #include "lblsstore.h"
+#include "keyblkstore.h"
 #include "tuidstore.h"
 #include "tastore.h"
 
@@ -96,8 +97,6 @@ void initDB(char *path) {
 	}
 }
 
-
-
 void init() {
 	ID_QUEUE_LENGTH = 25;
 	LABEL_ID_QUEUE_LENGTH = 10;
@@ -115,14 +114,14 @@ void init() {
 	// time axis page expiration time (minutes), configurable in .conf file
 	TIME_AXIS_PAGE_EXPIRE_TIME = 10;
 
-	// label token block size
+	// label block size
 	LABEL_BLOCK_LENGTH = 64;
-	// label token buffer size
+	// label block buffer size
 	LABEL_BUFFER_LENGTH = 256;
 	// label token page size in memory
-	LABEL_TOKEN_PAGE_RECORDS = 10;
-	// label token page's expire time in memory
-	LABEL_TOKEN_PAGE_EXPIRE_TIME = 10;
+	LABEL_BLOCK_PAGE_RECORDS = 10;
+	// label block page's expire time in memory
+	LABEL_BLOCK_PAGE_EXPIRE_TIME = 10;
 	// records in one page with label index records, configurable in .conf file
 	LABEL_INDEX_PAGE_RECORDS = 10;
 	// label index page's expire time in memory
@@ -133,9 +132,9 @@ void init() {
 	LABELS_PAGE_EXPIRE_TIME = 10;
 
 	// label bytes length.
-	lbl_tkn_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
+	lbl_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
 			+ LABEL_BLOCK_LENGTH;
-	lbl_tkn_page_bytes = lbl_tkn_record_bytes * LABEL_TOKEN_PAGE_RECORDS;
+	lbl_blk_page_bytes = lbl_blk_record_bytes * LABEL_BLOCK_PAGE_RECORDS;
 	// bytes in one label index record
 	lbl_idx_record_bytes = 4 * LONG_LONG;
 	// bytes in one page with label index records
@@ -147,31 +146,31 @@ void init() {
 
 }
 
-long long teLabelStore(long long ta_id, char *labels[],
-		FILE *lbls_db_fp, FILE*lbls_id_fp, FILE*lbl_idx_db_fp,
-		FILE* lbl_idx_id_fp, FILE*lbl_tkn_db_fp, FILE*lbl_tkn_id_fp) {
+long long teLabelStore(long long ta_id, char *labels[], FILE *lbls_db_fp,
+		FILE *lbls_id_fp, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp,
+		FILE *lbl_blk_db_fp, FILE *lbl_blk_id_fp) {
 	int c = 0;
 	while (labels[c]) {
 		c++;
 	}
-	long long * idList = (long long*) calloc(c + 1, sizeof(long long));
+	long long *idList = (long long*) calloc(c + 1, sizeof(long long));
 	int i = 0;
 	while (labels[i]) {
 		char *label = labels[i];
 		// insert into label token DB
-		lbl_tkn_t **list = divideLabelTokens((unsigned char*) label);
-		commitLabelToken(ta_id, list, lbl_tkn_db_fp, lbl_tkn_id_fp);
+		lbl_blk_t **list = divideLabelBlocks((unsigned char*) label);
+		commitLabelBlocks(ta_id, list, lbl_blk_db_fp, lbl_blk_id_fp);
 		// insert into label index DB
 		lbl_idx_t *idx = insertLabelIndex(ta_id, list[0]->id, strlen(labels[i]),
 				0);
 		long long idxId = commitLabelIndex(idx, lbl_idx_db_fp, lbl_idx_id_fp);
 		idList[i] = idxId;
-		deallocLabelTokenList(list);
+		deallocLabelBlockList(list);
 		label = NULL;
 		i++;
 	}
 	// insert into labels DB
-	lbls_t ** lbls = insertLabels(idList, c);
+	lbls_t **lbls = insertLabels(idList, c);
 	commitLabels(ta_id, lbls, lbls_db_fp, lbls_id_fp);
 	return lbls[0]->id;
 }
@@ -342,9 +341,8 @@ long long teLabelStore(long long ta_id, char *labels[],
 //
 //}
 
-
 //void labelTokenOperationTest() {
-	// -- insert operation
+// -- insert operation
 //	lbl_tkn_t **list = divideLabelTokens(label);
 //	printf("id= %lld\n", (*list)->id);
 //	commitLabelToken(1, list, lbl_tkn_fp, lbl_tkn_id_fp);
@@ -355,7 +353,7 @@ long long teLabelStore(long long ta_id, char *labels[],
 //	// -- deletion operation
 //	deleteLabelToken(0, lbl_tkn_fp);
 //	listAllIds(caches->lbltknIds);
-	// -- update operation
+// -- update operation
 //	unsigned char label2[256] ="美利坚Microsoft corporation 美国yes微软公司 华盛顿施普林格springer景观大道venue，北大街社区中心的地下室中的冰箱冷冻室里的小盒子中";
 //	lbl_tkn_t **list11 = searchLabelTokenList(0, lbl_tkn_fp);
 //	lbl_tkn_t **newlist = divideLabelTokens(label2);
@@ -371,11 +369,9 @@ long long teLabelStore(long long ta_id, char *labels[],
 //	printf("%s\n", slabel1);
 //}
 
-
-
 // test label token store
 int main(int argv, char **argc) {
-    setlocale(LC_ALL, "zh-CN.UTF-8");
+	setlocale(LC_ALL, "zh-CN.UTF-8");
 	setvbuf(stdout, NULL, _IONBF, 0);
 
 	const char *d_path = "D:/tudata/";
@@ -383,7 +379,7 @@ int main(int argv, char **argc) {
 
 	char *ta_id_path = (char*) calloc(256, sizeof(char));
 	strcat(ta_id_path, d_path);
-	strcat(ta_id_path,"tustore.timeaxis.tdb.id");
+	strcat(ta_id_path, "tustore.timeaxis.tdb.id");
 
 	char *ta_db_path = (char*) calloc(256, sizeof(char));
 	strcat(ta_db_path, d_path);
@@ -398,8 +394,8 @@ int main(int argv, char **argc) {
 //	strcat(tedb, path);
 //	strcat(tedb, "tustore.element.tdb");
 //	FILE *tedbfp = fopen(tedb, "rb+");
-    // label array
- 	char *lbls_id_path = (char*) calloc(256, sizeof(char));
+	// label array
+	char *lbls_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbls_id_path, d_path);
 	strcat(lbls_id_path, "tustore.element.labels.tdb.id");
 
@@ -410,19 +406,19 @@ int main(int argv, char **argc) {
 	// label name
 	char *lbl_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_idx_id_path, d_path);
-	strcat(lbl_idx_id_path, "tustore.label.index.tdb.id");
+	strcat(lbl_idx_id_path, "tustore.labelindex.tdb.id");
 
 	char *lbl_idx_db_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_idx_db_path, d_path);
-	strcat(lbl_idx_db_path, "tustore.label.index.tdb");
+	strcat(lbl_idx_db_path, "tustore.labelindex.tdb");
 
-	char *lbl_tkn_id_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_tkn_id_path, d_path);
-	strcat(lbl_tkn_id_path, "tustore.label.token.tdb.id");
+	char *lbl_blk_id_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_blk_id_path, d_path);
+	strcat(lbl_blk_id_path, "tustore.labelblock.tdb.id");
 
-	char *lbl_tkn_db_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_tkn_db_path, d_path);
-	strcat(lbl_tkn_db_path, "tustore.label.token.tdb");
+	char *lbl_blk_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_blk_db_path, d_path);
+	strcat(lbl_blk_db_path, "tustore.labelblock.tdb");
 	// property name
 	char *key_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(key_idx_id_path, d_path);
@@ -446,14 +442,14 @@ int main(int argv, char **argc) {
 	// initialized Id DB
 	initIdDB(lbls_id_path);
 	initIdDB(lbl_idx_id_path);
-	initIdDB(lbl_tkn_id_path);
+	initIdDB(lbl_blk_id_path);
 	initIdDB(key_idx_id_path);
 	initIdDB(key_blk_id_path);
 	// initialized DB
 	initTaDB(ta_db_path);
 	initDB(lbls_db_path);
 	initDB(lbl_idx_db_path);
-	initDB(lbl_tkn_db_path);
+	initDB(lbl_blk_db_path);
 	initDB(key_idx_db_path);
 	initDB(key_blk_db_path);
 
@@ -462,13 +458,13 @@ int main(int argv, char **argc) {
 
 	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
-	FILE *lbl_tkn_id_fp = fopen(lbl_tkn_id_path, "rb+");
+	FILE *lbl_blk_id_fp = fopen(lbl_blk_id_path, "rb+");
 	FILE *key_idx_id_fp = fopen(key_idx_id_path, "rb+");
 	FILE *key_blk_id_fp = fopen(key_blk_id_path, "rb+");
 
 	FILE *lbls_db_fp = fopen(lbls_db_path, "rb+");
 	FILE *lbl_idx_db_fp = fopen(lbl_idx_db_path, "rb+");
-	FILE *lbl_tkn_db_fp = fopen(lbl_tkn_db_path, "rb+");
+	FILE *lbl_blk_db_fp = fopen(lbl_blk_db_path, "rb+");
 	FILE *key_idx_db_fp = fopen(key_idx_db_path, "rb+");
 	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
 	//initIds(lbl_tkn_id_fp);
@@ -477,29 +473,32 @@ int main(int argv, char **argc) {
 	//loadAllIds(taidfp, caches->teIds);
 	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
 	loadAllIds(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(lbl_tkn_id_fp, caches->lbltknIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(lbl_blk_id_fp, caches->lblblkIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(key_blk_id_fp, caches->keyblkIds, LABEL_ID_QUEUE_LENGTH);
 
 	listAllIds(caches->taIds);
 	//listAllIds(caches->teIds);
 	listAllIds(caches->lblsIds);
 	listAllIds(caches->lblidxIds);
-	listAllIds(caches->lbltknIds);
+	listAllIds(caches->lblblkIds);
+	listAllIds(caches->keyblkIds);
 
 	initTaDBMemPages(tm_axis_pages, ta_db_fp);
 	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
 	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
-	initLabelTokenDBMemPages(lbl_tkn_pages, lbl_tkn_db_fp);
+	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
+	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
 
 	long long ts = 1593783935;	//(unsigned long) time(NULL);
 	// -- insert operation
 	long long ta_id = insertEvolvedPoint(ts, ta_id_fp, ta_db_fp);
 	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
 	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
-			lbl_idx_db_fp, lbl_idx_id_fp, lbl_tkn_db_fp, lbl_tkn_id_fp);
+			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
-	deallocLabelTokenPages(lbl_tkn_pages);
+	deallocLabelBlockPages(lbl_blk_pages);
 	deallocTimeAxisPages(tm_axis_pages);
 	deallocIdCaches(caches);
 
@@ -507,8 +506,8 @@ int main(int argv, char **argc) {
 	free(lbls_db_path);
 	free(lbl_idx_id_path);
 	free(lbl_idx_db_path);
-	free(lbl_tkn_id_path);
-	free(lbl_tkn_db_path);
+	free(lbl_blk_id_path);
+	free(lbl_blk_db_path);
 	free(key_blk_id_path);
 	free(key_blk_db_path);
 	free(ta_id_path);
@@ -518,8 +517,8 @@ int main(int argv, char **argc) {
 	fclose(lbls_id_fp);
 	fclose(lbl_idx_id_fp);
 	fclose(lbl_idx_db_fp);
-	fclose(lbl_tkn_id_fp);
-	fclose(lbl_tkn_db_fp);
+	fclose(lbl_blk_id_fp);
+	fclose(lbl_blk_db_fp);
 	fclose(key_blk_id_fp);
 	fclose(key_blk_db_fp);
 	fclose(ta_id_fp);
@@ -529,8 +528,8 @@ int main(int argv, char **argc) {
 	lbls_db_path = NULL;
 	lbl_idx_id_path = NULL;
 	lbl_idx_db_path = NULL;
-	lbl_tkn_id_path = NULL;
-	lbl_tkn_db_path = NULL;
+	lbl_blk_id_path = NULL;
+	lbl_blk_db_path = NULL;
 	key_blk_id_path = NULL;
 	key_blk_db_path = NULL;
 	ta_id_path = NULL;
@@ -540,8 +539,8 @@ int main(int argv, char **argc) {
 	lbls_id_fp = NULL;
 	lbl_idx_id_fp = NULL;
 	lbl_idx_db_fp = NULL;
-	lbl_tkn_id_fp = NULL;
-	lbl_tkn_db_fp = NULL;
+	lbl_blk_id_fp = NULL;
+	lbl_blk_db_fp = NULL;
 	key_blk_id_fp = NULL;
 	key_blk_db_fp = NULL;
 	ta_id_fp = NULL;
@@ -549,68 +548,66 @@ int main(int argv, char **argc) {
 	return 0;
 }
 
-
- // test time axis DB Id
+// test time axis DB Id
 /*int main(int argv, char **argc) {
-	setvbuf(stdout, NULL, _IONBF, 0);
-	ID_QUEUE_LENGTH = 5;
-	// get new Id from next free IDs
-	char *ta_id = "D:/tudata/tustore.timeaxis.tdb.id";
-	FILE *ta_id_fp = fopen(ta_id, "rb+");
-	// initialize
-	initIdDB(ta_id);
-	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
-	initIdCaches(caches);
-	loadAllIds(ta_id_fp, caches->taIds);
-	//listAllTaIds(caches->taIds);
-	//recycleOneId(14);
-	listAllIds(caches->taIds);
+ setvbuf(stdout, NULL, _IONBF, 0);
+ ID_QUEUE_LENGTH = 5;
+ // get new Id from next free IDs
+ char *ta_id = "D:/tudata/tustore.timeaxis.tdb.id";
+ FILE *ta_id_fp = fopen(ta_id, "rb+");
+ // initialize
+ initIdDB(ta_id);
+ caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+ initIdCaches(caches);
+ loadAllIds(ta_id_fp, caches->taIds);
+ //listAllTaIds(caches->taIds);
+ //recycleOneId(14);
+ listAllIds(caches->taIds);
 
-	long long d = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", d);
-	d = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", d);
-	d = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", d);
-	d = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", d);
-	d = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", d);
-	listAllTaIds(caches->taIds);
-	d = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", d);
-	long long id = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", id);
-	id = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", id);
-	id = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", id);
-	id = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", id);
-	listAllTaIds(caches->taIds);
-	id = getOneId(ta_id_fp, caches->taIds);
-	printf("%lld\n", id);
-*/
-	// test recycle one id
-	//	 recycleId(ta_id_fp, 4);
-	//	 recycleId(ta_id_fp, 7);
-	//	 recycleId(ta_id_fp, 2);
-	//	 recycleId(ta_id_fp, 3);
-	//	 recycleId(ta_id_fp, 11);
-	//	 recycleId(ta_id_fp, 9);
-	//	 recycleId(ta_id_fp, 5);
-	//	 recycleId(ta_id_fp, 13);
-	//	 recycleId(ta_id_fp, 17);
-	//	 recycleId(ta_id_fp, 26);
-	//
-	//	readAllTaIds(ta_id_fp);
+ long long d = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", d);
+ d = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", d);
+ d = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", d);
+ d = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", d);
+ d = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", d);
+ listAllTaIds(caches->taIds);
+ d = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", d);
+ long long id = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", id);
+ id = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", id);
+ id = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", id);
+ id = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", id);
+ listAllTaIds(caches->taIds);
+ id = getOneId(ta_id_fp, caches->taIds);
+ printf("%lld\n", id);
+ */
+// test recycle one id
+//	 recycleId(ta_id_fp, 4);
+//	 recycleId(ta_id_fp, 7);
+//	 recycleId(ta_id_fp, 2);
+//	 recycleId(ta_id_fp, 3);
+//	 recycleId(ta_id_fp, 11);
+//	 recycleId(ta_id_fp, 9);
+//	 recycleId(ta_id_fp, 5);
+//	 recycleId(ta_id_fp, 13);
+//	 recycleId(ta_id_fp, 17);
+//	 recycleId(ta_id_fp, 26);
+//
+//	readAllTaIds(ta_id_fp);
 //	fclose(ta_id_fp);
 //
 //	free(caches);
 //	printf("%s\n", "End");
 //
 //}
-
 //int main(int argv, char **argc) {
 //	setvbuf(stdout, NULL, _IONBF, 0);
 //	char s[20] = "中国dhdhdh";
@@ -639,7 +636,6 @@ int main(int argv, char **argc) {
 //	LongToByteArray(in1, s1);
 //	long long out1 = ByteArrayToLong(s1);
 //	printf("%lld\n", out1);
-
 //	int i;
 //	int *pn = (int*) malloc(5 * sizeof(int));
 //	printf("%p\n", pn);
@@ -651,8 +647,7 @@ int main(int argv, char **argc) {
 //		printf("%3d", pn[i]);
 //	printf("\n");
 //	free(pn);
-
-	// pointer testing
+// pointer testing
 //	int i = 1;
 //	int * list=NULL;
 //	while(i<10) {
@@ -666,8 +661,7 @@ int main(int argv, char **argc) {
 //		printf("num = %d\n", *(list + i));
 //		i++;
 //	}
-
-	// double pointer testing
+// double pointer testing
 //	int i = 1;
 //	int **list = NULL;
 //	while (i < 10) {
@@ -693,7 +687,7 @@ int main(int argv, char **argc) {
 //	}
 //	realloc(list, 0);
 //	list = NULL;
-	// -- insert operation
+// -- insert operation
 //	char *labels[] =
 //			{ "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
 //	long long **idList;
@@ -708,4 +702,3 @@ int main(int argv, char **argc) {
 //
 //	return 0;
 //}
-
