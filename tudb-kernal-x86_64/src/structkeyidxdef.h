@@ -24,7 +24,7 @@
 #ifndef STRUCTKEYIDXDEF_H_
 #define STRUCTKEYIDXDEF_H_
 
-typedef struct key_idx_page {
+typedef struct key_idex_page {
 	long long expiretime; // expiration time to mark this page, -1 by default, that means blank page
 	unsigned char *content; // buffer for page content.
 	long long startNo;
@@ -32,8 +32,17 @@ typedef struct key_idx_page {
 	long long end; // end byte on this page
 	unsigned char dirty; // if dirty, then 1; otherwise, 0;
 	int hit; // hit counting, 0 by default, hit once, plus 1;
-	struct key_token_page *prvpage;
-	struct key_token_page *nxtpage;
+	struct key_idex_page *prvpage;
+	struct key_idex_page *nxtpage;
 } key_idx_page_t;
+
+typedef struct key_index {
+	long long id; // pointer in DB
+	long long useCount; // It counts the usage of the label token in whole Tu DB
+	long long keyBlkId; //
+	int length;
+	long long taId;
+	key_idx_page_t *page;
+} key_idx_t;
 
 #endif /* STRUCTKEYIDXDEF_H_ */

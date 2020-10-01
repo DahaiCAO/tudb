@@ -38,9 +38,8 @@ typedef struct label_index_page {
 
 typedef struct label_index {
 	long long id; // pointer in DB
-	long long lblCount; // It counts the usage of the label token in whole Tu DB
-	long long lblTknId; //
-	int codingType;
+	long long useCount; // It counts the usage of the label token in whole Tu DB
+	long long lblBlkId; //
 	int length;
 	long long taId;
 	lbl_idx_page_t *page;

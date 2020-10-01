@@ -21,14 +21,15 @@
 #include <time.h>
 #include <locale.h>
 
-#include "convert.h"
-#include "lblblkstore.h"
 #include "macrodef.h"
-#include "lblidxstore.h"
-#include "lblsstore.h"
-#include "keyblkstore.h"
+#include "convert.h"
 #include "tuidstore.h"
 #include "tastore.h"
+#include "lblblkstore.h"
+#include "lblidxstore.h"
+#include "lblsstore.h"
+#include "keyidxstore.h"
+#include "keyblkstore.h"
 
 /*
  * main.c
@@ -136,7 +137,7 @@ void init() {
 			+ LABEL_BLOCK_LENGTH;
 	lbl_blk_page_bytes = lbl_blk_record_bytes * LABEL_BLOCK_PAGE_RECORDS;
 	// bytes in one label index record
-	lbl_idx_record_bytes = 4 * LONG_LONG;
+	lbl_idx_record_bytes = 3 * LONG_LONG + LONG;
 	// bytes in one page with label index records
 	lbl_idx_page_bytes = lbl_idx_record_bytes * LABEL_INDEX_PAGE_RECORDS;
 	// bytes in one labels record
@@ -144,6 +145,15 @@ void init() {
 	// bytes in one page with labels records
 	lbls_page_bytes = lbls_record_bytes * LABELS_PAGE_RECORDS;
 
+	// key (property name) block bytes length.
+	key_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
+			+ KEY_BLOCK_LENGTH;
+	// bytes of one key (property name) block page
+	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
+	// bytes in one key (property name) index record
+	key_idx_record_bytes = 3 * LONG_LONG + LONG;
+	// bytes in one page with key index records
+	key_idx_page_bytes = key_idx_record_bytes * KEY_INDEX_PAGE_RECORDS;
 }
 
 long long teLabelStore(long long ta_id, char *labels[], FILE *lbls_db_fp,
@@ -161,8 +171,7 @@ long long teLabelStore(long long ta_id, char *labels[], FILE *lbls_db_fp,
 		lbl_blk_t **list = divideLabelBlocks((unsigned char*) label);
 		commitLabelBlocks(ta_id, list, lbl_blk_db_fp, lbl_blk_id_fp);
 		// insert into label index DB
-		lbl_idx_t *idx = insertLabelIndex(ta_id, list[0]->id, strlen(labels[i]),
-				0);
+		lbl_idx_t *idx = insertLabelIndex(ta_id, list[0]->id, strlen(labels[i]));
 		long long idxId = commitLabelIndex(idx, lbl_idx_db_fp, lbl_idx_id_fp);
 		idList[i] = idxId;
 		deallocLabelBlockList(list);
@@ -474,19 +483,22 @@ int main(int argv, char **argc) {
 	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
 	loadAllIds(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
 	loadAllIds(lbl_blk_id_fp, caches->lblblkIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(key_blk_id_fp, caches->keyblkIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(key_idx_id_fp, caches->keyidxIds, KEY_ID_QUEUE_LENGTH);
+	loadAllIds(key_blk_id_fp, caches->keyblkIds, KEY_ID_QUEUE_LENGTH);
 
 	listAllIds(caches->taIds);
 	//listAllIds(caches->teIds);
 	listAllIds(caches->lblsIds);
 	listAllIds(caches->lblidxIds);
 	listAllIds(caches->lblblkIds);
+	listAllIds(caches->keyidxIds);
 	listAllIds(caches->keyblkIds);
 
 	initTaDBMemPages(tm_axis_pages, ta_db_fp);
 	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
 	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
 	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
+	initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
 	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
 
 	long long ts = 1593783935;	//(unsigned long) time(NULL);
@@ -499,6 +511,8 @@ int main(int argv, char **argc) {
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
 	deallocLabelBlockPages(lbl_blk_pages);
+	deallocKeyIndexPages(key_blk_pages);
+	deallocKeyBlockPages(key_blk_pages);
 	deallocTimeAxisPages(tm_axis_pages);
 	deallocIdCaches(caches);
 
@@ -508,6 +522,8 @@ int main(int argv, char **argc) {
 	free(lbl_idx_db_path);
 	free(lbl_blk_id_path);
 	free(lbl_blk_db_path);
+	free(key_idx_id_path);
+	free(key_idx_db_path);
 	free(key_blk_id_path);
 	free(key_blk_db_path);
 	free(ta_id_path);
@@ -521,6 +537,9 @@ int main(int argv, char **argc) {
 	fclose(lbl_blk_db_fp);
 	fclose(key_blk_id_fp);
 	fclose(key_blk_db_fp);
+	fclose(key_idx_id_fp);
+	fclose(key_idx_db_fp);
+
 	fclose(ta_id_fp);
 	fclose(ta_db_fp);
 
@@ -530,8 +549,11 @@ int main(int argv, char **argc) {
 	lbl_idx_db_path = NULL;
 	lbl_blk_id_path = NULL;
 	lbl_blk_db_path = NULL;
+	key_idx_id_path = NULL;
+	key_idx_db_path = NULL;
 	key_blk_id_path = NULL;
 	key_blk_db_path = NULL;
+
 	ta_id_path = NULL;
 	ta_db_path = NULL;
 
@@ -541,8 +563,11 @@ int main(int argv, char **argc) {
 	lbl_idx_db_fp = NULL;
 	lbl_blk_id_fp = NULL;
 	lbl_blk_db_fp = NULL;
+	key_idx_id_fp = NULL;
+	key_idx_db_fp = NULL;
 	key_blk_id_fp = NULL;
 	key_blk_db_fp = NULL;
+
 	ta_id_fp = NULL;
 	ta_db_fp = NULL;
 	return 0;

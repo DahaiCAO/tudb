@@ -27,7 +27,7 @@
 // start the start pointer in memory
 // start_no the start record id in this page
 // lbl_idx_db_fp label index DB file
-lbl_idx_page_t* readOneLabelIndexPage(lbl_idx_page_t *pages, long long start,
+static lbl_idx_page_t* readOneLabelIndexPage(lbl_idx_page_t *pages, long long start,
 		long long start_no, FILE *lbl_idx_db_fp) {
 	unsigned char *page = (unsigned char*) malloc(
 			sizeof(unsigned char) * lbl_idx_page_bytes);
@@ -68,13 +68,11 @@ void initLabelIndexDBMemPages(lbl_idx_page_t *pages, FILE *lbl_idx_db_fp) {
 	readOneLabelIndexPage(pages, 0LL, 0LL, lbl_idx_db_fp);
 }
 
-lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
-		int codingtype) {
+lbl_idx_t* insertLabelIndex(long long ta_id, long long firstBlkId, int length) {
 	lbl_idx_t *idx = (lbl_idx_t*) malloc(sizeof(lbl_idx_t));
 	idx->id = NULL_POINTER;
-	idx->codingType = codingtype;
-	idx->lblCount = 1;
-	idx->lblTknId = tknId;
+	idx->useCount = 1;
+	idx->lblBlkId = firstBlkId;
 	idx->length = length;
 	idx->taId = ta_id;
 	idx->page = NULL;
@@ -100,16 +98,13 @@ long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
 				unsigned char length[LONG] = { 0 };
 				Integer2Bytes(idx->length, length); // length
 				unsigned char count[LONG_LONG] = { 0 };
-				LongToByteArray(idx->lblCount, count); // label counting
-				unsigned char coding[LONG] = { 0 };
-				Integer2Bytes(idx->codingType, coding);
-				unsigned char tknIds[LONG_LONG] = { 0 };
-				LongToByteArray(idx->lblTknId, tknIds);
+				LongToByteArray(idx->useCount, count); // label counting
+				unsigned char blkIds[LONG_LONG] = { 0 };
+				LongToByteArray(idx->lblBlkId, blkIds);
 				memcpy(pos, ta_ids, LONG_LONG);
-				memcpy(pos + LONG_LONG, tknIds, LONG_LONG);
+				memcpy(pos + LONG_LONG, blkIds, LONG_LONG);
 				memcpy(pos + LONG_LONG + LONG_LONG, length, LONG);
-				memcpy(pos + LONG_LONG + LONG_LONG + LONG, coding, LONG);
-				memcpy(pos + LONG_LONG + LONG_LONG + LONG_LONG, count,
+				memcpy(pos + LONG_LONG + LONG_LONG + LONG, count,
 				LONG_LONG);
 				fseek(lbl_idx_db_fp, idx->id * lbl_idx_record_bytes,
 				SEEK_SET); //

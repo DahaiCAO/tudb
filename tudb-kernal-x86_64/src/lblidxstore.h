@@ -44,13 +44,9 @@ size_t lbl_idx_page_bytes;
 // label index page's expire time in memory
 int LABEL_INDEX_PAGE_EXPIRE_TIME;
 
-lbl_idx_page_t* readOneLabelIndexPage(lbl_idx_page_t *pages, long long start,
-		long long start_no, FILE *lbl_idx_db_fp);
-
 void initLabelIndexDBMemPages(lbl_idx_page_t *pages, FILE *lbl_idx_db_fp);
 
-lbl_idx_t* insertLabelIndex(long long ta_id, long long tknId, int length,
-		int codingtype);
+lbl_idx_t* insertLabelIndex(long long ta_id, long long blkId, int length);
 
 long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
 		FILE *lbl_idx_id_fp);
