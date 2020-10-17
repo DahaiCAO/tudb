@@ -22,21 +22,21 @@
  * Author: Dahai CAO
  */
 
-/* read one label token page
+/* read one label block page
  * start the start pointer in memory
  * start_no the start record id in this page
- * lbl_tkn_db_fp label token DB file
+ * lbl_blk_db_fp label block DB file
  */
 static lbl_blk_page_t* readOneLabelBlockPage(lbl_blk_page_t *pages,
-		long long start, long long start_no, FILE *lbl_tkn_db_fp) {
+		long long start, long long start_no, FILE *lbl_blk_db_fp) {
 	unsigned char *page = (unsigned char*) malloc(
 			sizeof(unsigned char) * lbl_blk_page_bytes);
 	memset(page, 0, sizeof(unsigned char) * lbl_blk_page_bytes);
-	fseek(lbl_tkn_db_fp, start, SEEK_SET); // start to read from the first record
+	fseek(lbl_blk_db_fp, start, SEEK_SET); // start to read from the first record
 	int c;
-	if ((c = fgetc(lbl_tkn_db_fp)) != EOF) {
-		fseek(lbl_tkn_db_fp, start, SEEK_SET);
-		fread(page, sizeof(unsigned char), lbl_blk_page_bytes, lbl_tkn_db_fp); // read one page
+	if ((c = fgetc(lbl_blk_db_fp)) != EOF) {
+		fseek(lbl_blk_db_fp, start, SEEK_SET);
+		fread(page, sizeof(unsigned char), lbl_blk_page_bytes, lbl_blk_db_fp); // read one page
 	}
 
 	lbl_blk_page_t *p = (lbl_blk_page_t*) malloc(sizeof(lbl_blk_page_t));

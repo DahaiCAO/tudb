@@ -30,6 +30,7 @@
 #include "lblsstore.h"
 #include "keyidxstore.h"
 #include "keyblkstore.h"
+#include "valstore.h"
 
 /*
  * main.c
@@ -444,6 +445,24 @@ int main(int argv, char **argc) {
 	char *key_blk_db_path = (char*) calloc(256, sizeof(char));
 	strcat(key_blk_db_path, d_path);
 	strcat(key_blk_db_path, "tustore.property.keyblock.tdb");
+
+	char *val_idx_id_path = (char*) calloc(256, sizeof(char));
+	strcat(val_idx_id_path, d_path);
+	strcat(val_idx_id_path, "tustore.property.valueindex.tdb.id");
+
+	char *val_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(val_idx_db_path, d_path);
+	strcat(val_idx_db_path, "tustore.property.valueindex.tdb");
+
+	char *val_id_path = (char*) calloc(256, sizeof(char));
+	strcat(val_id_path, d_path);
+	strcat(val_id_path, "tustore.property.value.tdb.id");
+
+	char *val_db_path = (char*) calloc(256, sizeof(char));
+	strcat(val_db_path, d_path);
+	strcat(val_db_path, "tustore.property.value.tdb");
+
+
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
 	initIdCaches(caches);
@@ -476,6 +495,12 @@ int main(int argv, char **argc) {
 	FILE *lbl_blk_db_fp = fopen(lbl_blk_db_path, "rb+");
 	FILE *key_idx_db_fp = fopen(key_idx_db_path, "rb+");
 	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
+
+	FILE *val_idx_id_fp = fopen(val_idx_id_path, "rb+");
+	FILE *val_idx_db_fp = fopen(val_idx_db_path, "rb+");
+	FILE *val_id_fp = fopen(val_id_path, "rb+");
+	FILE *val_db_fp = fopen(val_db_path, "rb+");
+
 	//initIds(lbl_tkn_id_fp);
 
 	loadAllIds(ta_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
@@ -485,14 +510,19 @@ int main(int argv, char **argc) {
 	loadAllIds(lbl_blk_id_fp, caches->lblblkIds, LABEL_ID_QUEUE_LENGTH);
 	loadAllIds(key_idx_id_fp, caches->keyidxIds, KEY_ID_QUEUE_LENGTH);
 	loadAllIds(key_blk_id_fp, caches->keyblkIds, KEY_ID_QUEUE_LENGTH);
+	loadAllIds(val_idx_id_fp, caches->valIdxIds, VALUE_ID_QUEUE_LENGTH);
+	loadAllIds(val_id_fp, caches->valIds, VALUE_ID_QUEUE_LENGTH);
 
 	listAllIds(caches->taIds);
 	//listAllIds(caches->teIds);
+	//listAllIds(caches->prpIds);
 	listAllIds(caches->lblsIds);
 	listAllIds(caches->lblidxIds);
 	listAllIds(caches->lblblkIds);
 	listAllIds(caches->keyidxIds);
 	listAllIds(caches->keyblkIds);
+	listAllIds(caches->valIdxIds);
+	listAllIds(caches->valIds);
 
 	initTaDBMemPages(tm_axis_pages, ta_db_fp);
 	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
@@ -500,13 +530,16 @@ int main(int argv, char **argc) {
 	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
 	initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
 	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
+	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
+	initValueDBMemPages(val_pages, val_db_fp);
 
-	long long ts = 1593783935;	//(unsigned long) time(NULL);
-	// -- insert operation
-	long long ta_id = insertEvolvedPoint(ts, ta_id_fp, ta_db_fp);
-	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
-	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
-			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
+
+//	long long ts = 1593783935;	//(unsigned long) time(NULL);
+//	// -- insert operation
+//	long long ta_id = insertEvolvedPoint(ts, ta_id_fp, ta_db_fp);
+//	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
+//	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
+//			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
