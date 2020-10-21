@@ -63,7 +63,7 @@ void loadNewIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 	// fetch a new Id
 	fseek(id_fp, 0, SEEK_SET); // move file pointer to file head
 	fread(ids, sizeof(unsigned char), LONG_LONG, id_fp); // read the first bytes
-	long long newid = ByteArrayToLong(ids); // convert array to long long
+	long long newid = byteArrayToLong(ids); // convert array to long long
 	for (int i = 0; i < ID_QUEUE_LENGTH; i++) {
 		id_t *p = cache->nId;
 		if (p != NULL) {
@@ -82,7 +82,7 @@ void loadNewIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 		newid += 1;
 	}
 	// update the next free Id.
-	LongToByteArray(newid, ids); // convert
+	longToByteArray(newid, ids); // convert
 	fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
 	fwrite(ids, sizeof(unsigned char), LONG_LONG, id_fp);
 }
@@ -96,7 +96,7 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 	unsigned char ids[LONG_LONG] = { 0 };
 	fseek(id_fp, LONG_LONG, SEEK_SET);
 	fread(ids, sizeof(unsigned char), LONG_LONG, id_fp);
-	long long s0 = ByteArrayToLong(ids);
+	long long s0 = byteArrayToLong(ids);
 	if (s0 != 0) { // there reused Id
 		// 16 means 2 * LONG_LONG Bytes for long long
 		long long rest = (s0 + 1) * LONG_LONG - 2 * LONG_LONG;
@@ -115,7 +115,7 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 				for (int j = 0; j < LONG_LONG; j++) {
 					ids[j] = buf[i * LONG_LONG + j];
 				}
-				long long d = ByteArrayToLong(ids);
+				long long d = byteArrayToLong(ids);
 				// insert one at end of queue
 				id_t *p = cache->rId;
 				if (p != NULL) {
@@ -140,7 +140,7 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 			// update the second pointer
 			fseek(id_fp, LONG_LONG, SEEK_SET);
 			// last reused Id
-			LongToByteArray((p - LONG_LONG) / LONG_LONG, ids);
+			longToByteArray((p - LONG_LONG) / LONG_LONG, ids);
 			fwrite(ids, sizeof(unsigned char), LONG_LONG, id_fp);
 		} else {
 			// all read
@@ -154,7 +154,7 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length) {
 				for (int j = 0; j < LONG_LONG; j++) {
 					ids[j] = buf[i * LONG_LONG + j];
 				}
-				long long d = ByteArrayToLong(ids);
+				long long d = byteArrayToLong(ids);
 				// insert one at end of queue
 				id_t *p = cache->rId;
 				if (p != NULL) {

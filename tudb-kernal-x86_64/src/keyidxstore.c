@@ -92,13 +92,13 @@ long long commitKeyIndex(key_idx_t *idx, FILE *key_idx_db_fp,
 				pos = ps->content
 						+ (idx->id - ps->startNo) * key_idx_record_bytes;
 				unsigned char ta_ids[LONG_LONG] = { 0 };
-				LongToByteArray(idx->taId, ta_ids);			// ta Id
+				longToByteArray(idx->taId, ta_ids);			// ta Id
 				unsigned char length[LONG] = { 0 };
-				Integer2Bytes(idx->length, length); // length
+				integer2Bytes(idx->length, length); // length
 				unsigned char count[LONG_LONG] = { 0 };
-				LongToByteArray(idx->useCount, count); // label counting
+				longToByteArray(idx->useCount, count); // label counting
 				unsigned char blkIds[LONG_LONG] = { 0 };
-				LongToByteArray(idx->keyBlkId, blkIds);
+				longToByteArray(idx->keyBlkId, blkIds);
 				memcpy(pos, ta_ids, LONG_LONG);
 				memcpy(pos + LONG_LONG, blkIds, LONG_LONG);
 				memcpy(pos + LONG_LONG + LONG_LONG, length, LONG);

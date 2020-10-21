@@ -117,14 +117,14 @@ long long commitLabels(long long ta_id, lbls_t **labels, FILE *lbls_db_fp,
 									* lbls_record_bytes;
 					// convert label token block to byte array
 					unsigned char ta_ids[LONG_LONG] = { 0 };
-					LongToByteArray(ta_id, ta_ids);			// ta Id
+					longToByteArray(ta_id, ta_ids);			// ta Id
 					unsigned char prvLblsId[LONG_LONG] = { 0 };
-					LongToByteArray((*(t + j))->prvLblsId, prvLblsId);// previous labels Id
+					longToByteArray((*(t + j))->prvLblsId, prvLblsId);// previous labels Id
 					unsigned char nxtLblsId[LONG_LONG] = { 0 };
-					LongToByteArray((*(t + j))->nxtLblsId, nxtLblsId);// next labels Id
+					longToByteArray((*(t + j))->nxtLblsId, nxtLblsId);// next labels Id
 					unsigned char inuse[1] = { (*(t + j))->inUse };
 					unsigned char lblidxId[LONG_LONG] = { 0 };
-					LongToByteArray((*(t + j))->lblIdxId, lblidxId);// label index Id
+					longToByteArray((*(t + j))->lblIdxId, lblidxId);// label index Id
 					memcpy(pos, ta_ids, LONG_LONG);
 					memcpy(pos + LONG_LONG, inuse, 1LL);
 					memcpy(pos + LONG_LONG + 1, nxtLblsId, LONG_LONG);

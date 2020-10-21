@@ -100,11 +100,11 @@ void commitKeyBlocks(long long ta_id, key_blk_t **list, FILE *key_blk_db_fp,
 									* key_blk_record_bytes;
 					// convert label token block to byte array
 					unsigned char ta_ids[LONG_LONG] = { 0 };
-					LongToByteArray(ta_id, ta_ids);			// ta Id
+					longToByteArray(ta_id, ta_ids);			// ta Id
 					unsigned char length[LONG] = { 0 };
-					Integer2Bytes((*(t + j))->len, length);
+					integer2Bytes((*(t + j))->len, length);
 					unsigned char nblockId[LONG_LONG] = { 0 };
-					LongToByteArray((*(t + j))->nxtBlkId, nblockId);// next block Id
+					longToByteArray((*(t + j))->nxtBlkId, nblockId);// next block Id
 					// store label token block
 					memcpy(pos, ta_ids, LONG_LONG);
 					unsigned char inuse[1] = { (*(t + j))->inUse };
@@ -228,17 +228,17 @@ key_blk_t** searchKeyBlockList(long long id, FILE *key_blk_db_fp) {
 				tkn->id = tId;
 				unsigned char ta_ids[LONG_LONG] = { 0 };
 				memcpy(ta_ids, buf, LONG_LONG);
-				tkn->taId = ByteArrayToLong(ta_ids); // ta id
+				tkn->taId = byteArrayToLong(ta_ids); // ta id
 
 				tkn->inUse = *(buf + LONG_LONG); // in use
 
 				unsigned char length[LONG] = { 0 };
 				memcpy(length, buf + LONG_LONG + 1, LONG);
-				tkn->len = Bytes2Integer(length); // block length
+				tkn->len = bytes2Integer(length); // block length
 
 				unsigned char nblockId[LONG_LONG] = { 0 };
 				memcpy(nblockId, (buf + LONG_LONG + 1 + LONG), LONG_LONG);
-				tkn->nxtBlkId = ByteArrayToLong(nblockId); // next block id
+				tkn->nxtBlkId = byteArrayToLong(nblockId); // next block id
 
 				unsigned char *blockContent = (unsigned char*) calloc(
 						KEY_BLOCK_LENGTH, sizeof(unsigned char)); // block content
@@ -403,18 +403,18 @@ void commitUpdateKey(key_blk_t **list, key_blk_t **newlist, FILE *key_blk_id_fp,
 							+ ((*(t + k))->id - ps->startNo)
 									* key_blk_record_bytes;
 					unsigned char ta_ids[LONG_LONG] = { 0 };
-					LongToByteArray((*(t + k))->taId, ta_ids);			// ta Id
+					longToByteArray((*(t + k))->taId, ta_ids);			// ta Id
 					memcpy(pos, ta_ids, LONG_LONG);
 
 					unsigned char inuse[1] = { (*(t + k))->inUse };
 					memcpy(pos + LONG_LONG, inuse, 1);		// in use flag
 
 					unsigned char length[LONG] = { 0 };
-					Integer2Bytes((*(t + k))->len, length);
+					integer2Bytes((*(t + k))->len, length);
 					memcpy(pos + LONG_LONG + 1, length, LONG); // block length
 
 					unsigned char nblockId[LONG_LONG] = { 0 };
-					LongToByteArray((*(t + k))->nxtBlkId, nblockId); // next block Id
+					longToByteArray((*(t + k))->nxtBlkId, nblockId); // next block Id
 					memcpy(pos + LONG_LONG + 1 + LONG, nblockId,
 					LONG_LONG);
 

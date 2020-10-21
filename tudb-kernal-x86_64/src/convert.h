@@ -26,15 +26,15 @@
 #define CONVERT_H_
 
 // Convert long long to byte array
-void LongToByteArray(long long value, unsigned char buffer[]);
+void longToByteArray(long long value, unsigned char buffer[]);
 
 // Convert byte array to long long
-long long ByteArrayToLong(unsigned char buffer[]);
+long long byteArrayToLong(unsigned char buffer[]);
 
 // convert integer to bytes
-void Integer2Bytes(int value, unsigned char bytes[4]);
+void integer2Bytes(int value, unsigned char bytes[4]);
 
 // convert byte array to integer
-int Bytes2Integer(unsigned char bytes[4]);
+int bytes2Integer(unsigned char bytes[4]);
 
 #endif /* CONVERT_H_ */

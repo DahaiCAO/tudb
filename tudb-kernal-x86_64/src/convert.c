@@ -21,7 +21,7 @@
  * Author: Dahai CAO
  */
 // Convert long long to byte array
-void LongToByteArray(long long value, unsigned char buffer[]) {
+void longToByteArray(long long value, unsigned char buffer[]) {
 	memset(buffer, 0, LONG_LONG);
 	for (int i = 0; i < LONG_LONG; i++) {
 		buffer[i] = ((value >> (LONG_LONG * i)) & 0XFF);
@@ -29,7 +29,7 @@ void LongToByteArray(long long value, unsigned char buffer[]) {
 }
 
 // Convert byte array to long long
-long long ByteArrayToLong(unsigned char buffer[]) {
+long long byteArrayToLong(unsigned char buffer[]) {
 	long long recoveredValue = 0;
 	for (int i = 0; i < LONG_LONG; i++) {
 		long long byteVal = (((long long) buffer[i]) << (LONG_LONG * i));
@@ -39,7 +39,7 @@ long long ByteArrayToLong(unsigned char buffer[]) {
 }
 
 // Convert integer to byte array
-void Integer2Bytes(int value, unsigned char bytes[4]) {
+void integer2Bytes(int value, unsigned char bytes[4]) {
 	bytes[0] = 0xFF & value;
 	bytes[1] = (0xFF00 & value) >> 8;
 	bytes[2] = (0xFF0000 & value) >> 16;
@@ -47,7 +47,7 @@ void Integer2Bytes(int value, unsigned char bytes[4]) {
 	return;
 }
 
-int Bytes2Integer(unsigned char bytes[4]) {
+int bytes2Integer(unsigned char bytes[4]) {
 	int addr = bytes[0] & 0xFF;
 	addr |= ((bytes[1] << 8) & 0xFF00);
 	addr |= ((bytes[2] << 16) & 0xFF0000);

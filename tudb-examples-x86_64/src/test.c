@@ -22,6 +22,8 @@
 #include <unistd.h>
 
 #include "test.h"
+
+#include "btreestore.h"
 /*
  * test.c
  *
@@ -227,40 +229,120 @@ void createTimeAxisRecord(FILE *idfp, FILE *dbfp) {
 //#include "log.h"
 //#include "confutil.h"
 
+//int main(int argv, char **argc) {
+//	setvbuf(stdout, NULL, _IONBF, 0);
+//	//char send_dat1[] = "bye";
+//	//createRequest(send_dat1);
+//	//fileReadTest();
+//	fileWrieTest();
+//	/* gets time of day */
+//	/*time_t now = time(NULL);
+//	 char buf[25] = {0};
+//	 struct tm *tblock;
+//	 //tblock = localtime(&timer);
+//	 //localtime() converts date/time to a structure
+//	 strftime(buf,24,"%Y%m%d",localtime(&now));
+//	 printf("%s\n",buf);
+//
+//	 strftime(buf,24,"%Y-%m-%d %H:%M:%S",localtime(&now));
+//	 printf("%s\n",buf);
+//
+//	 strftime(buf,24,"%y%m%d %H:%M:%S",localtime(&now));
+//	 printf("%s\n",buf);
+//
+//	 strftime(buf,24,"%y%m%d",localtime(&now));
+//	 printf("%s\n",buf);
+//
+//	 strftime(buf,24,"%H:%M:%S",localtime(&now));
+//	 printf("%s\n",buf);*/
+//
+//	/*	long long num = 2004293008363;
+//	 unsigned char buffer[8] = {0};
+//	 LongToByteArray(num, buffer);
+//
+//	 long long s = ByteArrayToLong(buffer);
+//	 printf("%lld\n",s);*/
+//
+//	//printf("%lu\n", (unsigned long)time(NULL)); // For 64-bit systems
+//	//printf("%u\n", (unsigned)time(NULL)); // For 32-bit systems
+//}
+
+// testing program for B tree
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
-	//char send_dat1[] = "bye";
-	//createRequest(send_dat1);
-	//fileReadTest();
-	fileWrieTest();
-	/* gets time of day */
-	/*time_t now = time(NULL);
-	 char buf[25] = {0};
-	 struct tm *tblock;
-	 //tblock = localtime(&timer);
-	 //localtime() converts date/time to a structure
-	 strftime(buf,24,"%Y%m%d",localtime(&now));
-	 printf("%s\n",buf);
+	ta_btree_t **_btree = (ta_btree_t**) calloc(1, sizeof(ta_btree_t));
+//	btree_create(_btree, 100);
+//	btree_insert(*_btree, 29); //1
+//	btree_insert(*_btree, 40); //2
+//	btree_insert(*_btree, 22); //3
+//	btree_insert(*_btree, 32); //3
+//	btree_insert(*_btree, 59); //4
+//	btree_insert(*_btree, 99); //5
+//	btree_insert(*_btree, 72); //6
+//	btree_insert(*_btree, 8); //7
+//	btree_insert(*_btree, 37); //8
+//	btree_insert(*_btree, 58); //9
+//	btree_insert(*_btree, 78); //10
+//	btree_insert(*_btree, 10); //11
+//	btree_insert(*_btree, 20); //12
+//	btree_insert(*_btree, 48); //13
+//	btree_insert(*_btree, 43); //14
+//	btree_insert(*_btree, 41); //15
+//	btree_insert(*_btree, 28); //16
+//	btree_insert(*_btree, 66); //17
+//	btree_insert(*_btree, 97); //18
+//	btree_insert(*_btree, 101); //19
+//	btree_insert(*_btree, 18); //20
 
-	 strftime(buf,24,"%Y-%m-%d %H:%M:%S",localtime(&now));
-	 printf("%s\n",buf);
+	//	// 11->12->6->5->13->7->3->4->2->1->9->8->10
+	//		btree_create(_btree, 4);
+	//		btree_insert(*_btree, 11); //1
+	//		btree_insert(*_btree, 12); //2
+	//		btree_insert(*_btree, 6); //3
+	//		btree_insert(*_btree, 5); //3
+	//		btree_insert(*_btree, 13); //4
+	//		btree_insert(*_btree, 7); //5
+	//		btree_insert(*_btree, 3); //6
+	//		btree_insert(*_btree, 4); //7
+	//		btree_insert(*_btree, 2); //8
+	//		btree_insert(*_btree, 1); //9
+	//		btree_insert(*_btree, 9); //10
+	//		btree_insert(*_btree, 8); //11
+	//		btree_insert(*_btree, 10); //12
 
-	 strftime(buf,24,"%y%m%d %H:%M:%S",localtime(&now));
-	 printf("%s\n",buf);
 
-	 strftime(buf,24,"%y%m%d",localtime(&now));
-	 printf("%s\n",buf);
 
-	 strftime(buf,24,"%H:%M:%S",localtime(&now));
-	 printf("%s\n",buf);*/
+	btree_create(_btree, 3);
+	btree_insert(*_btree, 492); //1
+	btree_insert(*_btree, 172); //2
+	btree_insert(*_btree, 383); //3
+	btree_insert(*_btree, 59); //4
+	btree_insert(*_btree, 123); //5
+	btree_insert(*_btree, 27); //6
+	btree_insert(*_btree, 135); //7
+	btree_insert(*_btree, 67); //8
+	btree_insert(*_btree, 335); //9
+	btree_insert(*_btree, 211); //10
+	btree_insert(*_btree, 368); //11
+	btree_insert(*_btree, 362); //12
+	btree_insert(*_btree, 386); //13
+	btree_insert(*_btree, 429); //14
+	btree_insert(*_btree, 426); //15
+	btree_insert(*_btree, 421); //16
+	btree_insert(*_btree, 690); //17
+	btree_insert(*_btree, 567); //18
+	btree_insert(*_btree, 540); //19
+	btree_insert(*_btree, 530); //20
+	btree_insert(*_btree, 649); //21
+	btree_insert(*_btree, 736); //22
+	btree_insert(*_btree, 763); //23
+	btree_insert(*_btree, 886); //24
+	btree_insert(*_btree, 793); //25
+	btree_insert(*_btree, 782); //26
+	btree_insert(*_btree, 862); //27
+	btree_insert(*_btree, 915); //28
+	btree_insert(*_btree, 926); //29
+	btree_insert(*_btree, 777); //30
 
-	/*	long long num = 2004293008363;
-	 unsigned char buffer[8] = {0};
-	 LongToByteArray(num, buffer);
-
-	 long long s = ByteArrayToLong(buffer);
-	 printf("%lld\n",s);*/
-
-	//printf("%lu\n", (unsigned long)time(NULL)); // For 64-bit systems
-	//printf("%u\n", (unsigned)time(NULL)); // For 32-bit systems
+	print_btree(_btree[0]);
 }

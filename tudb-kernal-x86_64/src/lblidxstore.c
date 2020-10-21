@@ -94,13 +94,13 @@ long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
 				pos = ps->content
 						+ (idx->id - ps->startNo) * lbl_idx_record_bytes;
 				unsigned char ta_ids[LONG_LONG] = { 0 };
-				LongToByteArray(idx->taId, ta_ids);			// ta Id
+				longToByteArray(idx->taId, ta_ids);			// ta Id
 				unsigned char length[LONG] = { 0 };
-				Integer2Bytes(idx->length, length); // length
+				integer2Bytes(idx->length, length); // length
 				unsigned char count[LONG_LONG] = { 0 };
-				LongToByteArray(idx->useCount, count); // label counting
+				longToByteArray(idx->useCount, count); // label counting
 				unsigned char blkIds[LONG_LONG] = { 0 };
-				LongToByteArray(idx->lblBlkId, blkIds);
+				longToByteArray(idx->lblBlkId, blkIds);
 				memcpy(pos, ta_ids, LONG_LONG);
 				memcpy(pos + LONG_LONG, blkIds, LONG_LONG);
 				memcpy(pos + LONG_LONG + LONG_LONG, length, LONG);
