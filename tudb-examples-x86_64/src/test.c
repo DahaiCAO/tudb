@@ -345,4 +345,34 @@ int main(int argv, char **argc) {
 	btree_insert(*_btree, 777); //30
 
 	print_btree(_btree[0]);
+
+	printf("%s\n", "--------------------------------");
+
+	btree_delete(*_btree, 429); //14
+
+	print_btree(_btree[0]);
+
+	btree_delete(*_btree, 172); //2
+
+	print_btree(_btree[0]);
+
+	btree_delete(*_btree, 386); //13
+
+	print_btree(_btree[0]);
+
+	btree_delete(*_btree, 123); //
+
+	print_btree(_btree[0]);
+
+	btree_delete(*_btree, 530); //
+
+	print_btree(_btree[0]);
+
+	btree_delete(*_btree, 690); //
+
+	print_btree(_btree[0]);
+
+	btree_delete(*_btree, 763); //
+
+	print_btree(_btree[0]);
 }
