@@ -24,6 +24,7 @@
 #include "test.h"
 
 #include "btreestore.h"
+#include "bptreestore.h"
 /*
  * test.c
  *
@@ -131,6 +132,17 @@ void fileReadTest() {
 	fclose(dbfp);
 }
 
+void createTimeAxisRecord(FILE *idfp, FILE *dbfp) {
+	//long long newid = getId(idfp);
+	//fseek(dbfp, 0L, SEEK_END);
+	//long sz1 = ftell(dbfp);
+	// printf("nnnnn%ld\n", sz1);
+	//
+
+	// insert new record into time axis DB.
+
+}
+
 void fileWrieTest() {
 	FILE *idfp = NULL;
 	FILE *dbfp = NULL;
@@ -212,19 +224,10 @@ long long getId(FILE *idfp) {
 }
 
 long long recycleId(FILE *idfp, long long id) {
-
+	return 0;
 }
 
-void createTimeAxisRecord(FILE *idfp, FILE *dbfp) {
-	long long newid = getId(idfp);
-	//fseek(dbfp, 0L, SEEK_END);
-	//long sz1 = ftell(dbfp);
-	// printf("nnnnn%ld\n", sz1);
-	//
 
-	// insert new record into time axis DB.
-
-}
 
 //#include "log.h"
 //#include "confutil.h"
@@ -267,112 +270,161 @@ void createTimeAxisRecord(FILE *idfp, FILE *dbfp) {
 //	//printf("%u\n", (unsigned)time(NULL)); // For 32-bit systems
 //}
 
-// testing program for B tree
+//// testing program for B tree
+//int main(int argv, char **argc) {
+//	setvbuf(stdout, NULL, _IONBF, 0);
+//	ta_btree_t **_btree = (ta_btree_t**) calloc(1, sizeof(ta_btree_t));
+////	btree_create(_btree, 100);
+////	btree_insert(*_btree, 29); //1
+////	btree_insert(*_btree, 40); //2
+////	btree_insert(*_btree, 22); //3
+////	btree_insert(*_btree, 32); //3
+////	btree_insert(*_btree, 59); //4
+////	btree_insert(*_btree, 99); //5
+////	btree_insert(*_btree, 72); //6
+////	btree_insert(*_btree, 8); //7
+////	btree_insert(*_btree, 37); //8
+////	btree_insert(*_btree, 58); //9
+////	btree_insert(*_btree, 78); //10
+////	btree_insert(*_btree, 10); //11
+////	btree_insert(*_btree, 20); //12
+////	btree_insert(*_btree, 48); //13
+////	btree_insert(*_btree, 43); //14
+////	btree_insert(*_btree, 41); //15
+////	btree_insert(*_btree, 28); //16
+////	btree_insert(*_btree, 66); //17
+////	btree_insert(*_btree, 97); //18
+////	btree_insert(*_btree, 101); //19
+////	btree_insert(*_btree, 18); //20
+//
+//	//	// 11->12->6->5->13->7->3->4->2->1->9->8->10
+//	//		btree_create(_btree, 4);
+//	//		btree_insert(*_btree, 11); //1
+//	//		btree_insert(*_btree, 12); //2
+//	//		btree_insert(*_btree, 6); //3
+//	//		btree_insert(*_btree, 5); //3
+//	//		btree_insert(*_btree, 13); //4
+//	//		btree_insert(*_btree, 7); //5
+//	//		btree_insert(*_btree, 3); //6
+//	//		btree_insert(*_btree, 4); //7
+//	//		btree_insert(*_btree, 2); //8
+//	//		btree_insert(*_btree, 1); //9
+//	//		btree_insert(*_btree, 9); //10
+//	//		btree_insert(*_btree, 8); //11
+//	//		btree_insert(*_btree, 10); //12
+//
+//
+//
+//	btree_create(_btree, 3);
+//	btree_insert(*_btree, 492); //1
+//	btree_insert(*_btree, 172); //2
+//	btree_insert(*_btree, 383); //3
+//	btree_insert(*_btree, 59); //4
+//	btree_insert(*_btree, 123); //5
+//	btree_insert(*_btree, 27); //6
+//	btree_insert(*_btree, 135); //7
+//	btree_insert(*_btree, 67); //8
+//	btree_insert(*_btree, 335); //9
+//	btree_insert(*_btree, 211); //10
+//	btree_insert(*_btree, 368); //11
+//	btree_insert(*_btree, 362); //12
+//	btree_insert(*_btree, 386); //13
+//	btree_insert(*_btree, 429); //14
+//	btree_insert(*_btree, 426); //15
+//	btree_insert(*_btree, 421); //16
+//	btree_insert(*_btree, 690); //17
+//	btree_insert(*_btree, 567); //18
+//	btree_insert(*_btree, 540); //19
+//	btree_insert(*_btree, 530); //20
+//	btree_insert(*_btree, 649); //21
+//	btree_insert(*_btree, 736); //22
+//	btree_insert(*_btree, 763); //23
+//	btree_insert(*_btree, 886); //24
+//	btree_insert(*_btree, 793); //25
+//	btree_insert(*_btree, 782); //26
+//	btree_insert(*_btree, 862); //27
+//	btree_insert(*_btree, 915); //28
+//	btree_insert(*_btree, 926); //29
+//	btree_insert(*_btree, 777); //30
+//
+//	print_btree(_btree[0]);
+//
+//	printf("%s\n", "--------------------------------");
+//
+//	btree_delete(*_btree, 429); //14
+//
+//	print_btree(_btree[0]);
+//
+//	btree_delete(*_btree, 172); //2
+//
+//	print_btree(_btree[0]);
+//
+//	btree_delete(*_btree, 386); //13
+//
+//	print_btree(_btree[0]);
+//
+//	btree_delete(*_btree, 123); //
+//
+//	print_btree(_btree[0]);
+//
+//	btree_delete(*_btree, 530); //
+//
+//	print_btree(_btree[0]);
+//
+//	btree_delete(*_btree, 690); //
+//
+//	print_btree(_btree[0]);
+//
+//	btree_delete(*_btree, 763); //
+//
+//	print_btree(_btree[0]);
+//}
+
+
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
-	ta_btree_t **_btree = (ta_btree_t**) calloc(1, sizeof(ta_btree_t));
-//	btree_create(_btree, 100);
-//	btree_insert(*_btree, 29); //1
-//	btree_insert(*_btree, 40); //2
-//	btree_insert(*_btree, 22); //3
-//	btree_insert(*_btree, 32); //3
-//	btree_insert(*_btree, 59); //4
-//	btree_insert(*_btree, 99); //5
-//	btree_insert(*_btree, 72); //6
-//	btree_insert(*_btree, 8); //7
-//	btree_insert(*_btree, 37); //8
-//	btree_insert(*_btree, 58); //9
-//	btree_insert(*_btree, 78); //10
-//	btree_insert(*_btree, 10); //11
-//	btree_insert(*_btree, 20); //12
-//	btree_insert(*_btree, 48); //13
-//	btree_insert(*_btree, 43); //14
-//	btree_insert(*_btree, 41); //15
-//	btree_insert(*_btree, 28); //16
-//	btree_insert(*_btree, 66); //17
-//	btree_insert(*_btree, 97); //18
-//	btree_insert(*_btree, 101); //19
-//	btree_insert(*_btree, 18); //20
+	ta_bptree_t **_bptree = (ta_bptree_t**) calloc(1, sizeof(ta_btree_t));
+	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70，
+	bptree_create(_bptree, 5);
+	bptree_insert(*_bptree, 10);//1
+	bptree_insert(*_bptree, 15);//2
+	bptree_insert(*_bptree, 9);//3
+	bptree_insert(*_bptree, 4);//4
+	bptree_insert(*_bptree, 19);//5
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 20);//6
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 12);//7
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 11);//8
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 13);//9
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 14);//10
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 32);//11
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 60);//12
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 30);//13
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 70);//14
+	print_bptree(_bptree[0]);
+	bptree_insert(*_bptree, 31);//14
+	print_bptree(_bptree[0]);
 
-	//	// 11->12->6->5->13->7->3->4->2->1->9->8->10
-	//		btree_create(_btree, 4);
-	//		btree_insert(*_btree, 11); //1
-	//		btree_insert(*_btree, 12); //2
-	//		btree_insert(*_btree, 6); //3
-	//		btree_insert(*_btree, 5); //3
-	//		btree_insert(*_btree, 13); //4
-	//		btree_insert(*_btree, 7); //5
-	//		btree_insert(*_btree, 3); //6
-	//		btree_insert(*_btree, 4); //7
-	//		btree_insert(*_btree, 2); //8
-	//		btree_insert(*_btree, 1); //9
-	//		btree_insert(*_btree, 9); //10
-	//		btree_insert(*_btree, 8); //11
-	//		btree_insert(*_btree, 10); //12
+//	bptree_delete(*_bptree, 60);//15
+//	print_bptree(_bptree[0]);
+//	bptree_delete(*_bptree, 70);//16
+//	print_bptree(_bptree[0]);
+//	bptree_delete(*_bptree, 15);//17
+//	print_bptree(_bptree[0]);
+
+//	bptree_delete(*_bptree, 9);//18
+//	print_bptree(_bptree[0]);
+
+	bptree_delete(*_bptree, 10);//19
+	print_bptree(_bptree[0]);
 
 
-
-	btree_create(_btree, 3);
-	btree_insert(*_btree, 492); //1
-	btree_insert(*_btree, 172); //2
-	btree_insert(*_btree, 383); //3
-	btree_insert(*_btree, 59); //4
-	btree_insert(*_btree, 123); //5
-	btree_insert(*_btree, 27); //6
-	btree_insert(*_btree, 135); //7
-	btree_insert(*_btree, 67); //8
-	btree_insert(*_btree, 335); //9
-	btree_insert(*_btree, 211); //10
-	btree_insert(*_btree, 368); //11
-	btree_insert(*_btree, 362); //12
-	btree_insert(*_btree, 386); //13
-	btree_insert(*_btree, 429); //14
-	btree_insert(*_btree, 426); //15
-	btree_insert(*_btree, 421); //16
-	btree_insert(*_btree, 690); //17
-	btree_insert(*_btree, 567); //18
-	btree_insert(*_btree, 540); //19
-	btree_insert(*_btree, 530); //20
-	btree_insert(*_btree, 649); //21
-	btree_insert(*_btree, 736); //22
-	btree_insert(*_btree, 763); //23
-	btree_insert(*_btree, 886); //24
-	btree_insert(*_btree, 793); //25
-	btree_insert(*_btree, 782); //26
-	btree_insert(*_btree, 862); //27
-	btree_insert(*_btree, 915); //28
-	btree_insert(*_btree, 926); //29
-	btree_insert(*_btree, 777); //30
-
-	print_btree(_btree[0]);
-
-	printf("%s\n", "--------------------------------");
-
-	btree_delete(*_btree, 429); //14
-
-	print_btree(_btree[0]);
-
-	btree_delete(*_btree, 172); //2
-
-	print_btree(_btree[0]);
-
-	btree_delete(*_btree, 386); //13
-
-	print_btree(_btree[0]);
-
-	btree_delete(*_btree, 123); //
-
-	print_btree(_btree[0]);
-
-	btree_delete(*_btree, 530); //
-
-	print_btree(_btree[0]);
-
-	btree_delete(*_btree, 690); //
-
-	print_btree(_btree[0]);
-
-	btree_delete(*_btree, 763); //
-
-	print_btree(_btree[0]);
 }

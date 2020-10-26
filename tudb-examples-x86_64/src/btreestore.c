@@ -74,6 +74,7 @@ int btree_create(ta_btree_t **_btree, int m) {
 	}
 
 	btree->max = m - 1;
+	// Math.ceiling(m/2)-1;
 	btree->min = m / 2;
 	if (0 != m % 2) {
 		btree->min++;
