@@ -44,7 +44,7 @@ typedef struct _bptree_node_t {
 typedef struct _bptree {
 	int max; /* 单个结点最大关键字个数 - 阶m=max+1 */
 	int min; /* 单个结点最小关键字个数    */
-	int sidx; /* 非叶子分裂索引 = (max)/2 */
+	int sidx; /* 分裂索引 = (max)/2 */
 	/*叶子*/
 	int sidxLeaf; /* 叶子分裂索引 = (max)/4 */
 	ta_bptree_node_t *root; /* B树根结点地址 */

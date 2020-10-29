@@ -37,4 +37,12 @@ void integer2Bytes(int value, unsigned char bytes[4]);
 // convert byte array to integer
 int bytes2Integer(unsigned char bytes[4]);
 
+void longlongtoByteArray(long long value, unsigned char *buffer);
+
+void integerBytesArry(int value, unsigned char *bytes);
+
+long long bytesLonglong(unsigned char *buffer);
+
+int byteArray2Integer(unsigned char *bytes);
+
 #endif /* CONVERT_H_ */

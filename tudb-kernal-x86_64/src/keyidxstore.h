@@ -46,4 +46,6 @@ int KEY_INDEX_PAGE_EXPIRE_TIME;
 
 void initKeyIndexDBMemPages(key_idx_page_t *pages, FILE *key_idx_db_fp);
 
+void deallocKeyIndexPages(key_idx_page_t *pages);
+
 #endif /* KEYIDXSTORE_H_ */

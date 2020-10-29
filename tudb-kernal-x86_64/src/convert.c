@@ -38,6 +38,39 @@ long long byteArrayToLong(unsigned char buffer[]) {
 	return recoveredValue;
 }
 
+// the convert utility for long long to byte array
+void longlongtoByteArray(long long value, unsigned char *buffer) {
+	for (int i = 0; i < LONG_LONG; i++) {
+		*(buffer + i) = ((value >> (LONG_LONG * i)) & 0XFF);
+	}
+}
+
+// the utility for converting byte array to long long
+long long bytesLonglong(unsigned char *buffer) {
+	long long recoveredValue = 0;
+	for (int i = 0; i < LONG_LONG; i++) {
+		long long byteVal = (((long long) (buffer + i)) << (LONG_LONG * i));
+		recoveredValue = recoveredValue | byteVal;
+	}
+	return recoveredValue;
+}
+
+int byteArray2Integer(unsigned char *bytes) {
+	int addr = *bytes & 0xFF;
+	addr |= ((*(bytes + 1) << 8) & 0xFF00);
+	addr |= ((*(bytes + 2) << 16) & 0xFF0000);
+	addr |= ((*(bytes + 3) << 24) & 0xFF000000);
+	return addr;
+}
+
+void integerBytesArry(int value, unsigned char *bytes) {
+	*bytes = 0xFF & value;
+	*(bytes + 1) = (0xFF00 & value) >> 8;
+	*(bytes + 2) = (0xFF0000 & value) >> 16;
+	*(bytes + 3) = (0xFF000000 & value) >> 24;
+	return;
+}
+
 // Convert integer to byte array
 void integer2Bytes(int value, unsigned char bytes[4]) {
 	bytes[0] = 0xFF & value;
@@ -56,8 +89,8 @@ int bytes2Integer(unsigned char bytes[4]) {
 }
 
 int cont_str(char *str) {
-    int length = 0;
-    while( *str++ != '\0' )
-        length += 1;
-    return length;
+	int length = 0;
+	while (*str++ != '\0')
+		length += 1;
+	return length;
 }

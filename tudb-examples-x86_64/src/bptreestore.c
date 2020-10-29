@@ -64,7 +64,7 @@ int bptree_create(ta_bptree_t **_bptree, int m) {
 	ta_bptree_t *bptree = NULL;
 
 	if (m < 3) {
-		fprintf(stderr, "[%s][%d] Parameter 'max' must geater than 2.\n",
+		fprintf(stderr, "[%s][%d] Parameter 'max' must greater than 2.\n",
 		__FILE__, __LINE__);
 		return -1;
 	}

@@ -32,7 +32,6 @@
 #include "keyblkstore.h"
 #include "valstore.h"
 
-
 /*
  * main.c
  *
@@ -55,50 +54,24 @@ void initIdDB(char *path) {
 	}
 }
 
-void initIds(FILE *id_fp) {
-	if (id_fp != NULL) {
-		// initializes Id DB
-		unsigned char nIds[LONG_LONG] = { 0L };
-		//unsigned char lastrIds[LONG_LONG] = { 0L };
-		//unsigned char rIds[LONG_LONG] = { 0L };
-		long long nId = 2LL;
-		//long long lastrId = 0LL;
-		//long long rId = 0;
-		longToByteArray(nId, nIds); // convert
-		//LongToByteArray(lastrId, lastrIds); // convert
-		//LongToByteArray(rId, rIds); // convert
-		fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
-		fwrite(nIds, sizeof(unsigned char), LONG_LONG, id_fp);
-		//fwrite(lastrIds, sizeof(unsigned char), LONG_LONG, id_fp);
-		//fwrite(rIds, sizeof(unsigned char), LONG_LONG, id_fp);
-	}
-}
-
-// create and initialize new Tu time axis DB file
-//void initTaDB(char *path) {
-//	if ((access(path, F_OK)) == -1) {
-//		FILE *tadbfp = fopen(path, "wb+");
-//		// initializes Id DB
-//		unsigned char n2[LONG_LONG] = { 0L };
-//		longToByteArray(NULL_POINTER, n2); // convert
-//		fseek(tadbfp, 0L, SEEK_SET); // move file pointer to file head
-//		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
-//		//fseek(tadbfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
-//		fwrite(n2, sizeof(unsigned char), LONG_LONG, tadbfp);
-//		fclose(tadbfp);
-//		tadbfp = NULL;
-//	}
-//}
-
 void initTaIndexDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
-		FILE *ta_idx_db_fp = fopen(path, "wb+");
-		unsigned char nullBytes[LONG_LONG] = { 0L };
-		longToByteArray(NULL_POINTER, nullBytes); // convert
-		fseek(ta_idx_db_fp, 0L, SEEK_SET); // move file pointer to file head
-		fwrite(nullBytes, sizeof(unsigned char), LONG_LONG, ta_idx_db_fp);
-		fclose(ta_idx_db_fp);
-		ta_idx_db_fp = NULL;
+		FILE *ta_idx_fp = fopen(path, "wb+");
+		unsigned char *zeroBytes = (unsigned char*) calloc(3 * LONG_LONG,
+				sizeof(unsigned char));
+		unsigned char *rootBytes = (unsigned char*) calloc(
+				ta_bptree_idx_node_bytes, sizeof(unsigned char));
+		*(rootBytes + LONG) = 0X1;
+		fseek(ta_idx_fp, 0L, SEEK_SET);
+		fwrite(zeroBytes, sizeof(unsigned char), 3 * LONG_LONG, ta_idx_fp);
+		fwrite(rootBytes, sizeof(unsigned char), ta_bptree_idx_node_bytes,
+				ta_idx_fp);
+		free(zeroBytes);
+		free(rootBytes);
+		fclose(ta_idx_fp);
+		ta_idx_fp = NULL;
+		zeroBytes = NULL;
+		rootBytes = NULL;
 	}
 }
 
@@ -110,72 +83,6 @@ void initDB(char *path) {
 		fclose(tudbfp);
 		tudbfp = NULL;
 	}
-}
-
-void init() {
-	ID_QUEUE_LENGTH = 25;
-	LABEL_ID_QUEUE_LENGTH = 10;
-	KEY_ID_QUEUE_LENGTH = 10;
-	TIMEAXIS_ID_QUEUE_LENGTH = 10;
-
-	// m is order. it is 3 at least.
-	TA_BPLUS_TREE_M = 5;
-
-	// time axis record byte array length
-	//tm_axis_record_bytes = 3 * LONG_LONG + 1;
-	// time axis memory page records, configurable in .conf file
-	//TIME_AXIS_PAGE_RECORDS = 10;
-	// time axis page byte array length
-	//tm_axis_page_bytes = tm_axis_record_bytes * TIME_AXIS_PAGE_RECORDS;
-	// time axis DB start points in database
-	//tm_axis_db_start_byte = 16LL;
-	// time axis page expiration time (minutes), configurable in .conf file
-	TIME_AXIS_NODE_EXPIRE_TIME = 10;
-
-	// node size (bytes) is page size , record size as well.
-	// that is, there are length, m-1 keys, m-1 data, m children, 1 previous, 1 next, totally,
-	// LONG	+ ((TA_BPLUS_TREE_M - 1) + (TA_BPLUS_TREE_M - 1) + TA_BPLUS_TREE_M) * LONG_LONG + 2 * LONG_LONG;
-	tm_axis_bptree_node_bytes = LONG + (3 * TA_BPLUS_TREE_M - 2) * LONG_LONG + 2 * LONG_LONG;
-
-	// label block size
-	LABEL_BLOCK_LENGTH = 64;
-	// label block buffer size
-	LABEL_BUFFER_LENGTH = 256;
-	// label token page size in memory
-	LABEL_BLOCK_PAGE_RECORDS = 10;
-	// label block page's expire time in memory
-	LABEL_BLOCK_PAGE_EXPIRE_TIME = 10;
-	// records in one page with label index records, configurable in .conf file
-	LABEL_INDEX_PAGE_RECORDS = 10;
-	// label index page's expire time in memory
-	LABEL_INDEX_PAGE_EXPIRE_TIME = 10;
-	// records in one page with labels records, configurable in .conf file
-	LABELS_PAGE_RECORDS = 10;
-	// labels page's expire time in memory
-	LABELS_PAGE_EXPIRE_TIME = 10;
-
-	// label bytes length.
-	lbl_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
-			+ LABEL_BLOCK_LENGTH;
-	lbl_blk_page_bytes = lbl_blk_record_bytes * LABEL_BLOCK_PAGE_RECORDS;
-	// bytes in one label index record
-	lbl_idx_record_bytes = 3 * LONG_LONG + LONG;
-	// bytes in one page with label index records
-	lbl_idx_page_bytes = lbl_idx_record_bytes * LABEL_INDEX_PAGE_RECORDS;
-	// bytes in one labels record
-	lbls_record_bytes = LONG_LONG + 1 + LONG_LONG + LONG_LONG + LONG_LONG;
-	// bytes in one page with labels records
-	lbls_page_bytes = lbls_record_bytes * LABELS_PAGE_RECORDS;
-
-	// key (property name) block bytes length.
-	key_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
-			+ KEY_BLOCK_LENGTH;
-	// bytes of one key (property name) block page
-	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
-	// bytes in one key (property name) index record
-	key_idx_record_bytes = 3 * LONG_LONG + LONG;
-	// bytes in one page with key index records
-	key_idx_page_bytes = key_idx_record_bytes * KEY_INDEX_PAGE_RECORDS;
 }
 
 //long long teLabelStore(long long ta_id, char *labels[], FILE *lbls_db_fp,
@@ -382,13 +289,76 @@ void init() {
 //	printf("%s\n", slabel1);
 //}
 
+void initConf() {
+	ID_QUEUE_LENGTH = 25;
+	LABEL_ID_QUEUE_LENGTH = 10;
+	KEY_ID_QUEUE_LENGTH = 10;
+	TIMEAXIS_ID_QUEUE_LENGTH = 10;
+	ID_INDEX_QUEUE_LENGTH = 10;
+
+	// m is order. it is 3 at least.
+	TA_BPLUS_TREE_ORDER = 5;
+	/* node size (bytes) is page size , record size as well.
+	 * that is, there are length, m-1 keys, m-1 data/m children, 1 previous, 1 next, totally,
+	 * here, to keep all nodes are same, we design m data/m children, data store more than 1 B.
+	 * LONG	+ 1 + (TA_BPLUS_TREE_ORDER - 1) * LONG_LONG + TA_BPLUS_TREE_ORDER * LONG_LONG + 2 * LONG_LONG;
+	 * e.g., if order is 5, 93 bytes
+	 */
+	ta_bptree_idx_leng_leaf_bytes = LONG + 1;
+	ta_bptree_idx_keys_bytes = (TA_BPLUS_TREE_ORDER - 1) * LONG_LONG;
+	ta_bptree_idx_children_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
+	ta_bptree_idx_node_bytes = ta_bptree_idx_leng_leaf_bytes
+			+ ta_bptree_idx_keys_bytes + ta_bptree_idx_children_bytes
+			+ 2 * LONG_LONG;
+	start_pointer = 3 * LONG_LONG;
+
+	// label block size
+	LABEL_BLOCK_LENGTH = 64;
+	// label block buffer size
+	LABEL_BUFFER_LENGTH = 256;
+	// label token page size in memory
+	LABEL_BLOCK_PAGE_RECORDS = 10;
+	// label block page's expire time in memory
+	LABEL_BLOCK_PAGE_EXPIRE_TIME = 10;
+	// records in one page with label index records, configurable in .conf file
+	LABEL_INDEX_PAGE_RECORDS = 10;
+	// label index page's expire time in memory
+	LABEL_INDEX_PAGE_EXPIRE_TIME = 10;
+	// records in one page with labels records, configurable in .conf file
+	LABELS_PAGE_RECORDS = 10;
+	// labels page's expire time in memory
+	LABELS_PAGE_EXPIRE_TIME = 10;
+
+	// label bytes length.
+	lbl_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
+			+ LABEL_BLOCK_LENGTH;
+	lbl_blk_page_bytes = lbl_blk_record_bytes * LABEL_BLOCK_PAGE_RECORDS;
+	// bytes in one label index record
+	lbl_idx_record_bytes = 3 * LONG_LONG + LONG;
+	// bytes in one page with label index records
+	lbl_idx_page_bytes = lbl_idx_record_bytes * LABEL_INDEX_PAGE_RECORDS;
+	// bytes in one labels record
+	lbls_record_bytes = LONG_LONG + 1 + LONG_LONG + LONG_LONG + LONG_LONG;
+	// bytes in one page with labels records
+	lbls_page_bytes = lbls_record_bytes * LABELS_PAGE_RECORDS;
+
+	// key (property name) block bytes length.
+	key_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG + KEY_BLOCK_LENGTH;
+	// bytes of one key (property name) block page
+	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
+	// bytes in one key (property name) index record
+	key_idx_record_bytes = 3 * LONG_LONG + LONG;
+	// bytes in one page with key index records
+	key_idx_page_bytes = key_idx_record_bytes * KEY_INDEX_PAGE_RECORDS;
+}
+
 // test label token store
 int main(int argv, char **argc) {
 	setlocale(LC_ALL, "zh-CN.UTF-8");
 	setvbuf(stdout, NULL, _IONBF, 0);
 
 	const char *d_path = "D:/tudata/";
-	init();
+	initConf();
 
 	char *ta_id_path = (char*) calloc(256, sizeof(char));
 	strcat(ta_id_path, d_path);
@@ -465,7 +435,6 @@ int main(int argv, char **argc) {
 	strcat(val_db_path, d_path);
 	strcat(val_db_path, "tustore.property.value.tdb");
 
-
 	// initialize
 	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
 	initIdCaches(caches);
@@ -505,8 +474,6 @@ int main(int argv, char **argc) {
 	FILE *val_id_fp = fopen(val_id_path, "rb+");
 	FILE *val_db_fp = fopen(val_db_path, "rb+");
 
-	//initIds(lbl_tkn_id_fp);
-
 	loadAllIds(ta_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
 	//loadAllIds(taidfp, caches->teIds);
 	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
@@ -528,7 +495,8 @@ int main(int argv, char **argc) {
 	listAllIds(caches->valIdxIds);
 	listAllIds(caches->valIds);
 
-	loadTaIndex(ta_bptree_idx,ta_db_fp);
+	ta_idx = taIndexRootCreate(TA_BPLUS_TREE_ORDER);
+	initTaIndexMemPages(ta_idx, ta_db_fp, ta_id_fp);
 //	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
 //	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
 //	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
@@ -537,7 +505,6 @@ int main(int argv, char **argc) {
 //	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
 //	initValueDBMemPages(val_pages, val_db_fp);
 
-
 //	long long ts = 1593783935;	//(unsigned long) time(NULL);
 //	// -- insert operation
 //	long long ta_id = insertEvolvedPoint(ts, ta_id_fp, ta_db_fp);
@@ -545,13 +512,13 @@ int main(int argv, char **argc) {
 //	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
 //			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
 
-//	deallocLabelsPages(lbls_pages);
-//	deallocLabelIndexPages(lbl_idx_pages);
-//	deallocLabelBlockPages(lbl_blk_pages);
-//	deallocKeyIndexPages(key_blk_pages);
-//	deallocKeyBlockPages(key_blk_pages);
-//	deallocTimeAxisPages(tm_axis_pages);
-//	deallocIdCaches(caches);
+	deallocLabelsPages(lbls_pages);
+	deallocLabelIndexPages(lbl_idx_pages);
+	deallocLabelBlockPages(lbl_blk_pages);
+	deallocKeyIndexPages(key_idx_pages);
+	deallocKeyBlockPages(key_blk_pages);
+	//deallocTimeAxisPages(ta_idx);
+	deallocIdCaches(caches);
 
 	free(lbls_id_path);
 	free(lbls_db_path);
