@@ -22,6 +22,40 @@
  * Author: Dahai CAO
  */
 
+void print_ta_index(ta_idx_t *btree) {
+	ta_idx_node_t *node = btree->root;
+	int level = 1;
+	print_bptree_children(node, level);
+}
+
+void print_ta_indexes(ta_idx_node_t *node, int level) {
+	char *s = (char*) calloc(256, sizeof(char));
+	for (int n = 1; n < level - 1; n++) {
+		strcat(s, "|           ");
+	}
+	if (level > 1) {
+		strcat(s, "|----------");
+	}
+	strcat(s, "<");
+	char str1[25];
+	itoa(node->num, str1, 10);
+	strcat(s, str1);
+	strcat(s, " |");
+	for (int i = 0; i < node->num; i++) {
+		char str2[25];
+		itoa(node->keys[i], str2, 10);
+		strcat(s, str2);
+		strcat(s, " ");
+	}
+	strcat(s, ">");
+	puts(s);
+	level++;
+	for (int n = 0; n <= node->num; n++) {
+		if (node->child[n] != NULL)
+			print_bptree_children(node->child[n], level);
+	}
+}
+
 // this function loads a time axis index b+tree node(page), one node one page.
 static ta_idx_node_t* readTaIndexPage(ta_idx_t *bptree, long long id,
 		size_t size, ta_idx_node_t *parent, FILE *ta_bptree_idx_db_fp) {
@@ -440,7 +474,7 @@ ta_idx_node_t* taIndexInsertNode(ta_idx_t *bptree, long long ts, long long tuid,
 					node->child[idx] = readTaIndexPage(bptree,
 							node->chldrnIds[idx] * ta_bptree_idx_node_bytes
 									+ start_pointer, ta_bptree_idx_node_bytes,
-							NULL, ta_db_fp);
+							node, ta_db_fp);
 					node = node->child[idx];
 				}
 			}
@@ -512,6 +546,326 @@ void commitIndexNode(ta_idx_t *bptree, FILE *ta_db_fp) {
 	fwrite(threeids, sizeof(unsigned char), 3 * LONG_LONG, ta_db_fp);
 	free(threeids);
 	threeids = NULL;
+}
+
+static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
+		ta_idx_node_t *right, int mid) {
+	int m = 0;
+	ta_idx_node_t *parent = left->parent;
+
+	// 把left和node的共同父节点的key拿到left节点中来。
+	for (m = 0; m < right->num; m++) {
+		if (parent->keys[mid] == right->keys[m]) {
+			break;
+		}
+	}
+	if (m != 0) {
+		left->keys[left->num] = parent->keys[mid];
+		if (left->leaf == 1) {
+			left->tuIdxIds[left->num] = 0;			// 新添加到叶子的节点没有tuid
+		}
+		left->num++;
+	}
+	for (int k = 0; k < left->num; k++) {
+		printf("left child keys before: %d\n", left->keys[k]);
+	}
+	// 把右节点node的keys拷贝到子节点中来
+	memcpy(left->keys + left->num, right->keys, right->num * sizeof(long long));
+	for (int k = 0; k < left->num; k++) {
+		printf("left child keys after: %d\n", left->keys[k]);
+	}
+	if (left->leaf == 1) {
+		memcpy(left->tuIdxIds + left->num, right->tuIdxIds,
+				right->num * sizeof(long long));
+		for (int k = 0; k < left->num; k++) {
+			printf("left child tuIdxIds after: %d\n", left->tuIdxIds[k]);
+		}
+	}
+
+	if (left->leaf == 0) {
+		// 把右节点node的children拷贝到子节点中来
+		memcpy(left->child + left->num, right->child,
+				(right->num + 1) * sizeof(ta_idx_node_t*));
+		memcpy(left->chldrnIds + left->num, right->chldrnIds,
+				(right->num + 1) * sizeof(long long));
+		// 修改右节点node的孩子父亲为左孩子的父亲
+		for (m = 0; m <= right->num; m++) {
+			if (NULL != right->child[m]) {
+				right->child[m]->parent = left;
+			}
+		}
+	}
+	if (left->leaf == 1) {			// 修改链表指针
+		left->nxt = right->nxt;
+		if (right->nxt) {
+			left->next = right->nxt->id;
+			right->nxt->prv = left;
+			right->nxt->prev = left->id;
+		}
+	}
+	// 修改左孩子的num
+	left->num += right->num;
+
+	// 在父亲的keys中清除掉parent->key[mid]
+	for (m = mid; m < parent->num - 1; m++) {
+		parent->keys[m] = parent->keys[m + 1];
+		parent->child[m + 1] = parent->child[m + 2];
+	}
+	for (int k = 0; k < parent->num; k++) {
+		printf("parent keys after: %d\n", parent->keys[k]);
+	}
+	// 删除掉最后一个key，因为这个key已经到了左孩子left去了。
+	parent->keys[m] = 0;
+	parent->child[m + 1] = NULL;
+	parent->num--;
+	deallocTaIndexNode(right);
+
+	/* Check if need to merge further */
+	if (parent->num < bptree->min) {
+		return bptree_merge(bptree, parent);
+	}
+
+	return 0;
+}
+
+static int bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node) {
+	int idx = 0, m = 0, mid = 0;
+	ta_idx_node_t *parent = node->parent, *right = NULL, *left = NULL;
+
+	/* 1. node是根结点, 不必进行合并处理 */
+	if (NULL == parent) {
+		if (0 == node->num) {
+			if (NULL != node->child[0]) {
+				bptree->root = node->child[0];			// new root node
+				bptree->rtId = node->child[0]->id;
+				node->child[0]->parent = NULL;
+				node->child[0]->leaf = 1;
+				bptree->maxLeaf = node->child[0];
+				bptree->maxLf = node->child[0]->id;
+				bptree->minLeaf = node->child[0];
+				bptree->minLf = node->child[0]->id;
+			} else {
+				bptree->root = NULL;
+			}
+			deallocTaIndexNode(node); // deallocate old root node
+		}
+		return 0;
+	}
+
+	/* 2. 查找node是其父结点的第几个孩子结点 */
+	for (idx = 0; idx <= parent->num; idx++) {
+		if (parent->child[idx] == node) {
+			break;
+		}
+	}
+
+	if (idx > parent->num) {
+		fprintf(stderr,
+				"[%s][%d] Didn't find node in parent's children array!\n",
+				__FILE__, __LINE__);
+		return -1;
+	}
+	/* 3. node: 最后一个孩子结点(left < node)
+	 * node as right child */
+	else if (idx == parent->num) { // node是父亲的最后一个child
+		mid = idx - 1;
+		left = parent->child[mid]; // 获取孩子节点，为合并或者借用做准备
+
+		/* 1) 合并结点 */
+		if ((node->num + left->num + 1) <= bptree->max) {
+			return _bptree_merge(bptree, left, node, mid);
+		}
+
+		/* 2) 借用结点:brother->key[num-1] */
+		for (m = node->num; m > 0; m--) { // 为借用节点腾出个位置
+			node->keys[m] = node->keys[m - 1];
+			if (node->leaf == 0) {
+				node->child[m + 1] = node->child[m];
+				node->chldrnIds[m + 1] = node->chldrnIds[m];
+			} else
+				node->tuIdxIds[m] = node->tuIdxIds[m - 1];
+		}
+
+		for (int k = 0; k < node->num; k++) {
+			printf("++node keys after: %d\n", node->keys[k]);
+			if (node->leaf == 1)
+				printf("++node tuIdxIds after: %d\n", node->tuIdxIds[k]);
+			else
+				printf("++node chldrnIds after: %d\n", node->chldrnIds[k]);
+		}
+		if (node->leaf == 0) {
+			node->child[1] = node->child[0];
+			node->chldrnIds[1] = node->chldrnIds[0];
+		}
+
+		//node->key[0] = parent->key[mid];
+		node->keys[0] = left->keys[left->num - 1];
+		if (node->leaf == 1)
+			node->tuIdxIds[0] = left->tuIdxIds[left->num - 1];
+
+		node->num++;
+
+		for (int k = 0; k < node->num; k++) {
+			printf("++--node keys after: %d\n", node->keys[k]);
+			if (node->leaf == 1)
+				printf("++node tuIdxIds after: %d\n", node->tuIdxIds[k]);
+			else
+				printf("++node chldrnIds after: %d\n", node->chldrnIds[k]);
+		}
+
+		if (node->leaf == 0) {
+			node->child[0] = left->child[left->num];
+			if (NULL != left->child[left->num]) {
+				left->child[left->num]->parent = node;
+			}
+		}
+
+		parent->keys[mid] = left->keys[left->num - 1];
+		printf("++parent->key[mid] after: %d\n", parent->keys[mid]);
+		left->keys[left->num - 1] = 0;
+		if (left->leaf == 0) {
+			left->child[left->num] = NULL;
+			left->chldrnIds[left->num] = 0;
+		} else
+			left->tuIdxIds[left->num] = 0;
+		left->num--;
+		return 0;
+	}
+
+	/* 4. node: 非最后一个孩子结点(node < right)
+	 * node as left child */
+	// node不是父亲的最后一个child，它右边还有节点
+	mid = idx;
+	right = parent->child[mid + 1];
+
+	/* 1) 合并结点 */
+	if ((node->num + right->num + 1) <= bptree->max) {
+		return _bptree_merge(bptree, node, right, mid);
+	}
+
+	for (int k = 0; k < node->num; k++) {
+		printf("left child keys before: %d\n", node->keys[k]);
+		if (node->leaf == 1)
+			printf("++node tuIdxIds before: %d\n", node->tuIdxIds[k]);
+		else
+			printf("++node chldrnIds before: %d\n", node->chldrnIds[k]);
+	}
+
+	/* 2) 借用结点: right->key[0] */
+	node->keys[node->num] = parent->keys[mid];
+	if (node->leaf == 1) {
+		node->tuIdxIds[node->num] = parent->tuIdxIds[mid];
+	}
+	node->num++;
+	if (node->leaf == 0) {
+		node->child[node->num] = right->child[0];
+		node->chldrnIds[node->num] = right->chldrnIds[0];
+		if (NULL != right->child[0]) {
+			right->child[0]->parent = node;
+		}
+	}
+	for (int k = 0; k < node->num; k++) {
+		printf("left child keys after: %d\n", node->keys[k]);
+	}
+	for (int k = 0; k < right->num; k++) {
+		printf("right child keys before: %d\n", right->keys[k]);
+	}
+	//parent->key[mid] = right->key[0];
+	for (m = 0; m < right->num; m++) {
+		right->keys[m] = right->keys[m + 1];
+		if (right->leaf == 0) {
+			right->child[m] = right->child[m + 1];
+			right->chldrnIds[m] = right->chldrnIds[m + 1];
+		} else {
+			right->tuIdxIds[m] = right->tuIdxIds[m + 1];
+		}
+	}
+	parent->keys[mid] = right->keys[0];
+	for (int k = 0; k < parent->num; k++) {
+		printf("parent keys after: %d\n", parent->keys[k]);
+	}
+	for (int k = 0; k < right->num; k++) {
+		printf("right child keys before: %d\n", right->keys[k]);
+	}
+
+	if (right->leaf == 0) {
+		right->child[m] = NULL;
+		right->chldrnIds[m] = 0;
+	}
+	right->num--;
+	return 0;
+}
+
+static int _bptree_delete_leaf(ta_idx_t *bptree, ta_idx_node_t *node, int idx,
+		long long tuid) {
+	printf("to delete child key: %lld\n", node->keys[idx]);
+	printf("%d\n", node->num);
+
+	for (int k = 0; k < node->num; k++) {
+		printf("delete child keys before: %lld\n", node->keys[k]);
+	}
+
+	if (node->tuIdxIds[idx] != 0) { // node is a leaf
+		// delete tuid from tu index id in DB
+	}
+	if (node->tuIdxIds[idx] == 0) {
+		memcpy(node->keys + idx, node->keys + idx + 1,
+				(node->num - idx - 1) * sizeof(int));
+		memset(node->keys + node->num - 1, 0, sizeof(int));
+		memcpy(node->tuIdxIds + idx, node->tuIdxIds + idx + 1,
+				(node->num - idx - 1) * sizeof(int));
+		memset(node->tuIdxIds + node->num - 1, 0, sizeof(int));
+		node->num--;
+	}
+
+	for (int k = 0; k < node->num; k++) {
+		printf("remained child keys: %d\n", node->keys[k]);
+	}
+	printf("--\n");
+
+	if (node->num < bptree->min) {
+		return bptree_merge(bptree, node);
+	}
+	return 0;
+}
+
+// 先测插入，后测删除
+int taIndexDeleteNode(ta_idx_t *bptree, long long ts, long long tuid,
+		FILE *ta_db_fp) {
+	int idx = 0;
+	ta_idx_node_t *node = bptree->root;
+
+	while (NULL != node) {
+		for (idx = 0; idx < node->num; idx++) {
+			if (ts == node->keys[idx] && node->leaf == 1) {
+				return _bptree_delete_leaf(bptree, node, idx, tuid);
+			} else if (ts < node->keys[idx]) {
+				break;
+			}
+		}
+
+		if (node->leaf == 0) {
+			if (node->child[idx] != NULL) {
+				node = node->child[idx];
+			} else {
+				if (node->chldrnIds[idx] != 0) {
+					node->child[idx] = readTaIndexPage(bptree,
+							node->chldrnIds[idx] * ta_bptree_idx_node_bytes
+									+ start_pointer, ta_bptree_idx_node_bytes,
+							node, ta_db_fp);
+					node = node->child[idx];
+				}
+			}
+		} else {
+			break;
+		}
+
+	}
+	return 0;
+}
+
+void deallocTaIndexNode(ta_idx_node_t *node) {
+
 }
 
 //// initially load time axis index database
