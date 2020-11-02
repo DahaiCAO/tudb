@@ -50,6 +50,9 @@ typedef struct _bptree {
 	ta_bptree_node_t *root; /* B树根结点地址 */
 	ta_bptree_node_t *minLeaf;
 	ta_bptree_node_t *maxLeaf;
+	long long rtId;
+	long long maxLf;
+	long long minLf;
 } ta_bptree_t;
 
 void print_bptree(ta_bptree_t *btree);

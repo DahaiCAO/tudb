@@ -360,13 +360,14 @@ int main(int argv, char **argc) {
 	const char *d_path = "D:/tudata/";
 	initConf();
 
-	char *ta_id_path = (char*) calloc(256, sizeof(char));
-	strcat(ta_id_path, d_path);
-	strcat(ta_id_path, "tustore.timeaxis.idx.id");
+	// b+tree index for time axis
+	char *ta_idx_id_path = (char*) calloc(256, sizeof(char));
+	strcat(ta_idx_id_path, d_path);
+	strcat(ta_idx_id_path, "tustore.timeaxis.idx.id");
 
-	char *ta_db_path = (char*) calloc(256, sizeof(char));
-	strcat(ta_db_path, d_path);
-	strcat(ta_db_path, "tustore.timeaxis.idx");
+	char *ta_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(ta_idx_db_path, d_path);
+	strcat(ta_idx_db_path, "tustore.timeaxis.idx");
 //
 //	char *teid;
 //	strcat(teid, path);
@@ -386,7 +387,7 @@ int main(int argv, char **argc) {
 	strcat(lbls_db_path, d_path);
 	strcat(lbls_db_path, "tustore.element.labels.tdb");
 
-	// label name
+	// b+tree index tree for label name
 	char *lbl_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_idx_id_path, d_path);
 	strcat(lbl_idx_id_path, "tustore.label.idx.id");
@@ -402,7 +403,7 @@ int main(int argv, char **argc) {
 	char *lbl_blk_db_path = (char*) calloc(256, sizeof(char));
 	strcat(lbl_blk_db_path, d_path);
 	strcat(lbl_blk_db_path, "tustore.labelblock.tdb");
-	// property name
+	// b+tree index db for property name
 	char *key_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(key_idx_id_path, d_path);
 	strcat(key_idx_id_path, "tustore.property.key.idx.id");
@@ -418,7 +419,7 @@ int main(int argv, char **argc) {
 	char *key_blk_db_path = (char*) calloc(256, sizeof(char));
 	strcat(key_blk_db_path, d_path);
 	strcat(key_blk_db_path, "tustore.property.keyblock.tdb");
-
+	// b+tree index db for property value
 	char *val_idx_id_path = (char*) calloc(256, sizeof(char));
 	strcat(val_idx_id_path, d_path);
 	strcat(val_idx_id_path, "tustore.property.value.idx.id");
@@ -440,23 +441,26 @@ int main(int argv, char **argc) {
 	initIdCaches(caches);
 
 	// initialized Id DB
-	initIdDB(ta_id_path);
+	initIdDB(ta_idx_id_path);
 	initIdDB(lbls_id_path);
 	initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_blk_id_path);
 	initIdDB(key_idx_id_path);
 	initIdDB(key_blk_id_path);
+	initIdDB(val_idx_id_path);
+	initIdDB(val_id_path);
 	// initialized DB
-	initTaIndexDB(ta_db_path);
+	initTaIndexDB(ta_idx_db_path);
 	initDB(lbls_db_path);
 	initDB(lbl_idx_db_path);
 	initDB(lbl_blk_db_path);
 	initDB(key_idx_db_path);
 	initDB(key_blk_db_path);
+	initDB(val_idx_db_path);
+	initDB(val_db_path);
 
-	FILE *ta_id_fp = fopen(ta_id_path, "rb+");
-	FILE *ta_db_fp = fopen(ta_db_path, "rb+");
-
+	FILE *ta_idx_id_fp = fopen(ta_idx_id_path, "rb+");
+	FILE *ta_idx_db_fp = fopen(ta_idx_db_path, "rb+");
 	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
 	FILE *lbl_blk_id_fp = fopen(lbl_blk_id_path, "rb+");
@@ -468,13 +472,12 @@ int main(int argv, char **argc) {
 	FILE *lbl_blk_db_fp = fopen(lbl_blk_db_path, "rb+");
 	FILE *key_idx_db_fp = fopen(key_idx_db_path, "rb+");
 	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
-
 	FILE *val_idx_id_fp = fopen(val_idx_id_path, "rb+");
 	FILE *val_idx_db_fp = fopen(val_idx_db_path, "rb+");
 	FILE *val_id_fp = fopen(val_id_path, "rb+");
 	FILE *val_db_fp = fopen(val_db_path, "rb+");
 
-	loadAllIds(ta_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
+	loadAllIds(ta_idx_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
 	//loadAllIds(taidfp, caches->teIds);
 	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
 	loadAllIds(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
@@ -496,7 +499,7 @@ int main(int argv, char **argc) {
 	listAllIds(caches->valIds);
 
 	ta_idx = taIndexRootCreate(TA_BPLUS_TREE_ORDER);
-	initTaIndexMemPages(ta_idx, ta_db_fp, ta_id_fp);
+	initTaIndexMemPages(ta_idx, ta_idx_db_fp, ta_idx_id_fp);
 //	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
 //	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
 //	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
@@ -511,6 +514,14 @@ int main(int argv, char **argc) {
 //	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
 //	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
 //			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
+
+	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70,...
+	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);//1
+	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);//2
+	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);//3
+	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);//4
+	taIndexInsertNode(ta_idx, 15, 19, ta_idx_id_fp, ta_idx_db_fp);//5
+	print_ta_index(ta_idx);
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
@@ -530,8 +541,12 @@ int main(int argv, char **argc) {
 	free(key_idx_db_path);
 	free(key_blk_id_path);
 	free(key_blk_db_path);
-	free(ta_id_path);
-	free(ta_db_path);
+	free(ta_idx_id_path);
+	free(ta_idx_db_path);
+	free(val_idx_id_path);
+	free(val_idx_db_path);
+	free(val_id_path);
+	free(val_db_path);
 
 	fclose(lbls_db_fp);
 	fclose(lbls_id_fp);
@@ -539,14 +554,19 @@ int main(int argv, char **argc) {
 	fclose(lbl_idx_db_fp);
 	fclose(lbl_blk_id_fp);
 	fclose(lbl_blk_db_fp);
-	fclose(key_blk_id_fp);
-	fclose(key_blk_db_fp);
 	fclose(key_idx_id_fp);
 	fclose(key_idx_db_fp);
+	fclose(key_blk_id_fp);
+	fclose(key_blk_db_fp);
+	fclose(val_idx_id_fp);
+	fclose(val_idx_db_fp);
+	fclose(val_id_fp);
+	fclose(val_db_fp);
+	fclose(ta_idx_id_fp);
+	fclose(ta_idx_db_fp);
 
-	fclose(ta_id_fp);
-	fclose(ta_db_fp);
-
+	ta_idx_id_path = NULL;
+	ta_idx_db_path = NULL;
 	lbls_id_path = NULL;
 	lbls_db_path = NULL;
 	lbl_idx_id_path = NULL;
@@ -557,10 +577,13 @@ int main(int argv, char **argc) {
 	key_idx_db_path = NULL;
 	key_blk_id_path = NULL;
 	key_blk_db_path = NULL;
+	val_idx_id_path = NULL;
+	val_idx_db_path = NULL;
+	val_id_path = NULL;
+	val_db_path = NULL;
 
-	ta_id_path = NULL;
-	ta_db_path = NULL;
-
+	ta_idx_id_fp = NULL;
+	ta_idx_db_fp = NULL;
 	lbls_db_fp = NULL;
 	lbls_id_fp = NULL;
 	lbl_idx_id_fp = NULL;
@@ -571,9 +594,11 @@ int main(int argv, char **argc) {
 	key_idx_db_fp = NULL;
 	key_blk_id_fp = NULL;
 	key_blk_db_fp = NULL;
+	val_idx_id_fp = NULL;
+	val_idx_db_fp = NULL;
+	val_id_fp = NULL;
+	val_db_fp = NULL;
 
-	ta_id_fp = NULL;
-	ta_db_fp = NULL;
 	return 0;
 }
 

@@ -423,8 +423,8 @@ int main(int argv, char **argc) {
 //	bptree_delete(*_bptree, 9);//18
 //	print_bptree(_bptree[0]);
 
-	bptree_delete(*_bptree, 10);//19
-	print_bptree(_bptree[0]);
+//	bptree_delete(*_bptree, 10);//19
+//	print_bptree(_bptree[0]);
 
 
 }

@@ -24,8 +24,52 @@
 /*
  * print b+tree
  */
-void print_bptree(ta_bptree_t *btree) {
-	ta_bptree_node_t *node = btree->root;
+void print_bptree(ta_bptree_t *ta_idx) {
+	ta_bptree_node_t *node = ta_idx->root;
+	char *r = (char*) calloc(256, sizeof(char));
+	strcat(r, "(");
+	char str0[20] = {0};
+	strcat(r, "root id:");
+	itoa(ta_idx->rtId, str0, 10);
+	strcat(r, str0);
+	strcat(r, " , root:");
+	memset(str0, 20, sizeof(char));
+	sprintf(str0, "%lx", ta_idx->root);
+	strcat(r, str0);
+	strcat(r, "; max leaf id:");
+	memset(str0, 20, sizeof(char));
+	itoa(ta_idx->maxLf, str0, 10);
+	strcat(r, str0);
+	strcat(r, " , max leaf:");
+	memset(str0, 20, sizeof(char));
+	sprintf(str0, "%lx", ta_idx->maxLeaf);
+	strcat(r, str0);
+	strcat(r, "; min leaf id:");
+
+	memset(str0, 20, sizeof(char));
+	itoa(ta_idx->minLf, str0, 10);
+	strcat(r, str0);
+	strcat(r, " , min leaf:");
+	memset(str0, 20, sizeof(char));
+	sprintf(str0, "%lx", ta_idx->minLeaf);
+	strcat(r, str0);
+	strcat(r, "; max:");
+
+	memset(str0, 20, sizeof(char));
+	itoa(ta_idx->max, str0, 10);
+	strcat(r, str0);
+	strcat(r, " , min:");
+	memset(str0, 20, sizeof(char));
+	itoa(ta_idx->min, str0, 10);
+	strcat(r, str0);
+	strcat(r, "; sidx:");
+	memset(str0, 20, sizeof(char));
+	itoa(ta_idx->sidx, str0, 10);
+	strcat(r, str0);
+	strcat(r, ") ");
+
+	puts(r);
+
 	int level = 1;
 	print_bptree_children(node, level);
 }

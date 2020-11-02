@@ -49,7 +49,7 @@ void longlongtoByteArray(long long value, unsigned char *buffer) {
 long long bytesLonglong(unsigned char *buffer) {
 	long long recoveredValue = 0;
 	for (int i = 0; i < LONG_LONG; i++) {
-		long long byteVal = (((long long) (buffer + i)) << (LONG_LONG * i));
+		long long byteVal = (((long long) buffer[i]) << (LONG_LONG * i));
 		recoveredValue = recoveredValue | byteVal;
 	}
 	return recoveredValue;

@@ -106,17 +106,24 @@ typedef struct ta_index {
 
 ta_idx_t *ta_idx;
 
-void initTaIndexMemPages(ta_idx_t *ta_idx, FILE *ta_db_fp, FILE *ta_idx_id_fp);
+void print_ta_index(ta_idx_t *btree);
+
+void initTaIndexMemPages(ta_idx_t *ta_idx, FILE *ta_idx_db_fp, FILE *ta_idx_id_fp);
 
 ta_idx_t* taIndexRootCreate(int m);
 
 ta_idx_node_t* taIndexCreateNode(ta_idx_t *bptree, unsigned char leaf,
-		FILE *ta_id_fp);
+		FILE *ta_id_db_fp);
 
 ta_idx_node_t* taIndexInsertNode(ta_idx_t *bptree, long long ts, long long tuid,
-		FILE *ta_id_fp, FILE *ta_db_fp);
+		FILE *ta_idx_id_fp, FILE *ta_idx_db_fp);
 
 void commitIndexNode(ta_idx_t *btree, FILE *ta_db_fp);
+
+int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node);
+
+int taIndexDeleteNode(ta_idx_t *bptree, long long ts, long long tuid,
+		FILE *ta_db_fp);
 
 //// the convert utility for long long to byte array
 //void longlongToByteArray(long long value, unsigned char *buffer);
