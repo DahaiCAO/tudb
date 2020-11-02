@@ -375,6 +375,7 @@ void initIdCaches(id_caches_t * caches) {
 	caches->valIds =  (id_cache_t*) malloc(sizeof(id_cache_t));
 	caches->valIds->nId = NULL;
 	caches->valIds->rId = NULL;
+
 }
 
 void deallocIdCaches(id_caches_t * caches) {

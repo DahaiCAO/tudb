@@ -521,6 +521,7 @@ int main(int argv, char **argc) {
 	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);//3
 	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);//4
 	taIndexInsertNode(ta_idx, 15, 19, ta_idx_id_fp, ta_idx_db_fp);//5
+
 	print_ta_index(ta_idx);
 
 	deallocLabelsPages(lbls_pages);

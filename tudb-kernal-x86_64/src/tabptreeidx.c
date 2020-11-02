@@ -154,6 +154,7 @@ void print_ta_index(ta_idx_t *ta_idx) {
 	strcat(r, str0);
 	strcat(r, "); max:");
 
+
 	memset(str0, 20, sizeof(char));
 	itoa(ta_idx->max, str0, 10);
 	strcat(r, str0);
