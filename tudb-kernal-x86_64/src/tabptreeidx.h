@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "macrodef.h"
 #include "tuidstore.h"
@@ -45,16 +46,17 @@
  * leaf node is same as that of non-leaf node. But the information stores
  * in two nodes is different. Non-leaf nodes including root node, store keys (size_t, 8 bytes) and
  * children (subtree pointer) (size_t, 8 bytes), while leaf nodes store keys (size_t, 8 bytes)
- * and data pointer (non-cluster index) (size_t, 8 bytes). If m is order, that means
- * leaf node has m-1 data and m-1 keys, while non-leaf's nodes has m-1 keys and m children.
+ * and data pointer (non-cluster index) (size_t, 8 bytes). If m is order,
+ * that means leaf node has n data and n keys,
+ * while non-leaf's nodes has n keys and n children, and ceiling(m/2) <= n <= m
  *
  * Each node includes key number (integer), leaf mark(1 byte)
  * that is, if order is m, the bytes of a record  in index db is:
- * leaf bytes = length(int) + leaf(char) + ts(0~m-1 B) + data(0~m-1 B) + prev(8 B) + nxt(8 B)
- * non-leaf bytes = length(int) + leaf(char) + ts(0~m-1 B) + children(0~m-1 B) + prev(8 B) + nxt(8 B)
+ * leaf bytes = length(int) + leaf(char) + ts(ceiling(m/2) ~ m B) + data(ceiling(m/2) ~ m B) + prev(8 B) + nxt(8 B)
+ * non-leaf bytes = length(int) + leaf(char) + ts(ceiling(m/2) ~ m B) + children(ceiling(m/2) ~ m B) + prev(8 B) + nxt(8 B)
  *
  * NOTE: however, bytes of leaf node are same as bytes of non leaf node.
- * total bytes = 4 + 1 + (m-1)*8 + (m)*8 + 2*8 per node(page)
+ * total bytes = 4 + 1 + (m)*8 + (m)*8 + 2*8 per node(page)
  *
  * B+tree 一般规律，分裂总是叶子分裂为叶子，非叶子分裂为非叶子
  * 合并是叶子合并完孩子叶子，非叶子合并完还是非叶子

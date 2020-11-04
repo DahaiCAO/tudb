@@ -557,8 +557,11 @@ int main(int argv, char **argc) {
 	print_ta_index(ta_idx);
 	taIndexInsertNode(ta_idx, 82, 124, ta_idx_id_fp, ta_idx_db_fp);//14
 	print_ta_index(ta_idx);
-
-	taIndexInsertNode(ta_idx, 20, 799, ta_idx_id_fp, ta_idx_db_fp);//14
+	taIndexInsertNode(ta_idx, 25, 799, ta_idx_id_fp, ta_idx_db_fp);//14
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 28, 81, ta_idx_id_fp, ta_idx_db_fp);//14
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 2, 11988, ta_idx_id_fp, ta_idx_db_fp);//14
 	print_ta_index(ta_idx);
 
 	deallocLabelsPages(lbls_pages);

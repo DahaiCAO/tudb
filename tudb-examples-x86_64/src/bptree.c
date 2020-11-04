@@ -129,8 +129,13 @@ static Position FindSiblingKeyNum_M_2(Position Parent, int i, int *j) {
 	return Sibling;
 }
 
-/* 当要对X插入Key的时候，i是X在Parent的位置，j是Key要插入的位置
- 当要对Parent插入X节点的时候，i是要插入的位置，Key和j的值没有用
+/* 当要对X插入Key的时候，
+ * i是X在Parent的位置，
+ * j是Key要插入的位置，
+ * 当要对Parent插入X节点的时候，
+ * i是要插入的位置，
+ * Key和j的值没有用.
+ * e.g., T = InsertElement(1, Parent, T, Key, i, j);
  */
 static Position InsertElement(int isKey, Position Parent, Position X,
 		KeyType Key, int i, int j) {

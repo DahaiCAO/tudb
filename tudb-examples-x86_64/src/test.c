@@ -383,35 +383,35 @@ long long recycleId(FILE *idfp, long long id) {
 
 int main(int argv, char **argc) {
 	setvbuf(stdout, NULL, _IONBF, 0);
-	ta_bptree_t **_bptree = (ta_bptree_t**) calloc(1, sizeof(ta_btree_t));
-	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70，
-	bptree_create(_bptree, 5);
-	bptree_insert(*_bptree, 10);//1
-	bptree_insert(*_bptree, 15);//2
-	bptree_insert(*_bptree, 9);//3
-	bptree_insert(*_bptree, 4);//4
-	bptree_insert(*_bptree, 19);//5
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 20);//6
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 12);//7
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 11);//8
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 13);//9
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 14);//10
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 32);//11
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 60);//12
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 30);//13
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 70);//14
-	print_bptree(_bptree[0]);
-	bptree_insert(*_bptree, 31);//14
-	print_bptree(_bptree[0]);
+//	ta_bptree_t **_bptree = (ta_bptree_t**) calloc(1, sizeof(ta_btree_t));
+//	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70，
+//	bptree_create(_bptree, 5);
+//	bptree_insert(*_bptree, 10);//1
+//	bptree_insert(*_bptree, 15);//2
+//	bptree_insert(*_bptree, 9);//3
+//	bptree_insert(*_bptree, 4);//4
+//	bptree_insert(*_bptree, 19);//5
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 20);//6
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 12);//7
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 11);//8
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 13);//9
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 14);//10
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 32);//11
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 60);//12
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 30);//13
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 70);//14
+//	print_bptree(_bptree[0]);
+//	bptree_insert(*_bptree, 31);//14
+//	print_bptree(_bptree[0]);
 
 //	bptree_delete(*_bptree, 60);//15
 //	print_bptree(_bptree[0]);
@@ -426,5 +426,10 @@ int main(int argv, char **argc) {
 //	bptree_delete(*_bptree, 10);//19
 //	print_bptree(_bptree[0]);
 
+int i = 7;
+double f = ceil(i/2);
+int j = (int)f;
 
+printf("%lf\n", f);
+printf("%d\n", j);
 }

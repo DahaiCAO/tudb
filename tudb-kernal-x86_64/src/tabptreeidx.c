@@ -75,7 +75,7 @@ static void print_ta_indexes(ta_idx_node_t *node, int level) {
 		}
 	} else {
 		strcat(s, "|childIds:");
-		for (int i = 0; i < node->num + 1; i++) {
+		for (int i = 0; i < node->num; i++) {
 			char str2[25] = { 0 };
 			itoa(node->chldrnIds[i], str2, 10);
 			strcat(s, str2);
@@ -195,13 +195,13 @@ ta_idx_t* taIndexRootCreate(int m) {
 		return NULL;
 	}
 
-	bptree->max = m - 1;
+	bptree->max = m;
 	bptree->min = m / 2;
 	if (0 != m % 2) {
 		bptree->min++;
 	}
 	bptree->min--;
-	bptree->sidx = m / 2;
+	bptree->sidx = (m + 1) / 2;
 	bptree->root = NULL; /* 空树 */
 	bptree->minLeaf = NULL;
 	bptree->maxLeaf = NULL;
@@ -367,7 +367,7 @@ ta_idx_node_t* taIndexCreateNode(ta_idx_t *bptree, unsigned char leaf,
 		}
 
 	} else {
-		node->chldrnIds = (long long*) calloc(bptree->max + 2,
+		node->chldrnIds = (long long*) calloc(bptree->max + 1,
 				sizeof(long long)); //
 		if (NULL == node->chldrnIds) {
 			free(node->keys);
@@ -378,7 +378,7 @@ ta_idx_node_t* taIndexCreateNode(ta_idx_t *bptree, unsigned char leaf,
 		}
 
 		/* More than (max+1) is for move */
-		node->child = (ta_idx_node_t**) calloc(bptree->max + 2,
+		node->child = (ta_idx_node_t**) calloc(bptree->max + 1,
 				sizeof(ta_idx_node_t*));
 		if (NULL == node->child) {
 			free(node->keys);
@@ -412,26 +412,11 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 		}
 
 		/* Copy data 2 */
+		memcpy(nodeRight->keys, node->keys + sidx,
+				(total - sidx) * sizeof(long long));
 		if (node->leaf == 1) {
-			memcpy(nodeRight->keys, node->keys + sidx,
-					(total - sidx) * sizeof(long long));
 			memcpy(nodeRight->tuIdxIds, node->tuIdxIds + sidx,
 					(total - sidx) * sizeof(long long));
-			nodeRight->num = (total - sidx);
-			node->num = sidx;
-			for (int k = 0; k < node->num; k++) {
-				printf("l keys: %lld\n", node->keys[k]);
-			}
-			for (int k = 0; k < node->num; k++) {
-				printf("l tuIdxIds: %lld\n", node->tuIdxIds[k]);
-			}
-
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("r keys: %lld\n", nodeRight->keys[k]);
-			}
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("r tuIdxIds: %lld\n", nodeRight->tuIdxIds[k]);
-			}
 
 			ta_idx_node_t *t = node->nxt;
 			node->nxt = nodeRight;
@@ -459,15 +444,13 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 				}
 			}
 		} else {
-			memcpy(nodeRight->keys, node->keys + sidx + 1,
-					(total - sidx - 1) * sizeof(long long));
-			memcpy(nodeRight->child, node->child + sidx + 1,
+			memcpy(nodeRight->child, node->child + sidx,
 					(total - sidx) * sizeof(ta_idx_node_t*));
-			memcpy(nodeRight->chldrnIds, node->chldrnIds + sidx + 1,
+			memcpy(nodeRight->chldrnIds, node->chldrnIds + sidx,
 					(total - sidx) * sizeof(long long));
-			nodeRight->num = (total - sidx - 1);
-			node->num = sidx;
 		}
+		nodeRight->num = (total - sidx);
+		node->num = sidx;
 		node->dirty = 1;
 		node->hit++;
 		nodeRight->parent = node->parent;
@@ -478,18 +461,37 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 
 		printf("total == %d\n", total);
 		printf("sidx == %d\n", sidx);
-		printf("total - sidx - 1 == %d\n", (total - sidx - 1));
 		printf("nodeRight->num == %d\n", nodeRight->num);
-		for (int k = 0; k < nodeRight->num; k++) {
-			printf("right child keys: %lld\n", nodeRight->keys[k]);
-		}
-		printf("--\n");
 		printf("node->num == %d\n", node->num);
-		printf("total == %d\n", total);
-		for (int k = 0; k < node->num; k++) {
-			printf("left child keys: %lld\n", node->keys[k]);
+		if (node->leaf == 1) {
+			for (int k = 0; k < node->num; k++) {
+				printf("l keys: %lld\n", node->keys[k]);
+			}
+			for (int k = 0; k < node->num; k++) {
+				printf("l tuIdxIds: %lld\n", node->tuIdxIds[k]);
+			}
+			for (int k = 0; k < nodeRight->num; k++) {
+				printf("r keys: %lld\n", nodeRight->keys[k]);
+			}
+			for (int k = 0; k < nodeRight->num; k++) {
+				printf("r tuIdxIds: %lld\n", nodeRight->tuIdxIds[k]);
+			}
+		} else {
+			for (int k = 0; k < node->num; k++) {
+				printf("l keys: %lld\n", node->keys[k]);
+			}
+			for (int k = 0; k < node->num; k++) {
+				printf("l chldrnIds: %lld\n", node->chldrnIds[k]);
+			}
+			for (int k = 0; k < nodeRight->num; k++) {
+				printf("r keys: %lld\n", nodeRight->keys[k]);
+			}
+			for (int k = 0; k < nodeRight->num; k++) {
+				printf("r chldrnIds: %lld\n", nodeRight->chldrnIds[k]);
+			}
+
 		}
-		printf("--\n");
+
 		/* Insert into parent */
 		parent = node->parent;
 		if (NULL == parent) {
@@ -508,34 +510,35 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 			bptree->rtId = parent->id;
 			node->parent = parent; // left child node
 			nodeRight->parent = parent; // right child node
-			parent->keys[0] = node->keys[sidx];
+			parent->keys[0] = node->keys[0];
+			parent->keys[1] = nodeRight->keys[0];
 			parent->child[0] = node; // left child node
 			parent->child[1] = nodeRight; // right child node
 			parent->chldrnIds[0] = node->id;
 			parent->chldrnIds[1] = nodeRight->id;
-			parent->num++;
+			parent->num += 2;
 		} else {
 			/* Insert into parent node */
 			for (idx = parent->num; idx > 0; idx--) {
-				if (node->keys[sidx] < parent->keys[idx - 1]) {
+				if (nodeRight->keys[0] < parent->keys[idx - 1]) {
 					parent->keys[idx] = parent->keys[idx - 1];
-					parent->child[idx + 1] = parent->child[idx];
-					parent->chldrnIds[idx + 1] = parent->chldrnIds[idx];
+					parent->child[idx] = parent->child[idx - 1];
+					parent->chldrnIds[idx] = parent->chldrnIds[idx - 1];
 					continue;
 				}
 				break;
 			}
 
-			parent->keys[idx] = node->keys[sidx];
-			parent->child[idx + 1] = nodeRight;
-			parent->chldrnIds[idx + 1] = nodeRight->id;
+			parent->keys[idx] = nodeRight->keys[0];
+			parent->child[idx] = nodeRight;
+			parent->chldrnIds[idx] = nodeRight->id;
 			nodeRight->parent = parent;
 			parent->num++;
 
 			for (int k = 0; k < parent->num; k++) {
 				printf("parent child node keys: %lld\n", parent->keys[k]);
 			}
-			for (int k = 0; k < parent->num + 1; k++) {
+			for (int k = 0; k < parent->num; k++) {
 				printf("parent child node chldrnIds: %lld\n",
 						parent->chldrnIds[k]);
 			}
@@ -546,9 +549,9 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 
 		memset(node->keys + sidx, 0, (total - sidx) * sizeof(long long));
 		if (node->leaf == 0) {
-			memset(node->child + sidx + 1, 0,
+			memset(node->child + sidx, 0,
 					(total - sidx) * sizeof(ta_idx_node_t*));
-			memset(node->chldrnIds + sidx + 1, 0,
+			memset(node->chldrnIds + sidx, 0,
 					(total - sidx) * sizeof(long long));
 		}
 		if (nodeRight->leaf == 0) {
@@ -625,54 +628,50 @@ static int _bptree_update_leaf(ta_idx_t *bptree, ta_idx_node_t *node,
 	node->hit++;
 	node->dirty = 1;
 
-
-
 	return 0;
 }
 
 ta_idx_node_t* taIndexInsertNode(ta_idx_t *bptree, long long ts, long long tuid,
 		FILE *ta_id_fp, FILE *ta_db_fp) {
-	int idx = 0;
+	int idx = 0, found = 0;
 	ta_idx_node_t *node = bptree->root;
-	int found = 0;
 	/* 2. 查找B+tree插入位置：在此当然也可以采用二分查找算法，
 	 * 有兴趣的可以自己去优化，也可以用折半查找来做。*/
-
 	while (NULL != node) {
 		for (idx = 0; idx < node->num; idx++) {
 			if (ts < node->keys[idx]) {
+				if (idx > 0 && node->leaf == 0)
+					idx--;
 				break;
 			} else if (ts == node->keys[idx]) {
 				found = 1;
 				node->hit++;
 				break;
 			}
+
 		}
 
 		if (node->leaf == 0) {
-//			if (found == 0) {
-				if (node->child[idx] != NULL) {
-					node = node->child[idx];
-				} else {
-					if (node->chldrnIds[idx] != 0) {
-						node->child[idx] = readTaIndexPage(bptree,
-								node->chldrnIds[idx], start_pointer,
-								ta_bptree_idx_node_bytes, node, ta_db_fp);
-						node = node->child[idx];
-					}
+			if (idx == node->num) {
+				idx--;
+				node->hit++;
+			} else if (idx == 0) {
+				if (ts < node->keys[idx]) {
+					node->keys[idx] = ts;
+					node->dirty = 1;
 				}
-//			} else if (found == 1) {
-//				if (node->child[idx + 1] != NULL) {
-//					node = node->child[idx + 1];
-//				} else {
-//					if (node->chldrnIds[idx + 1] != 0) {
-//						node->child[idx + 1] = readTaIndexPage(bptree,
-//								node->chldrnIds[idx + 1], start_pointer,
-//								ta_bptree_idx_node_bytes, node, ta_db_fp);
-//						node = node->child[idx + 1];
-//					}
-//				}
-//			}
+				node->hit++;
+			}
+			if (node->child[idx] != NULL) {
+				node = node->child[idx];
+			} else {
+				if (node->chldrnIds[idx] != 0) {
+					node->child[idx] = readTaIndexPage(bptree,
+							node->chldrnIds[idx], start_pointer,
+							ta_bptree_idx_node_bytes, node, ta_db_fp);
+					node = node->child[idx];
+				}
+			}
 		} else {
 			break;
 		}
