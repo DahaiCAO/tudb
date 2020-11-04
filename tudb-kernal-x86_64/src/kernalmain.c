@@ -563,6 +563,10 @@ int main(int argv, char **argc) {
 	print_ta_index(ta_idx);
 	taIndexInsertNode(ta_idx, 2, 11988, ta_idx_id_fp, ta_idx_db_fp);//14
 	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 1, 118, ta_idx_id_fp, ta_idx_db_fp);//14
+	print_ta_index(ta_idx);
+
+
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
