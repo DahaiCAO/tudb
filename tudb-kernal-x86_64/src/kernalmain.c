@@ -520,8 +520,45 @@ int main(int argv, char **argc) {
 	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);//2
 	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);//3
 	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);//4
-	taIndexInsertNode(ta_idx, 15, 19, ta_idx_id_fp, ta_idx_db_fp);//5
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 4, 7, ta_idx_id_fp, ta_idx_db_fp);//5:updating
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 15, 8, ta_idx_id_fp, ta_idx_db_fp);//5:updating
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 9, 111, ta_idx_id_fp, ta_idx_db_fp);//5:updating
+	print_ta_index(ta_idx);
 
+	taIndexInsertNode(ta_idx, 19, 99, ta_idx_id_fp, ta_idx_db_fp);//5
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 20, 6, ta_idx_id_fp, ta_idx_db_fp);//6
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 10, 0, ta_idx_id_fp, ta_idx_db_fp);//6:updating
+	print_ta_index(ta_idx);
+
+	taIndexInsertNode(ta_idx, 11, 5, ta_idx_id_fp, ta_idx_db_fp);//7
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 19, 266, ta_idx_id_fp, ta_idx_db_fp);//7:updating
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 13, 8, ta_idx_id_fp, ta_idx_db_fp);//8
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 14, 10, ta_idx_id_fp, ta_idx_db_fp);//9
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 32, 12, ta_idx_id_fp, ta_idx_db_fp);//10
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 60, 15, ta_idx_id_fp, ta_idx_db_fp);//11
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 70, 28, ta_idx_id_fp, ta_idx_db_fp);//12
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 72, 100, ta_idx_id_fp, ta_idx_db_fp);//13
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 18, 22, ta_idx_id_fp, ta_idx_db_fp);//14
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 78, 244, ta_idx_id_fp, ta_idx_db_fp);//14
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 82, 124, ta_idx_id_fp, ta_idx_db_fp);//14
+	print_ta_index(ta_idx);
+
+	taIndexInsertNode(ta_idx, 20, 799, ta_idx_id_fp, ta_idx_db_fp);//14
 	print_ta_index(ta_idx);
 
 	deallocLabelsPages(lbls_pages);

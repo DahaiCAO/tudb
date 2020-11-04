@@ -127,31 +127,4 @@ int taIndexDeleteNode(ta_idx_t *bptree, long long ts, long long tuid,
 
 
 
-//// the convert utility for long long to byte array
-//void longlongToByteArray(long long value, unsigned char *buffer);
-//
-//// the utility for converting byte array to long long
-//long long byteArrayToLonglong(unsigned char *buffer);
-//
-//ta_bptree_idx_node_t* loadTaBptreeNode(ta_bptree_idx_t *btree,
-//		unsigned char *page, long long *id, ta_bptree_idx_node_t *parent);
-//
-//ta_bptree_idx_node_t* readTaBpTreeNode(ta_bptree_idx_t *btree, long long start,
-//		size_t size, ta_bptree_idx_node_t *parent, FILE *ta_bptree_idx_db_fp);
-//
-//// initially load time axis index database
-//// m should be 3 at least in B+tree, if m is 2, the tree is two-b tree
-//void loadTaIndex(ta_bptree_idx_t* ta_bptree_idx,FILE *ta_bptree_idx_db_fp);
-//
-//void deallocTaBptreeIndex(ta_bptree_idx_t* ta_bptree_idx);
-//
-//int splitTaBptreeNode(ta_bptree_idx_t *btree, ta_bptree_idx_node_t *node,
-//		FILE *ta_bptree_idx_db_fp, FILE *ta_id_fp);
-//
-//int insertBptreeNode(ta_bptree_idx_t *btree, ta_bptree_idx_node_t *node,
-//		long long ts, int idx, long long tuIdxId);
-//
-//long long insertTaBptreeNode(ta_bptree_idx_t *btree, long long ts, long long tuid,
-//		FILE *ta_bptree_idx_db_fp, FILE *ta_id_fp);
-
 #endif /* TABPTREEIDX_H_ */
