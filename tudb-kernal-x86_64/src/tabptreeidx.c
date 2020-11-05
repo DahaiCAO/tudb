@@ -759,13 +759,13 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 	}
 	// 把右节点node的keys拷贝到子节点中来
 	memcpy(left->keys + left->num, right->keys, right->num * sizeof(long long));
-	for (int k = 0; k < left->num; k++) {
+	for (int k = 0; k < left->num + right->num; k++) {
 		printf("left child keys after: %lld\n", left->keys[k]);
 	}
 	if (left->leaf == 1) {
 		memcpy(left->tuIdxIds + left->num, right->tuIdxIds,
 				right->num * sizeof(long long));
-		for (int k = 0; k < left->num; k++) {
+		for (int k = 0; k < left->num + right->num; k++) {
 			printf("left child tuIdxIds after: %lld\n", left->tuIdxIds[k]);
 		}
 	} else if (left->leaf == 0) {
@@ -774,6 +774,9 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 				right->num * sizeof(ta_idx_node_t*));
 		memcpy(left->chldrnIds + left->num, right->chldrnIds,
 				right->num * sizeof(long long));
+		for (int k = 0; k < left->num + right->num; k++) {
+			printf("left child chldrnIds after: %lld\n", left->chldrnIds[k]);
+		}
 		// 修改右节点node的孩子父亲为左孩子的父亲
 		for (m = 0; m <= right->num; m++) {
 			if (NULL != right->child[m]) {
@@ -784,9 +787,11 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 
 	// 修改左孩子的num
 	left->num += right->num;
-
-	// 在父亲的keys中清除掉parent->key[mid]
-	for (m = mid; m < parent->num - 1; m++) {
+	for (int k = 0; k < parent->num; k++) {
+		printf("parent keys before: %lld\n", parent->keys[k]);
+	}
+	// 在父亲的keys中清除掉右节点的父亲parent->key[mid+1]，因为右节点已经合并到左节点了。
+	for (m = mid + 1; m < parent->num - 1; m++) {
 		parent->keys[m] = parent->keys[m + 1];
 		parent->child[m] = parent->child[m + 1];
 		parent->chldrnIds[m] = parent->chldrnIds[m + 1];
@@ -799,7 +804,9 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 	parent->child[m] = NULL;
 	parent->chldrnIds[m] = 0;
 	parent->num--;
-
+	for (int k = 0; k < parent->num; k++) {
+		printf("parent keys after after: %lld\n", parent->keys[k]);
+	}
 	if (left->leaf == 1) {			// 修改链表指针
 		left->nxt = right->nxt;
 		if (right->nxt) {
@@ -852,7 +859,7 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node) {
 	}
 
 	/* 2. 查找node是其父结点的第几个孩子结点 */
-	for (idx = 0; idx <= parent->num; idx++) {
+	for (idx = 0; idx < parent->num; idx++) {
 		if (parent->child[idx] == node) {
 			break;
 		}
@@ -866,7 +873,7 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node) {
 	}
 	/* 3. node: 最后一个孩子结点，即最右边节点(left < node)
 	 * node as right child */
-	else if (idx == parent->num) { // node是父亲的最后一个child
+	else if (idx == parent->num - 1) { // node是父亲的最后一个child
 		mid = idx - 1;
 		left = parent->child[mid]; // 获取左兄弟节点，为合并或者借用做准备
 
@@ -998,6 +1005,7 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node) {
 
 static int _bptree_delete_leaf(ta_idx_t *bptree, ta_idx_node_t *node, int idx,
 		long long tuid) {
+	ta_idx_node_t *parent = node->parent, *curr = node;
 	printf("to delete child key: %lld\n", node->keys[idx]);
 	printf("%d\n", node->num);
 
@@ -1009,15 +1017,30 @@ static int _bptree_delete_leaf(ta_idx_t *bptree, ta_idx_node_t *node, int idx,
 		// delete tuid from tu index id from index tuid DB
 	}
 
-	if (node->tuIdxIds[idx] == 0) { // delete a key and tu index id from leaf nodes
+	// 这里应该是等于0，为调试方便才设置为不等于0
+	if (node->tuIdxIds[idx] != 0) { // delete a key and tu index id from leaf nodes
 		memcpy(node->keys + idx, node->keys + idx + 1,
 				(node->num - idx - 1) * sizeof(long long)); // delete the key
 		memset(node->keys + node->num - 1, 0, sizeof(long long)); // clear
 		memcpy(node->tuIdxIds + idx, node->tuIdxIds + idx + 1,
 				(node->num - idx - 1) * sizeof(long long));
 		memset(node->tuIdxIds + node->num - 1, 0, sizeof(long long));
+		while (parent != NULL && idx == 0) { // 以下操作是由idx==0触发的
+			int i = 0;
+			for (i = 0; i < parent->num; i++) {
+				if (parent->child[i] == curr) {
+					parent->keys[i] = curr->keys[0];
+					parent->dirty = 1;
+					break;
+				}
+			}
+			curr = parent;
+			parent = parent->parent;
+		}
 		node->num--;
 	}
+	curr = NULL;
+	parent = NULL;
 
 	for (int k = 0; k < node->num; k++) {
 		printf("remained child keys: %lld\n", node->keys[k]);
