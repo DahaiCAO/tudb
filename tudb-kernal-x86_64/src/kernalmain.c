@@ -298,14 +298,15 @@ void initConf() {
 
 	// m is order. it is 3 at least.
 	TA_BPLUS_TREE_ORDER = 5;
-	/* node size (bytes) is page size , record size as well.
-	 * that is, there are length, m-1 keys, m-1 data/m children, 1 previous, 1 next, totally,
-	 * here, to keep all nodes are same, we design m data/m children, data store more than 1 B.
-	 * LONG	+ 1 + (TA_BPLUS_TREE_ORDER - 1) * LONG_LONG + TA_BPLUS_TREE_ORDER * LONG_LONG + 2 * LONG_LONG;
-	 * e.g., if order is 5, 93 bytes
+	/* node size (bytes) is page size , record size as well. (B is 8 bytes)
+	 * that is, the size consists of half B real length, 1 byte leaf flag,  m B keys, m B data or
+	 * m B children, 1 B previous node, 1 B next node, totally,
+	 * here, all nodes are same. LONG is 4 bytes, LONG_LONG is 8 bytes.
+	 * LONG	+ 1 + TA_BPLUS_TREE_ORDER * LONG_LONG + TA_BPLUS_TREE_ORDER * LONG_LONG + 2 * LONG_LONG;
+	 * e.g., if order is 5, 101 bytes
 	 */
 	ta_bptree_idx_leng_leaf_bytes = LONG + 1;
-	ta_bptree_idx_keys_bytes = (TA_BPLUS_TREE_ORDER - 1) * LONG_LONG;
+	ta_bptree_idx_keys_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
 	ta_bptree_idx_children_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
 	ta_bptree_idx_node_bytes = ta_bptree_idx_leng_leaf_bytes
 			+ ta_bptree_idx_keys_bytes + ta_bptree_idx_children_bytes
@@ -516,57 +517,64 @@ int main(int argv, char **argc) {
 //			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
 
 	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70,...
-	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);//1
-	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);//2
-	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);//3
-	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);//4
+	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);	//1
+	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);	//2
+	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);	//3
+	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);	//4
 	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 4, 7, ta_idx_id_fp, ta_idx_db_fp);//5:updating
+	taIndexInsertNode(ta_idx, 4, 7, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
 	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 15, 8, ta_idx_id_fp, ta_idx_db_fp);//5:updating
+	taIndexInsertNode(ta_idx, 15, 8, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
 	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 9, 111, ta_idx_id_fp, ta_idx_db_fp);//5:updating
-	print_ta_index(ta_idx);
-
-	taIndexInsertNode(ta_idx, 19, 99, ta_idx_id_fp, ta_idx_db_fp);//5
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 20, 6, ta_idx_id_fp, ta_idx_db_fp);//6
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 10, 0, ta_idx_id_fp, ta_idx_db_fp);//6:updating
+	taIndexInsertNode(ta_idx, 9, 111, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
 	print_ta_index(ta_idx);
 
-	taIndexInsertNode(ta_idx, 11, 5, ta_idx_id_fp, ta_idx_db_fp);//7
+	taIndexInsertNode(ta_idx, 19, 99, ta_idx_id_fp, ta_idx_db_fp);	//5
 	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 19, 266, ta_idx_id_fp, ta_idx_db_fp);//7:updating
+	taIndexInsertNode(ta_idx, 20, 6, ta_idx_id_fp, ta_idx_db_fp);	//6
 	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 13, 8, ta_idx_id_fp, ta_idx_db_fp);//8
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 14, 10, ta_idx_id_fp, ta_idx_db_fp);//9
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 32, 12, ta_idx_id_fp, ta_idx_db_fp);//10
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 60, 15, ta_idx_id_fp, ta_idx_db_fp);//11
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 70, 28, ta_idx_id_fp, ta_idx_db_fp);//12
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 72, 100, ta_idx_id_fp, ta_idx_db_fp);//13
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 18, 22, ta_idx_id_fp, ta_idx_db_fp);//14
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 78, 244, ta_idx_id_fp, ta_idx_db_fp);//14
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 82, 124, ta_idx_id_fp, ta_idx_db_fp);//14
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 25, 799, ta_idx_id_fp, ta_idx_db_fp);//14
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 28, 81, ta_idx_id_fp, ta_idx_db_fp);//14
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 2, 11988, ta_idx_id_fp, ta_idx_db_fp);//14
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 1, 118, ta_idx_id_fp, ta_idx_db_fp);//14
+	taIndexInsertNode(ta_idx, 10, 0, ta_idx_id_fp, ta_idx_db_fp);	//6:updating
 	print_ta_index(ta_idx);
 
+	taIndexInsertNode(ta_idx, 11, 5, ta_idx_id_fp, ta_idx_db_fp);	//7
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 19, 266, ta_idx_id_fp, ta_idx_db_fp);	//7:updating
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 13, 8, ta_idx_id_fp, ta_idx_db_fp);	//8
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 14, 10, ta_idx_id_fp, ta_idx_db_fp);	//9
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 32, 12, ta_idx_id_fp, ta_idx_db_fp);	//10
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 60, 15, ta_idx_id_fp, ta_idx_db_fp);	//11
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 70, 28, ta_idx_id_fp, ta_idx_db_fp);	//12
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 72, 100, ta_idx_id_fp, ta_idx_db_fp);	//13
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 18, 22, ta_idx_id_fp, ta_idx_db_fp);	//15
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 78, 244, ta_idx_id_fp, ta_idx_db_fp);	//16
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 82, 124, ta_idx_id_fp, ta_idx_db_fp);	//17
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 25, 799, ta_idx_id_fp, ta_idx_db_fp);	//18
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 28, 81, ta_idx_id_fp, ta_idx_db_fp);	//19
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 2, 11988, ta_idx_id_fp, ta_idx_db_fp);	//20
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 1, 118, ta_idx_id_fp, ta_idx_db_fp);	//21
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 89, 139, ta_idx_id_fp, ta_idx_db_fp);	//22
+	print_ta_index(ta_idx);
 
+	taIndexDeleteNode(ta_idx, 13, 8, ta_idx_db_fp);//1
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 60, 15, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 14, 10, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
