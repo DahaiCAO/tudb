@@ -582,6 +582,8 @@ int main(int argv, char **argc) {
 	print_ta_index(ta_idx);
 	taIndexDeleteNode(ta_idx, 82, 10, ta_idx_db_fp);//2
 	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 32, 10, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
