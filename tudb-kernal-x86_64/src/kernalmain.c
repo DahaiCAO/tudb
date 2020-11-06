@@ -533,7 +533,7 @@ int main(int argv, char **argc) {
 	print_ta_index(ta_idx);
 	taIndexInsertNode(ta_idx, 20, 6, ta_idx_id_fp, ta_idx_db_fp);	//6
 	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 10, 0, ta_idx_id_fp, ta_idx_db_fp);	//6:updating
+	taIndexInsertNode(ta_idx, 10, 101, ta_idx_id_fp, ta_idx_db_fp);	//6:updating
 	print_ta_index(ta_idx);
 
 	taIndexInsertNode(ta_idx, 11, 5, ta_idx_id_fp, ta_idx_db_fp);	//7
@@ -582,9 +582,44 @@ int main(int argv, char **argc) {
 	print_ta_index(ta_idx);
 	taIndexDeleteNode(ta_idx, 82, 10, ta_idx_db_fp);//2
 	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 32, 10, ta_idx_db_fp);//2
+	taIndexInsertNode(ta_idx, 80, 139, ta_idx_id_fp, ta_idx_db_fp);	//22
 	print_ta_index(ta_idx);
-
+	taIndexDeleteNode(ta_idx, 20, 10, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 25, 10, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexInsertNode(ta_idx, 12, 129, ta_idx_id_fp, ta_idx_db_fp);	//22
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 18, 18, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 19, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 14, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 15, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 28, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 70, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 72, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 80, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 4, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 9, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 32, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 60, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 12, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 2, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
+	taIndexDeleteNode(ta_idx, 10, 19, ta_idx_db_fp);//2
+	print_ta_index(ta_idx);
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
 	deallocLabelBlockPages(lbl_blk_pages);
