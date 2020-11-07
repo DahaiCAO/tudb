@@ -264,16 +264,16 @@ static ta_idx_node_t* readTaIndexPage(ta_idx_t *bptree, long long id,
 		}
 		node->chldrnIds = (long long*) calloc(bptree->max + 2,
 				sizeof(long long));
-		for (int i = 0; i < node->num + 1; i++) {
+		for (int i = 0; i < node->num; i++) {
 			node->chldrnIds[i] = bytesLonglong(
 					page + ta_bptree_idx_leng_leaf_bytes
 							+ ta_bptree_idx_keys_bytes + i * LONG_LONG);
 		}
 	}
-	node->next = bytesLonglong(
+	node->prev = bytesLonglong(
 			page + ta_bptree_idx_leng_leaf_bytes + ta_bptree_idx_keys_bytes
 					+ ta_bptree_idx_children_bytes); //
-	node->prev = bytesLonglong(
+	node->next = bytesLonglong(
 			page + ta_bptree_idx_leng_leaf_bytes + ta_bptree_idx_keys_bytes
 					+ ta_bptree_idx_children_bytes + LONG_LONG); //
 	node->content = page;
@@ -685,6 +685,7 @@ ta_idx_node_t* taIndexInsertNode(ta_idx_t *bptree, long long ts, long long tuid,
 	return node;
 }
 
+// store all dirty pages.
 void commitIndexNode(ta_idx_t *bptree, FILE *ta_db_fp) {
 	ta_idx_node_t *p = bptree->root;
 	if (p != NULL) {
@@ -695,12 +696,14 @@ void commitIndexNode(ta_idx_t *bptree, FILE *ta_db_fp) {
 				memset(bf, 0, ta_bptree_idx_node_bytes * sizeof(unsigned char));
 				integerBytesArry(p->num, p->content);
 				*(p->content + LONG) = p->leaf;
+				// update keys
+				for (int i = 0; i < p->num; i++) {
+					longlongtoByteArray(p->keys[i],
+							p->content + ta_bptree_idx_leng_leaf_bytes
+									+ i * LONG_LONG);
+				}
 				if (p->leaf == 1) {
-					for (int i = 0; i < p->num; i++) {
-						longlongtoByteArray(p->keys[i],
-								p->content + ta_bptree_idx_leng_leaf_bytes
-										+ i * LONG_LONG);
-					}
+					// update tuIdxIds
 					for (int i = 0; i < p->num; i++) {
 						longlongtoByteArray(p->keys[i],
 								p->content + ta_bptree_idx_leng_leaf_bytes
@@ -709,19 +712,23 @@ void commitIndexNode(ta_idx_t *bptree, FILE *ta_db_fp) {
 					}
 				} else {
 					for (int i = 0; i < p->num; i++) {
-						longlongtoByteArray(p->keys[i],
+						longlongtoByteArray(p->chldrnIds[i],
 								p->content + ta_bptree_idx_leng_leaf_bytes
-										+ i * LONG_LONG);
-					}
-					for (int i = 0; i < p->num + 1; i++) {
-						longlongtoByteArray(p->keys[i],
-								p->content + ta_bptree_idx_leng_leaf_bytes
+										+ ta_bptree_idx_keys_bytes
 										+ i * LONG_LONG);
 					}
 				}
+				longlongtoByteArray(p->prev,
+						p->content + ta_bptree_idx_leng_leaf_bytes
+								+ ta_bptree_idx_keys_bytes
+								+ ta_bptree_idx_children_bytes);
+				longlongtoByteArray(p->next,
+						p->content + ta_bptree_idx_leng_leaf_bytes
+								+ ta_bptree_idx_keys_bytes
+								+ ta_bptree_idx_children_bytes + LONG_LONG);
 				// write to db
 				fseek(ta_db_fp,
-						p->id * ta_bptree_idx_node_bytes + start_pointer,
+						start_pointer + p->id * ta_bptree_idx_node_bytes,
 						SEEK_SET);
 				fwrite(p->content, sizeof(unsigned char),
 						ta_bptree_idx_node_bytes, ta_db_fp);
@@ -744,8 +751,27 @@ void commitIndexNode(ta_idx_t *bptree, FILE *ta_db_fp) {
 	threeids = NULL;
 }
 
-static void deallocTaIndexNode(ta_idx_node_t *node) {
-
+static int deallocTaIndexNode(ta_idx_node_t *node, FILE *ta_idx_db_fp) {
+	// clear node in index DB
+	memset(node->content, 0, ta_bptree_idx_node_bytes * sizeof(unsigned char));
+	fseek(ta_idx_db_fp, start_pointer + node->id * ta_bptree_idx_node_bytes,
+	SEEK_SET);
+	fwrite(node->content, sizeof(unsigned char), ta_bptree_idx_node_bytes,
+			ta_idx_db_fp);
+	recycleOneId(node->id, caches->taIds);
+	free(node->content);
+	if (node->leaf == 1)
+		free(node->tuIdxIds);
+	else
+		free(node->chldrnIds);
+	free(node->child);
+	node->parent = NULL;
+	node->nxt = NULL;
+	node->prv = NULL;
+	node->nxtpage = NULL;
+	free(node);
+	node = NULL;
+	return 0;
 }
 
 // the merge is to right node merges to left node. (right -> left)
