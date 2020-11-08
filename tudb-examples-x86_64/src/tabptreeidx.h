@@ -30,8 +30,6 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "macrodef.h"
-#include "tuidstore.h"
 #include "convert.h"
 
 /*
@@ -63,6 +61,12 @@
  *
  * Dahai Cao designed at 9:01am on 2020-10-28
  */
+
+#define LONG_LONG 8LL
+#define LONG 4LL
+#define NULL_POINTER -2LL
+#define TA_PAGE_SIZE (LONG_LONG*3LL+1LL)*10LL
+
 // this is the order of leaf nodes in b+tree.
 long TA_BPLUS_TREE_ORDER;
 // time axis index page expiration time stamp, configurable in .conf file
@@ -91,8 +95,7 @@ typedef struct ta_bptree_index_node {
 	struct ta_bptree_index_node *parent; /* 父结点 */
 	struct ta_bptree_index_node *nxt; /* 下一个叶子结点 */
 	struct ta_bptree_index_node *prv; /* 下一个叶子结点 */
-	struct ta_bptree_index_node *nxtPage; /* next page for deallocation */
-	struct ta_bptree_index_node *prvPage; /* previous page for deallocation */
+	struct ta_bptree_index_node *nxtpage; /* next page for deallocation */
 } ta_idx_node_t;
 
 typedef struct ta_index {
@@ -107,8 +110,7 @@ typedef struct ta_index {
 	long long minLf;
 } ta_idx_t;
 
-ta_idx_t *ta_idx; // time axis index b+tree
-ta_idx_node_t *ta_idx_pgs; // time axis index memory pages
+ta_idx_t *ta_idx;
 
 void print_ta_index(ta_idx_t *btree);
 

@@ -54,6 +54,22 @@ void initIdDB(char *path) {
 	}
 }
 
+void initIndexIdDB(char *path) {
+	if ((access(path, F_OK)) == -1) {
+		FILE *ta_id_fp = fopen(path, "wb+");
+		// initializes Id DB
+		unsigned char firstId[LONG_LONG] = { 0L };
+		longToByteArray(1LL, firstId); // index DB has one root node by default
+		unsigned char zero[LONG_LONG] = { 0L };
+		fseek(ta_id_fp, 0L, SEEK_SET); // move file pointer to file head
+		fwrite(firstId, sizeof(unsigned char), LONG_LONG, ta_id_fp);
+		//fseek(taidfp, LONG_LONG, SEEK_SET);  // move file pointer to 8th byte
+		fwrite(zero, sizeof(unsigned char), LONG_LONG, ta_id_fp);
+		fclose(ta_id_fp);
+		ta_id_fp = NULL;
+	}
+}
+
 void initTaIndexDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
 		FILE *ta_idx_fp = fopen(path, "wb+");
@@ -61,7 +77,15 @@ void initTaIndexDB(char *path) {
 				sizeof(unsigned char));
 		unsigned char *rootBytes = (unsigned char*) calloc(
 				ta_bptree_idx_node_bytes, sizeof(unsigned char));
-		*(rootBytes + LONG) = 0X1;
+		*(rootBytes + LONG) = 0X1; // root is a leaf node initially
+		// the data and the previous Id and the next node Id of
+		// root node is -2 (NULL_POINTER) initially,
+		// 2 is the previous id and the next node Id.
+		for (int i = 0; i < TA_BPLUS_TREE_ORDER + 2; i++) {
+			longlongtoByteArray(NULL_POINTER,
+					rootBytes + ta_bptree_idx_leng_leaf_bytes
+							+ ta_bptree_idx_keys_bytes + i * LONG_LONG);
+		}
 		fseek(ta_idx_fp, 0L, SEEK_SET);
 		fwrite(zeroBytes, sizeof(unsigned char), 3 * LONG_LONG, ta_idx_fp);
 		fwrite(rootBytes, sizeof(unsigned char), ta_bptree_idx_node_bytes,
@@ -82,6 +106,25 @@ void initDB(char *path) {
 		FILE *tudbfp = fopen(path, "wb+");
 		fclose(tudbfp);
 		tudbfp = NULL;
+	}
+}
+
+void initIds(FILE *id_fp) {
+	if (id_fp != NULL) {
+		// initializes Id DB
+		unsigned char nIds[LONG_LONG] = { 0L };
+		//unsigned char lastrIds[LONG_LONG] = { 0L };
+		//unsigned char rIds[LONG_LONG] = { 0L };
+		long long nId = 9LL;
+		//long long lastrId = 0LL;
+		//long long rId = 0;
+		longToByteArray(nId, nIds); // convert
+		//LongToByteArray(lastrId, lastrIds); // convert
+		//LongToByteArray(rId, rIds); // convert
+		fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
+		fwrite(nIds, sizeof(unsigned char), LONG_LONG, id_fp);
+		//fwrite(lastrIds, sizeof(unsigned char), LONG_LONG, id_fp);
+		//fwrite(rIds, sizeof(unsigned char), LONG_LONG, id_fp);
 	}
 }
 
@@ -111,154 +154,6 @@ void initDB(char *path) {
 //	lbls_t **lbls = insertLabels(idList, c);
 //	commitLabels(ta_id, lbls, lbls_db_fp, lbls_id_fp);
 //	return lbls[0]->id;
-//}
-
-//int main(int argv, char **argc) {
-//    int i;
-//    BPlusTree T;
-//    T = Initialize();
-//    clock_t c1 = clock();
-//    i = 10000000;
-//    while (i > 0)
-//        T = Insert(T, i--);
-//    i = 5000001;
-//    while (i < 10000000)
-//        T = Insert(T, i++);
-//    i = 10000000;
-//    while (i > 100)
-//        T = Remove(T, i--);
-//    Travel(T);
-//    Destroy(T);
-//    clock_t c2 = clock();
-//    printf("\n用时： %lu秒\n",(c2 - c1)/CLOCKS_PER_SEC);
-//}
-
-// test time axis DB
-//int main(int argv, char **argc) {
-//	setvbuf(stdout, NULL, _IONBF, 0);
-//	const char *path = "D:/tudata/";
-//	char *taid;
-//	strcat(taid, path);
-//	strcat(taid, "tustore.timeaxis.tdb.id");
-//	FILE *taidfp = fopen(taid, "rb+");
-//
-//	char *tadb;
-//	strcat(tadb, path);
-//	strcat(tadb, "tustore.timeaxis.tdb");
-//	FILE *tadbfp = fopen(tadb, "rb+");
-//
-//	initIdDB(taid);
-//	initTimeAxisDB(tadb);
-//	// initialize
-//	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
-//	initIdCaches(caches);
-//	loadIds(taidfp, caches->taIds);
-//	loadIds(taidfp, caches->teIds);
-//	listAllTaIds(caches->taIds);
-//	listAllTaIds(caches->teIds);
-//	timeaxispages = (ta_buf_t*) malloc(sizeof(ta_buf_t));
-//	timeaxispages->pages = NULL;
-//	initTaDBMemPages(timeaxispages, tadbfp);
-//
-//	// insert 13 time stamp sequentially
-//	//1593783935
-//	//1593783957
-//	long long ts = 1593783935;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts, taidfp, tadbfp);
-//	//showAllPages();
-//	long long ts1 = 1593783957;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts1, taidfp, tadbfp);
-//	//showAllPages();
-//	long long ts2 = 1593783958;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts2, taidfp, tadbfp);
-//	//showAllPages();
-//	long long ts3 = 1593783959;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts3, taidfp, tadbfp);
-//	//showAllPages();
-//	long long ts4 = 1593783960;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts4, taidfp, tadbfp);
-//	long long ts5 = 1593783963;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts5, taidfp, tadbfp);
-//	long long ts6 = 1593783964;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts6, taidfp, tadbfp);
-//	long long ts7 = 1593783965;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts7, taidfp, tadbfp);
-//	long long ts8 = 1593783969;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts8, taidfp, tadbfp);
-//	long long ts9 = 1593783970;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts9, taidfp, tadbfp);
-//	showAllPages();
-//	long long ts10 = 1593783972;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts10, taidfp, tadbfp);
-//	showAllPages();
-//	long long ts11 = 1593783974;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts11, taidfp, tadbfp);
-//	showAllPages();
-//
-//	long long ts12 = 1593783975;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts12, taidfp, tadbfp);
-//
-//	long long ts13 = 1593783977;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts13, taidfp, tadbfp);
-//	showAllPages();
-//
-//	// insert 2 time stamps before the first time stamp
-//	long long ts14 = 1593783932;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts14, taidfp, tadbfp);
-//	showAllPages();
-//	long long ts15 = 1593783928;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts15, taidfp, tadbfp);
-//	showAllPages();
-//
-//	// insert 2 time stamps in the middle
-//	long long ts16 = 1593783961;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts16, taidfp, tadbfp);
-//	showAllPages();
-//	long long ts17 = 1593783973;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts17, taidfp, tadbfp);
-//	showAllPages();
-//
-//	long long ts18 = 1593783976;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts18, taidfp, tadbfp);
-//	showAllPages();
-//
-//	long long ts19 = 1593783931;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts19, taidfp, tadbfp);
-//	showAllPages();
-//
-//	//
-//	long long ts20 = 1593783931;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts20, taidfp, tadbfp);
-//	showAllPages();
-//
-//	long long ts21 = 1593783977;	//(unsigned long) time(NULL);
-//	insertEvolvedPoint(ts21, taidfp, tadbfp);
-//	showAllPages();
-//
-//	// delete evolved point
-//	long long ts22 = 1593783972;	//(unsigned long) time(NULL);
-//	deleteEvolvedPoint(ts22, taidfp, tadbfp);
-//	showAllPages();
-//
-//	listAllTaIds(caches->taIds);
-//
-//	long long ts23 = 1593783961;
-//	long long id1 = queryEvolvedPoint(ts23, taidfp, tadbfp);
-//	printf("--%lld\n", id1);
-//
-//	long long mints = 1593783969;
-//	long long maxts = 1593783974;
-//	idbuf_t *buf = (idbuf_t*) malloc(sizeof(idbuf_t));
-//	buf->id = NULL_POINTER;
-//	buf->nxt = NULL;
-//	queryEvolvedPoints(mints, maxts, buf, taidfp, tadbfp);
-//
-//	fclose(taidfp);
-//	fclose(tadbfp);
-//
-//	free(timeaxispages);
-//	free(caches);
-//
 //}
 
 //void labelTokenOperationTest() {
@@ -442,7 +337,7 @@ int main(int argv, char **argc) {
 	initIdCaches(caches);
 
 	// initialized Id DB
-	initIdDB(ta_idx_id_path);
+	initIndexIdDB(ta_idx_id_path);
 	initIdDB(lbls_id_path);
 	initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_blk_id_path);
@@ -477,6 +372,8 @@ int main(int argv, char **argc) {
 	FILE *val_idx_db_fp = fopen(val_idx_db_path, "rb+");
 	FILE *val_id_fp = fopen(val_id_path, "rb+");
 	FILE *val_db_fp = fopen(val_db_path, "rb+");
+
+	//initIds(ta_idx_id_fp);
 
 	loadAllIds(ta_idx_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
 	//loadAllIds(taidfp, caches->teIds);
@@ -515,117 +412,149 @@ int main(int argv, char **argc) {
 //	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
 //	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
 //			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
-
+	print_ta_index(ta_idx);
 	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70,...
-	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);	//1
-	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);	//2
-	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);	//3
-	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);	//4
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 4, 7, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 15, 8, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 9, 111, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
-	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);	//1
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	taIndexInsertNode(ta_idx, 9, 3, ta_idx_id_fp, ta_idx_db_fp);	//3
+//	taIndexInsertNode(ta_idx, 4, 4, ta_idx_id_fp, ta_idx_db_fp);	//4
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 4, 7, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 15, 8, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 9, 111, ta_idx_id_fp, ta_idx_db_fp);	//5:updating
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//
+//	taIndexInsertNode(ta_idx, 19, 99, ta_idx_id_fp, ta_idx_db_fp);	//5
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 20, 6, ta_idx_id_fp, ta_idx_db_fp);	//6
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 10, 101, ta_idx_id_fp, ta_idx_db_fp);	//6:updating
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexInsertNode(ta_idx, 11, 5, ta_idx_id_fp, ta_idx_db_fp);	//7
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//
+//	taIndexInsertNode(ta_idx, 19, 266, ta_idx_id_fp, ta_idx_db_fp);	//7:updating
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 13, 8, ta_idx_id_fp, ta_idx_db_fp);	//8
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 14, 10, ta_idx_id_fp, ta_idx_db_fp);	//9
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 32, 12, ta_idx_id_fp, ta_idx_db_fp);	//10
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 60, 15, ta_idx_id_fp, ta_idx_db_fp);	//11
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 70, 28, ta_idx_id_fp, ta_idx_db_fp);	//12
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 72, 100, ta_idx_id_fp, ta_idx_db_fp);	//13
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 18, 22, ta_idx_id_fp, ta_idx_db_fp);	//15
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 78, 244, ta_idx_id_fp, ta_idx_db_fp);	//16
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 82, 124, ta_idx_id_fp, ta_idx_db_fp);	//17
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 25, 799, ta_idx_id_fp, ta_idx_db_fp);	//18
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 28, 81, ta_idx_id_fp, ta_idx_db_fp);	//19
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 2, 11988, ta_idx_id_fp, ta_idx_db_fp);	//20
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 1, 118, ta_idx_id_fp, ta_idx_db_fp);	//21
+//	print_ta_index(ta_idx);
+//	taIndexInsertNode(ta_idx, 89, 139, ta_idx_id_fp, ta_idx_db_fp);	//22
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
 
-	taIndexInsertNode(ta_idx, 19, 99, ta_idx_id_fp, ta_idx_db_fp);	//5
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 20, 6, ta_idx_id_fp, ta_idx_db_fp);	//6
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 10, 101, ta_idx_id_fp, ta_idx_db_fp);	//6:updating
-	print_ta_index(ta_idx);
+//	taIndexDeleteNode(ta_idx, 1, 8, ta_idx_id_fp, ta_idx_db_fp);	//1
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 13, 8, ta_idx_id_fp, ta_idx_db_fp);	//1
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 11, 15, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 78, 15, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 89, 10, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 82, 10, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexInsertNode(ta_idx, 80, 139, ta_idx_id_fp, ta_idx_db_fp);	//22
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 20, 10, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 25, 10, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexInsertNode(ta_idx, 12, 129, ta_idx_id_fp, ta_idx_db_fp);	//22
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 18, 18, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 19, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 14, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 15, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 28, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 70, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 72, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 80, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 4, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 9, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 32, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 60, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 12, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 2, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
+//	taIndexDeleteNode(ta_idx, 10, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
+//	print_ta_index(ta_idx);
+//	commitIndexNode(ta_idx, ta_idx_db_fp);
 
-	taIndexInsertNode(ta_idx, 11, 5, ta_idx_id_fp, ta_idx_db_fp);	//7
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 19, 266, ta_idx_id_fp, ta_idx_db_fp);	//7:updating
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 13, 8, ta_idx_id_fp, ta_idx_db_fp);	//8
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 14, 10, ta_idx_id_fp, ta_idx_db_fp);	//9
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 32, 12, ta_idx_id_fp, ta_idx_db_fp);	//10
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 60, 15, ta_idx_id_fp, ta_idx_db_fp);	//11
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 70, 28, ta_idx_id_fp, ta_idx_db_fp);	//12
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 72, 100, ta_idx_id_fp, ta_idx_db_fp);	//13
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 18, 22, ta_idx_id_fp, ta_idx_db_fp);	//15
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 78, 244, ta_idx_id_fp, ta_idx_db_fp);	//16
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 82, 124, ta_idx_id_fp, ta_idx_db_fp);	//17
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 25, 799, ta_idx_id_fp, ta_idx_db_fp);	//18
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 28, 81, ta_idx_id_fp, ta_idx_db_fp);	//19
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 2, 11988, ta_idx_id_fp, ta_idx_db_fp);	//20
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 1, 118, ta_idx_id_fp, ta_idx_db_fp);	//21
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 89, 139, ta_idx_id_fp, ta_idx_db_fp);	//22
-	print_ta_index(ta_idx);
+	listAllIds(caches->taIds);
 
-	taIndexDeleteNode(ta_idx, 1, 8, ta_idx_db_fp);//1
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 13, 8, ta_idx_db_fp);//1
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 11, 15, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-
-	taIndexDeleteNode(ta_idx, 78, 15, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 89, 10, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 82, 10, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 80, 139, ta_idx_id_fp, ta_idx_db_fp);	//22
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 20, 10, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 25, 10, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexInsertNode(ta_idx, 12, 129, ta_idx_id_fp, ta_idx_db_fp);	//22
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 18, 18, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 19, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 14, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 15, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 28, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 70, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 72, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 80, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 4, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 9, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 32, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 60, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 12, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 2, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
-	taIndexDeleteNode(ta_idx, 10, 19, ta_idx_db_fp);//2
-	print_ta_index(ta_idx);
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
 	deallocLabelBlockPages(lbl_blk_pages);
 	deallocKeyIndexPages(key_idx_pages);
 	deallocKeyBlockPages(key_blk_pages);
-	//deallocTimeAxisPages(ta_idx);
+	deallocTaIndexPages(ta_idx);
 	deallocIdCaches(caches);
 
 	free(lbls_id_path);

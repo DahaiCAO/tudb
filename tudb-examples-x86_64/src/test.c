@@ -426,10 +426,22 @@ int main(int argv, char **argc) {
 //	bptree_delete(*_bptree, 10);//19
 //	print_bptree(_bptree[0]);
 
-int i = 7;
-double f = ceil(i/2);
-int j = (int)f;
+//int i = 7;
+//double f = ceil(i/2);
+//int j = (int)f;
+//
+//printf("%lf\n", f);
+//printf("%d\n", j);
+	const int TA_BPLUS_TREE_ORDER = 5;
+	//long long *ids1[TA_BPLUS_TREE_ORDER] = {0};
+	//long long *ids1[5] = {-2LL,-2,-2,-2,-2};
+	long long *ids = (long long*) calloc(TA_BPLUS_TREE_ORDER,
+			sizeof(long long));
+	//memset(ids, 5, TA_BPLUS_TREE_ORDER * sizeof(long long));
 
-printf("%lf\n", f);
-printf("%d\n", j);
+	for (int i=0;i<TA_BPLUS_TREE_ORDER;i++) {
+		ids[i] = -2LL;
+		printf("%lld\n", ids[i]);
+	}
+
 }
