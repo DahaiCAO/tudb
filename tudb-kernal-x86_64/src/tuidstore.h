@@ -60,10 +60,6 @@ void initIdCaches(id_caches_t * caches);
 
 void deallocIdCaches(id_caches_t * caches);
 
-//long long getId(FILE *idfp);
-//
-//void recycleId(FILE *idfp, long long id);
-//
-//void showAllTaIds(FILE *idfp);
+int returnIdtoDB(id_caches_t * caches);
 
 #endif /* IDCACHE_H_ */
