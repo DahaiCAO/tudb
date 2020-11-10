@@ -60,7 +60,7 @@ key_blk_t** searchKeyBlockList(long long id, FILE *key_blk_db_fp);
 
 unsigned char* findKey(long long id, FILE *key_blk_db_fp);
 
-void deleteKey(long long id, FILE *key_blk_db_fp);
+void deleteKey(long long id, FILE *key_blk_id_fp, FILE *key_blk_db_fp);
 
 // this update operation is used to update and override new key to old key
 void commitUpdateKey(key_blk_t **list, key_blk_t **newlist, FILE *key_blk_id_fp,

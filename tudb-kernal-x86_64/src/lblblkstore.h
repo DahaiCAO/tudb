@@ -63,7 +63,7 @@ lbl_blk_t** searchLabelBlockList(long long id, FILE *lbl_blk_db_fp);
 
 lbl_blk_t** divideLabelBlocks(unsigned char *label);
 
-void deleteLabelBlocks(long long id, FILE *lbl_blk_db_fp);
+void deleteLabelBlocks(long long id, FILE *lbl_blk_id_fp, FILE *lbl_blk_db_fp);
 
 void commitUpdateLabelBlock(lbl_blk_t **list, lbl_blk_t **newlist,
 		FILE *lbl_blk_id_fp, FILE *lbl_blk_db_fp);

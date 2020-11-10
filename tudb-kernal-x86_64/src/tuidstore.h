@@ -52,14 +52,15 @@ void loadReusedIds(FILE *id_fp, id_cache_t *cache, size_t id_length);
 
 void listAllIds(id_cache_t *cache);
 
-void recycleOneId(long long id, id_cache_t *cache);
+void recycleOneId(long long id, id_cache_t *cache, size_t id_length,
+		FILE *id_fp);
 
 void deallocIdCache(id_t *ids);
 
-void initIdCaches(id_caches_t * caches);
+void initIdCaches(id_caches_t *caches);
 
-void deallocIdCaches(id_caches_t * caches);
+void deallocIdCaches(id_caches_t *caches);
 
-int returnIdtoDB(id_caches_t * caches);
+int returnCachedIDtoDB(id_cache_t *cache, FILE *id_fp);
 
 #endif /* IDCACHE_H_ */

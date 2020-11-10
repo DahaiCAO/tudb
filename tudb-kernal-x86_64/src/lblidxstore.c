@@ -81,7 +81,7 @@ lbl_idx_t* insertLabelIndex(long long ta_id, long long firstBlkId, int length) {
 
 long long commitLabelIndex(lbl_idx_t *idx, FILE *lbl_idx_db_fp,
 		FILE *lbl_idx_id_fp) {
-	long long id = getOneId(lbl_idx_id_fp, caches->lblidxIds,
+	long long id = getOneId(lbl_idx_id_fp, caches->lblIdxIds,
 			LABEL_ID_QUEUE_LENGTH);
 	idx->id = id;
 	lbl_idx_page_t *ps = lbl_idx_pages;

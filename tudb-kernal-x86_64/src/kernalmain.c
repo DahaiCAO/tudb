@@ -264,16 +264,15 @@ int main(int argv, char **argc) {
 	char *ta_idx_db_path = (char*) calloc(256, sizeof(char));
 	strcat(ta_idx_db_path, d_path);
 	strcat(ta_idx_db_path, "tustore.timeaxis.idx");
-//
-//	char *teid;
-//	strcat(teid, path);
-//	strcat(teid, "tustore.element.tdb.id");
-//	FILE *teidfp = fopen(teid, "rb+");
-//
-//	char *tedb;
-//	strcat(tedb, path);
-//	strcat(tedb, "tustore.element.tdb");
-//	FILE *tedbfp = fopen(tedb, "rb+");
+
+	char *te_id_path = (char*) calloc(256, sizeof(char));
+	strcat(te_id_path, d_path);
+	strcat(te_id_path, "tustore.element.tdb.id");
+
+	char *te_db_path = (char*) calloc(256, sizeof(char));
+	strcat(te_db_path, d_path);
+	strcat(te_db_path, "tustore.element.tdb");
+
 	// label array
 	char *lbls_id_path = (char*) calloc(256, sizeof(char));
 	strcat(lbls_id_path, d_path);
@@ -338,6 +337,7 @@ int main(int argv, char **argc) {
 
 	// initialized Id DB
 	initIndexIdDB(ta_idx_id_path);
+	initIdDB(te_id_path);
 	initIdDB(lbls_id_path);
 	initIdDB(lbl_idx_id_path);
 	initIdDB(lbl_blk_id_path);
@@ -347,6 +347,7 @@ int main(int argv, char **argc) {
 	initIdDB(val_id_path);
 	// initialized DB
 	initTaIndexDB(ta_idx_db_path);
+	initDB(te_db_path);
 	initDB(lbls_db_path);
 	initDB(lbl_idx_db_path);
 	initDB(lbl_blk_db_path);
@@ -357,6 +358,8 @@ int main(int argv, char **argc) {
 
 	FILE *ta_idx_id_fp = fopen(ta_idx_id_path, "rb+");
 	FILE *ta_idx_db_fp = fopen(ta_idx_db_path, "rb+");
+	FILE *te_id_fp = fopen(te_id_path, "rb+");
+	FILE *te_db_fp = fopen(te_db_path, "rb+");
 	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
 	FILE *lbl_blk_id_fp = fopen(lbl_blk_id_path, "rb+");
@@ -375,36 +378,37 @@ int main(int argv, char **argc) {
 
 	//initIds(ta_idx_id_fp);
 
-	loadAllIds(ta_idx_id_fp, caches->taIds, TIMEAXIS_ID_QUEUE_LENGTH);
-	//loadAllIds(taidfp, caches->teIds);
+	loadAllIds(ta_idx_id_fp, caches->taIdxIds, TIMEAXIS_ID_QUEUE_LENGTH);
+	loadAllIds(te_id_fp, caches->teIds, ID_QUEUE_LENGTH);
 	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(lbl_idx_id_fp, caches->lblidxIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(lbl_blk_id_fp, caches->lblblkIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(key_idx_id_fp, caches->keyidxIds, KEY_ID_QUEUE_LENGTH);
-	loadAllIds(key_blk_id_fp, caches->keyblkIds, KEY_ID_QUEUE_LENGTH);
+	loadAllIds(lbl_idx_id_fp, caches->lblIdxIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(lbl_blk_id_fp, caches->lblBlkIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(key_idx_id_fp, caches->keyIdxIds, KEY_ID_QUEUE_LENGTH);
+	loadAllIds(key_blk_id_fp, caches->keyBlkIds, KEY_ID_QUEUE_LENGTH);
 	loadAllIds(val_idx_id_fp, caches->valIdxIds, VALUE_ID_QUEUE_LENGTH);
 	loadAllIds(val_id_fp, caches->valIds, VALUE_ID_QUEUE_LENGTH);
 
-	listAllIds(caches->taIds);
-	//listAllIds(caches->teIds);
+	listAllIds(caches->taIdxIds);
+	listAllIds(caches->teIds);
 	//listAllIds(caches->prpIds);
 	listAllIds(caches->lblsIds);
-	listAllIds(caches->lblidxIds);
-	listAllIds(caches->lblblkIds);
-	listAllIds(caches->keyidxIds);
-	listAllIds(caches->keyblkIds);
+	listAllIds(caches->lblIdxIds);
+	listAllIds(caches->lblBlkIds);
+	listAllIds(caches->keyIdxIds);
+	listAllIds(caches->keyBlkIds);
 	listAllIds(caches->valIdxIds);
 	listAllIds(caches->valIds);
 
 	ta_idx = taIndexRootCreate(TA_BPLUS_TREE_ORDER);
 	initTaIndexMemPages(ta_idx, ta_idx_db_fp, ta_idx_id_fp);
-//	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
-//	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
-//	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
-//	initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
-//	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
-//	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
-//	initValueDBMemPages(val_pages, val_db_fp);
+
+	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
+	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
+	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
+	initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
+	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
+	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
+	initValueDBMemPages(val_pages, val_db_fp);
 
 //	long long ts = 1593783935;	//(unsigned long) time(NULL);
 //	// -- insert operation
@@ -547,7 +551,16 @@ int main(int argv, char **argc) {
 //	print_ta_index(ta_idx);
 //	commitIndexNode(ta_idx, ta_idx_db_fp);
 
-	listAllIds(caches->taIds);
+	listAllIds(caches->taIdxIds);
+	returnCachedIDtoDB(caches->taIdxIds, ta_idx_id_fp);
+	returnCachedIDtoDB(caches->teIds, te_id_fp);
+	returnCachedIDtoDB(caches->lblIdxIds, lbl_idx_id_fp);
+	returnCachedIDtoDB(caches->lblBlkIds, lbl_blk_id_fp);
+	returnCachedIDtoDB(caches->lblsIds, lbls_id_fp);
+	returnCachedIDtoDB(caches->keyIdxIds, key_idx_id_fp);
+	returnCachedIDtoDB(caches->keyBlkIds, key_blk_id_fp);
+	returnCachedIDtoDB(caches->valIdxIds, val_idx_id_fp);
+	returnCachedIDtoDB(caches->valIds, val_id_fp);
 
 	deallocLabelsPages(lbls_pages);
 	deallocLabelIndexPages(lbl_idx_pages);
@@ -569,6 +582,8 @@ int main(int argv, char **argc) {
 	free(key_blk_db_path);
 	free(ta_idx_id_path);
 	free(ta_idx_db_path);
+	free(te_id_path);
+	free(te_db_path);
 	free(val_idx_id_path);
 	free(val_idx_db_path);
 	free(val_id_path);
@@ -590,9 +605,13 @@ int main(int argv, char **argc) {
 	fclose(val_db_fp);
 	fclose(ta_idx_id_fp);
 	fclose(ta_idx_db_fp);
+	fclose(te_id_fp);
+	fclose(te_db_fp);
 
 	ta_idx_id_path = NULL;
 	ta_idx_db_path = NULL;
+	te_id_path = NULL;
+	te_db_path = NULL;
 	lbls_id_path = NULL;
 	lbls_db_path = NULL;
 	lbl_idx_id_path = NULL;
@@ -610,6 +629,8 @@ int main(int argv, char **argc) {
 
 	ta_idx_id_fp = NULL;
 	ta_idx_db_fp = NULL;
+	te_id_fp = NULL;
+	te_db_fp = NULL;
 	lbls_db_fp = NULL;
 	lbls_id_fp = NULL;
 	lbl_idx_id_fp = NULL;
@@ -629,65 +650,97 @@ int main(int argv, char **argc) {
 }
 
 // test time axis DB Id
-/*int main(int argv, char **argc) {
- setvbuf(stdout, NULL, _IONBF, 0);
- ID_QUEUE_LENGTH = 5;
- // get new Id from next free IDs
- char *ta_id = "D:/tudata/tustore.timeaxis.tdb.id";
- FILE *ta_id_fp = fopen(ta_id, "rb+");
- // initialize
- initIdDB(ta_id);
- caches = (id_caches_t*) malloc(sizeof(id_caches_t));
- initIdCaches(caches);
- loadAllIds(ta_id_fp, caches->taIds);
- //listAllTaIds(caches->taIds);
- //recycleOneId(14);
- listAllIds(caches->taIds);
-
- long long d = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", d);
- d = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", d);
- d = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", d);
- d = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", d);
- d = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", d);
- listAllTaIds(caches->taIds);
- d = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", d);
- long long id = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", id);
- id = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", id);
- id = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", id);
- id = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", id);
- listAllTaIds(caches->taIds);
- id = getOneId(ta_id_fp, caches->taIds);
- printf("%lld\n", id);
- */
-// test recycle one id
-//	 recycleId(ta_id_fp, 4);
-//	 recycleId(ta_id_fp, 7);
-//	 recycleId(ta_id_fp, 2);
-//	 recycleId(ta_id_fp, 3);
-//	 recycleId(ta_id_fp, 11);
-//	 recycleId(ta_id_fp, 9);
-//	 recycleId(ta_id_fp, 5);
-//	 recycleId(ta_id_fp, 13);
-//	 recycleId(ta_id_fp, 17);
-//	 recycleId(ta_id_fp, 26);
-//
-//	readAllTaIds(ta_id_fp);
+//int main(int argv, char **argc) {
+//	setvbuf(stdout, NULL, _IONBF, 0);
+//	ID_QUEUE_LENGTH = 5;
+//	// get new Id from next free IDs
+//	char *ta_id_path = "D:/tudata/tustore.timeaxis.tdb.id";
+//	// initialize
+//	initIdDB(ta_id_path);
+//	// open DB file
+//	FILE *ta_id_fp = fopen(ta_id_path, "rb+");
+//	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+//	initIdCaches(caches);
+//	loadAllIds(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH);
+//	listAllIds(caches->taIdxIds);
+//	/*long long d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //1
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //2
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //3
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //4
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //5
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //6
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //7
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //8
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //9
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //10
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //11
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //12
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //13
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //14
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //15
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //16
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH); //17
+//	printf("%lld\n", d);
+//	// test recycle one id
+//	recycleOneId(4, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//1
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(7, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//2
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(2, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//3
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(3, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//4
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(11, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//5
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(9, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//6
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(5, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//7
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(13, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//8
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(17, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//9
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(26, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//10
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(19, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//11
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(21, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//12
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(22, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//13
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(9, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//14
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(7, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//15
+//	listAllIds(caches->taIdxIds);
+//	recycleOneId(14, caches->taIdxIds, ID_QUEUE_LENGTH, ta_id_fp);	//16
+//	listAllIds(caches->taIdxIds);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH);
+//	printf("%lld\n", d);
+//	d = getOneId(ta_id_fp, caches->taIdxIds, ID_QUEUE_LENGTH);
+//	printf("%lld\n", d);*/
+//	listAllIds(caches->taIdxIds);
+//	returnCachedIDtoDB(caches->taIdxIds, ta_id_fp);
 //	fclose(ta_id_fp);
-//
-//	free(caches);
+//	deallocIdCaches(caches);
 //	printf("%s\n", "End");
-//
 //}
+
 //int main(int argv, char **argc) {
 //	setvbuf(stdout, NULL, _IONBF, 0);
 //	char s[20] = "中国dhdhdh";

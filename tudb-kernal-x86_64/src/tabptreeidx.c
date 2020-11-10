@@ -365,7 +365,7 @@ ta_idx_node_t* taIndexCreateNode(ta_idx_t *bptree, unsigned char leaf,
 				strerror(errno));
 		return NULL;
 	}
-	node->id = getOneId(ta_id_fp, caches->taIds, ID_INDEX_QUEUE_LENGTH);
+	node->id = getOneId(ta_id_fp, caches->taIdxIds, ID_INDEX_QUEUE_LENGTH);
 	node->dirty = 1; // if dirty, then 1; otherwise, 0;
 	node->hit = 0; // hit counting, 0 by default, hit once, plus 1;
 	// buffer in memory for b+tree index. including keys, tu index Id and children ids
@@ -512,38 +512,38 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 		nodeRight->hit++;
 		nodeRight->expiretime = -1; // 计算过期的时间戳，未来完善
 
-		printf("total == %d\n", total);
-		printf("sidx == %d\n", sidx);
-		printf("nodeRight->num == %d\n", nodeRight->num);
-		printf("node->num == %d\n", node->num);
-		if (node->leaf == 1) {
-			for (int k = 0; k < node->num; k++) {
-				printf("l keys: %lld\n", node->keys[k]);
-			}
-			for (int k = 0; k < node->num; k++) {
-				printf("l tuIdxIds: %lld\n", node->tuIdxIds[k]);
-			}
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("r keys: %lld\n", nodeRight->keys[k]);
-			}
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("r tuIdxIds: %lld\n", nodeRight->tuIdxIds[k]);
-			}
-		} else {
-			for (int k = 0; k < node->num; k++) {
-				printf("l keys: %lld\n", node->keys[k]);
-			}
-			for (int k = 0; k < node->num; k++) {
-				printf("l chldrnIds: %lld\n", node->chldrnIds[k]);
-			}
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("r keys: %lld\n", nodeRight->keys[k]);
-			}
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("r chldrnIds: %lld\n", nodeRight->chldrnIds[k]);
-			}
-
-		}
+//		printf("total == %d\n", total);
+//		printf("sidx == %d\n", sidx);
+//		printf("nodeRight->num == %d\n", nodeRight->num);
+//		printf("node->num == %d\n", node->num);
+//		if (node->leaf == 1) {
+//			for (int k = 0; k < node->num; k++) {
+//				printf("l keys: %lld\n", node->keys[k]);
+//			}
+//			for (int k = 0; k < node->num; k++) {
+//				printf("l tuIdxIds: %lld\n", node->tuIdxIds[k]);
+//			}
+//			for (int k = 0; k < nodeRight->num; k++) {
+//				printf("r keys: %lld\n", nodeRight->keys[k]);
+//			}
+//			for (int k = 0; k < nodeRight->num; k++) {
+//				printf("r tuIdxIds: %lld\n", nodeRight->tuIdxIds[k]);
+//			}
+//		} else {
+//			for (int k = 0; k < node->num; k++) {
+//				printf("l keys: %lld\n", node->keys[k]);
+//			}
+//			for (int k = 0; k < node->num; k++) {
+//				printf("l chldrnIds: %lld\n", node->chldrnIds[k]);
+//			}
+//			for (int k = 0; k < nodeRight->num; k++) {
+//				printf("r keys: %lld\n", nodeRight->keys[k]);
+//			}
+//			for (int k = 0; k < nodeRight->num; k++) {
+//				printf("r chldrnIds: %lld\n", nodeRight->chldrnIds[k]);
+//			}
+//
+//		}
 
 		/* Insert into parent */
 		parent = node->parent;
@@ -588,15 +588,15 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 			nodeRight->parent = parent;
 			parent->num++;
 
-			for (int k = 0; k < parent->num; k++) {
-				printf("parent child node keys: %lld\n", parent->keys[k]);
-			}
-			for (int k = 0; k < parent->num; k++) {
-				printf("parent child node chldrnIds: %lld\n",
-						parent->chldrnIds[k]);
-			}
-
-			printf("%s\n", "end parent");
+//			for (int k = 0; k < parent->num; k++) {
+//				printf("parent child node keys: %lld\n", parent->keys[k]);
+//			}
+//			for (int k = 0; k < parent->num; k++) {
+//				printf("parent child node chldrnIds: %lld\n",
+//						parent->chldrnIds[k]);
+//			}
+//
+//			printf("%s\n", "end parent");
 
 		}
 
@@ -619,10 +619,10 @@ static int _bptree_split(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_id_fp) 
 					nodeRight->child[idx]->parent = nodeRight;
 				}
 			}
-			for (int k = 0; k < nodeRight->num; k++) {
-				printf("left child node keys: %lld\n", nodeRight->chldrnIds[k]);
-			}
-			printf("%s\n", "end left");
+//			for (int k = 0; k < nodeRight->num; k++) {
+//				printf("left child node keys: %lld\n", nodeRight->chldrnIds[k]);
+//			}
+//			printf("%s\n", "end left");
 		}
 
 		node = parent;
@@ -651,13 +651,13 @@ static int _bptree_insert_leaf(ta_idx_t *bptree, ta_idx_node_t *node,
 	node->dirty = 1;
 	node->num++;
 
-	for (int k = 0; k < node->num; k++) {
-		printf(":::: %lld\n", node->keys[k]);
-	}
-	printf("%s\n", "--");
-	for (int k = 0; k < node->num; k++) {
-		printf(">>>> %lld\n", node->tuIdxIds[k]);
-	}
+//	for (int k = 0; k < node->num; k++) {
+//		printf(":::: %lld\n", node->keys[k]);
+//	}
+//	printf("%s\n", "--");
+//	for (int k = 0; k < node->num; k++) {
+//		printf(">>>> %lld\n", node->tuIdxIds[k]);
+//	}
 
 	/* 2. 分裂处理 */
 	if (node->num > bptree->max) {
@@ -672,13 +672,13 @@ static int _bptree_update_leaf(ta_idx_t *bptree, ta_idx_node_t *node,
 
 	node->tuIdxIds[idx] = tuid;
 
-	for (int k = 0; k < node->num; k++) {
-		printf(">>>>>>> %lld\n", node->keys[k]);
-	}
-	printf("%s\n", "--");
-	for (int k = 0; k < node->num; k++) {
-		printf(">>>>>>> %lld\n", node->tuIdxIds[k]);
-	}
+//	for (int k = 0; k < node->num; k++) {
+//		printf(">>>>>>> %lld\n", node->keys[k]);
+//	}
+//	printf("%s\n", "--");
+//	for (int k = 0; k < node->num; k++) {
+//		printf(">>>>>>> %lld\n", node->tuIdxIds[k]);
+//	}
 	node->hit++;
 	node->dirty = 1;
 
@@ -811,7 +811,7 @@ static int _dealloc(ta_idx_node_t *node, FILE *ta_idx_id_fp, FILE *ta_idx_db_fp)
 	SEEK_SET);
 	fwrite(node->content, sizeof(unsigned char), ta_bptree_idx_node_bytes,
 			ta_idx_db_fp);
-	recycleOneId(node->id, caches->taIds);
+	recycleOneId(node->id, caches->taIdxIds, TIMEAXIS_ID_QUEUE_LENGTH, ta_idx_id_fp);
 	free(node->content);
 	if (node->leaf == 1)
 		free(node->tuIdxIds);
@@ -851,29 +851,29 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 	int m = 0;
 	ta_idx_node_t *parent = left->parent;
 
-	for (int k = 0; k < left->num; k++) {
-		printf("left child keys before: %lld\n", left->keys[k]);
-	}
+//	for (int k = 0; k < left->num; k++) {
+//		printf("left child keys before: %lld\n", left->keys[k]);
+//	}
 	// 把右节点node的keys拷贝到子节点中来
 	memcpy(left->keys + left->num, right->keys, right->num * sizeof(long long));
-	for (int k = 0; k < left->num + right->num; k++) {
-		printf("left child keys after: %lld\n", left->keys[k]);
-	}
+//	for (int k = 0; k < left->num + right->num; k++) {
+//		printf("left child keys after: %lld\n", left->keys[k]);
+//	}
 	if (left->leaf == 1) {
 		memcpy(left->tuIdxIds + left->num, right->tuIdxIds,
 				right->num * sizeof(long long));
-		for (int k = 0; k < left->num + right->num; k++) {
-			printf("left child tuIdxIds after: %lld\n", left->tuIdxIds[k]);
-		}
+//		for (int k = 0; k < left->num + right->num; k++) {
+//			printf("left child tuIdxIds after: %lld\n", left->tuIdxIds[k]);
+//		}
 	} else if (left->leaf == 0) {
 		// 把右节点node的children拷贝到子节点中来
 		memcpy(left->child + left->num, right->child,
 				right->num * sizeof(ta_idx_node_t*));
 		memcpy(left->chldrnIds + left->num, right->chldrnIds,
 				right->num * sizeof(long long));
-		for (int k = 0; k < left->num + right->num; k++) {
-			printf("left child chldrnIds after: %lld\n", left->chldrnIds[k]);
-		}
+//		for (int k = 0; k < left->num + right->num; k++) {
+//			printf("left child chldrnIds after: %lld\n", left->chldrnIds[k]);
+//		}
 		// 修改右节点node的孩子父亲为左孩子的父亲
 		for (m = 0; m <= right->num; m++) {
 			if (NULL != right->child[m]) {
@@ -886,18 +886,18 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 	left->num += right->num;
 	left->hit++;
 	left->dirty = 1;
-	for (int k = 0; k < parent->num; k++) {
-		printf("parent keys before: %lld\n", parent->keys[k]);
-	}
+//	for (int k = 0; k < parent->num; k++) {
+//		printf("parent keys before: %lld\n", parent->keys[k]);
+//	}
 	// 在父亲的keys中清除掉右节点的父亲parent->key[mid+1]，因为右节点已经合并到左节点了。
 	for (m = mid + 1; m < parent->num - 1; m++) {
 		parent->keys[m] = parent->keys[m + 1];
 		parent->child[m] = parent->child[m + 1];
 		parent->chldrnIds[m] = parent->chldrnIds[m + 1];
 	}
-	for (int k = 0; k < parent->num; k++) {
-		printf("parent keys after: %lld\n", parent->keys[k]);
-	}
+//	for (int k = 0; k < parent->num; k++) {
+//		printf("parent keys after: %lld\n", parent->keys[k]);
+//	}
 	print_ta_index(ta_idx);
 	// 删除掉最后一个key，因为这个key已经到了左孩子left去了。
 	parent->keys[m] = 0;
@@ -906,9 +906,9 @@ static int _bptree_merge(ta_idx_t *bptree, ta_idx_node_t *left,
 	parent->num--;
 	//parent->hit++;
 	parent->dirty = 1;
-	for (int k = 0; k < parent->num; k++) {
-		printf("parent keys after after: %lld\n", parent->keys[k]);
-	}
+//	for (int k = 0; k < parent->num; k++) {
+//		printf("parent keys after after: %lld\n", parent->keys[k]);
+//	}
 	if (left->leaf == 1) {			// 修改链表指针
 		if (right->nxt == NULL && right->next != NULL_POINTER) {
 			right->nxt = readTaIndexPage(bptree, right->next, start_pointer,
@@ -995,7 +995,7 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 				left = parent->child[mid];
 			}
 		}
-		print_ta_index(ta_idx);
+//		print_ta_index(ta_idx);
 
 		/* 1) 合并结点 */
 		if ((node->num + left->num + 1) <= bptree->max) {
@@ -1021,13 +1021,13 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 			node->tuIdxIds[1] = node->tuIdxIds[0];
 		}
 		// 腾位置结束。
-		for (int k = 0; k < node->num; k++) {
-			printf("node keys after: %lld\n", node->keys[k]);
-			if (node->leaf == 1)
-				printf("node tuIdxIds after: %lld\n", node->tuIdxIds[k]);
-			else
-				printf("node chldrnIds after: %lld\n", node->chldrnIds[k]);
-		}
+//		for (int k = 0; k < node->num; k++) {
+//			printf("node keys after: %lld\n", node->keys[k]);
+//			if (node->leaf == 1)
+//				printf("node tuIdxIds after: %lld\n", node->tuIdxIds[k]);
+//			else
+//				printf("node chldrnIds after: %lld\n", node->chldrnIds[k]);
+//		}
 
 		node->keys[0] = left->keys[left->num - 1];
 		if (node->leaf == 1) {
@@ -1042,16 +1042,16 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 		//node->hit++;
 		node->dirty = 1;
 
-		for (int k = 0; k < node->num; k++) {
-			printf("node keys after: %lld\n", node->keys[k]);
-			if (node->leaf == 1)
-				printf(">>node tuIdxIds after: %lld\n", node->tuIdxIds[k]);
-			else
-				printf(">>node chldrnIds after: %lld\n", node->chldrnIds[k]);
-		}
+//		for (int k = 0; k < node->num; k++) {
+//			printf("node keys after: %lld\n", node->keys[k]);
+//			if (node->leaf == 1)
+//				printf(">>node tuIdxIds after: %lld\n", node->tuIdxIds[k]);
+//			else
+//				printf(">>node chldrnIds after: %lld\n", node->chldrnIds[k]);
+//		}
 
 		parent->keys[mid + 1] = left->keys[left->num - 1]; // 就换了个key
-		printf("parent->key[mid] after: %lld\n", parent->keys[mid]);
+//		printf("parent->key[mid] after: %lld\n", parent->keys[mid]);
 		left->keys[left->num - 1] = 0; // clear
 		if (left->leaf == 0) {
 			left->child[left->num - 1] = NULL;
@@ -1079,7 +1079,7 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 			right = parent->child[mid + 1];
 		}
 	}
-	print_ta_index(ta_idx);
+//	print_ta_index(ta_idx);
 
 	/* 1) 合并结点 */
 	if ((node->num + right->num + 1) <= bptree->max) {
@@ -1087,13 +1087,13 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 				ta_idx_db_fp);
 	}
 
-	for (int k = 0; k < node->num; k++) {
-		printf("left child keys before: %lld\n", node->keys[k]);
-		if (node->leaf == 1)
-			printf(">>node tuIdxIds before: %lld\n", node->tuIdxIds[k]);
-		else
-			printf(">>node chldrnIds before: %lld\n", node->chldrnIds[k]);
-	}
+//	for (int k = 0; k < node->num; k++) {
+//		printf("left child keys before: %lld\n", node->keys[k]);
+//		if (node->leaf == 1)
+//			printf(">>node tuIdxIds before: %lld\n", node->tuIdxIds[k]);
+//		else
+//			printf(">>node chldrnIds before: %lld\n", node->chldrnIds[k]);
+//	}
 
 	/* 2) 借用结点: */
 	node->keys[node->num] = right->keys[0];
@@ -1109,12 +1109,12 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 	node->num++;
 	//node->hit++;
 	node->dirty = 1;
-	for (int k = 0; k < node->num; k++) {
-		printf("left child keys after: %lld\n", node->keys[k]);
-	}
-	for (int k = 0; k < right->num; k++) {
-		printf("right child keys after: %lld\n", right->keys[k]);
-	}
+//	for (int k = 0; k < node->num; k++) {
+//		printf("left child keys after: %lld\n", node->keys[k]);
+//	}
+//	for (int k = 0; k < right->num; k++) {
+//		printf("right child keys after: %lld\n", right->keys[k]);
+//	}
 	for (m = 0; m < right->num; m++) { // 移动右兄弟节点的
 		right->keys[m] = right->keys[m + 1];
 		if (right->leaf == 0) {
@@ -1125,12 +1125,12 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 		}
 	}
 	parent->keys[mid + 1] = right->keys[0];
-	for (int k = 0; k < parent->num; k++) {
-		printf("parent keys after: %lld\n", parent->keys[k]);
-	}
-	for (int k = 0; k < right->num; k++) {
-		printf("right child keys after: %lld\n", right->keys[k]);
-	}
+//	for (int k = 0; k < parent->num; k++) {
+//		printf("parent keys after: %lld\n", parent->keys[k]);
+//	}
+//	for (int k = 0; k < right->num; k++) {
+//		printf("right child keys after: %lld\n", right->keys[k]);
+//	}
 	right->keys[m] = 0;
 	if (right->leaf == 1) {
 		right->tuIdxIds[m] = NULL_POINTER;
@@ -1147,12 +1147,12 @@ int ta_bptree_merge(ta_idx_t *bptree, ta_idx_node_t *node, FILE *ta_idx_id_fp,
 static int _bptree_delete_leaf(ta_idx_t *bptree, ta_idx_node_t *node, int idx,
 		long long tuid, FILE *ta_idx_id_fp, FILE *ta_idx_db_fp) {
 	ta_idx_node_t *parent = node->parent, *curr = node;
-	printf("to delete child key: %lld\n", node->keys[idx]);
-	printf("%d\n", node->num);
+//	printf("to delete child key: %lld\n", node->keys[idx]);
+//	printf("%d\n", node->num);
 
-	for (int k = 0; k < node->num; k++) {
-		printf("delete child keys before: %lld\n", node->keys[k]);
-	}
+//	for (int k = 0; k < node->num; k++) {
+//		printf("delete child keys before: %lld\n", node->keys[k]);
+//	}
 
 	if (node->tuIdxIds[idx] != NULL_POINTER) { // node is a leaf
 		// delete tuid from tu index id from index tuid DB
@@ -1186,10 +1186,10 @@ static int _bptree_delete_leaf(ta_idx_t *bptree, ta_idx_node_t *node, int idx,
 	curr = NULL;
 	parent = NULL;
 
-	for (int k = 0; k < node->num; k++) {
-		printf("remained child keys: %lld\n", node->keys[k]);
-	}
-	printf("--\n");
+//	for (int k = 0; k < node->num; k++) {
+//		printf("remained child keys: %lld\n", node->keys[k]);
+//	}
+//	printf("--\n");
 
 	if (node->num < bptree->min) {
 		return ta_bptree_merge(bptree, node, ta_idx_id_fp, ta_idx_db_fp);
@@ -1245,7 +1245,7 @@ int taIndexDeleteNode(ta_idx_t *bptree, long long ts, long long tuid,
 		}
 	}
 
-	print_ta_index(ta_idx);
+//	print_ta_index(ta_idx);
 
 	/* 3. 执行删除操作 */
 	if (found == 1) {

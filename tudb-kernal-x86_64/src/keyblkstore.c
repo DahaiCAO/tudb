@@ -75,7 +75,7 @@ void commitKeyBlocks(long long ta_id, key_blk_t **list, FILE *key_blk_db_fp,
 	int j = 0;
 	t = list;
 	while (*(t + j) != NULL) {
-		(*(t + j))->id = getOneId(key_blk_id_fp, caches->keyblkIds,
+		(*(t + j))->id = getOneId(key_blk_id_fp, caches->keyBlkIds,
 				KEY_ID_QUEUE_LENGTH);
 		if (j > 0) {
 			(*(t + j - 1))->nxtBlkId = (*(t + j))->id;
@@ -306,7 +306,7 @@ unsigned char* findKey(long long id, FILE *key_blk_db_fp) {
 	return ct;
 }
 
-void deleteKey(long long id, FILE *key_blk_db_fp) {
+void deleteKey(long long id, FILE *key_blk_id_fp, FILE *key_blk_db_fp) {
 	key_blk_t **list = searchKeyBlockList(id, key_blk_db_fp);
 	int j = 0;
 	key_blk_t **p = list;
@@ -315,7 +315,8 @@ void deleteKey(long long id, FILE *key_blk_db_fp) {
 				+ ((*(p + j))->id - ((*(p + j))->page)->startNo)
 						* key_blk_record_bytes;
 		*(pos + LONG_LONG) = 0x0;
-		recycleOneId((*(p + j))->id, caches->keyblkIds);
+		recycleOneId((*(p + j))->id, caches->keyBlkIds, KEY_ID_QUEUE_LENGTH,
+				key_blk_id_fp);
 		// update to DB
 		fseek(key_blk_db_fp, (*(p + j))->id * key_blk_record_bytes + LONG_LONG,
 		SEEK_SET);
@@ -354,7 +355,7 @@ void commitUpdateKey(key_blk_t **list, key_blk_t **newlist, FILE *key_blk_id_fp,
 				(*(t + k))->taId = (*(l + k))->taId;
 				(*(t + k))->nxtBlkId = (*(l + k))->nxtBlkId;
 			} else {
-				(*(t + k))->id = getOneId(key_blk_id_fp, caches->keyblkIds,
+				(*(t + k))->id = getOneId(key_blk_id_fp, caches->keyBlkIds,
 						KEY_ID_QUEUE_LENGTH);
 				if (k >= c) {
 					(*(t + k - 1))->nxtBlkId = (*(t + k))->id;
@@ -451,7 +452,8 @@ void commitUpdateKey(key_blk_t **list, key_blk_t **newlist, FILE *key_blk_id_fp,
 					+ ((*(l + k))->id - ((*(l + k))->page)->startNo)
 							* key_blk_record_bytes;
 			*(pos + LONG_LONG) = 0x0;
-			recycleOneId((*(l + k))->id, caches->keyblkIds);
+			recycleOneId((*(l + k))->id, caches->keyBlkIds, KEY_ID_QUEUE_LENGTH,
+					key_blk_id_fp);
 			// update to DB
 			fseek(key_blk_db_fp,
 					(*(l + k))->id * key_blk_record_bytes + LONG_LONG,
@@ -490,7 +492,7 @@ void combineKeyBlocks(key_blk_t **list, int length) {
 void deallocKeyBlockList(key_blk_t **list) {
 	int j = 0;
 	while (*(list + j)) {
-		free((void *)(*(list + j))->blkContent);
+		free((void*) (*(list + j))->blkContent);
 		(*(list + j))->blkContent = NULL;
 		(*(list + j))->page = NULL;
 		free(*(list + j));

@@ -86,7 +86,7 @@ void commitLabelBlocks(long long ta_id, lbl_blk_t **list, FILE *lbl_blk_db_fp,
 	int j = 0;
 	t = list;
 	while (*(t + j) != NULL) {
-		(*(t + j))->id = getOneId(lbl_blk_id_fp, caches->lblblkIds,
+		(*(t + j))->id = getOneId(lbl_blk_id_fp, caches->lblBlkIds,
 				LABEL_ID_QUEUE_LENGTH);
 		if (j > 0) {
 			(*(t + j - 1))->nxtBlkId = (*(t + j))->id;
@@ -318,7 +318,7 @@ unsigned char* findLabelBlocks(long long id, FILE *lbl_tkn_db_fp) {
 	return ct;
 }
 
-void deleteLabelBlocks(long long id, FILE *lbl_blk_db_fp) {
+void deleteLabelBlocks(long long id, FILE *lbl_blk_id_fp, FILE *lbl_blk_db_fp) {
 	lbl_blk_t **list = searchLabelBlockList(id, lbl_blk_db_fp);
 	int j = 0;
 	lbl_blk_t **p = list;
@@ -327,7 +327,8 @@ void deleteLabelBlocks(long long id, FILE *lbl_blk_db_fp) {
 				+ ((*(p + j))->id - ((*(p + j))->page)->startNo)
 						* lbl_blk_record_bytes;
 		*(pos + LONG_LONG) = 0x0;
-		recycleOneId((*(p + j))->id, caches->lblblkIds);
+		recycleOneId((*(p + j))->id, caches->lblBlkIds, LABEL_ID_QUEUE_LENGTH,
+				lbl_blk_id_fp);
 		// update to DB
 		fseek(lbl_blk_db_fp, (*(p + j))->id * lbl_blk_record_bytes + LONG_LONG,
 		SEEK_SET);
@@ -366,7 +367,7 @@ void commitUpdateLabelBlock(lbl_blk_t **list, lbl_blk_t **newlist,
 				(*(t + k))->taId = (*(l + k))->taId;
 				(*(t + k))->nxtBlkId = (*(l + k))->nxtBlkId;
 			} else {
-				(*(t + k))->id = getOneId(lbl_blk_id_fp, caches->lblblkIds,
+				(*(t + k))->id = getOneId(lbl_blk_id_fp, caches->lblBlkIds,
 						LABEL_ID_QUEUE_LENGTH);
 				if (k >= c) {
 					(*(t + k - 1))->nxtBlkId = (*(t + k))->id;
@@ -464,7 +465,8 @@ void commitUpdateLabelBlock(lbl_blk_t **list, lbl_blk_t **newlist,
 					+ ((*(l + k))->id - ((*(l + k))->page)->startNo)
 							* lbl_blk_record_bytes;
 			*(pos + LONG_LONG) = 0x0;
-			recycleOneId((*(l + k))->id, caches->lblblkIds);
+			recycleOneId((*(l + k))->id, caches->lblBlkIds,
+					LABEL_ID_QUEUE_LENGTH, lbl_blk_id_fp);
 			// update to DB
 			fseek(lbl_blk_db_fp,
 					(*(l + k))->id * lbl_blk_record_bytes + LONG_LONG,

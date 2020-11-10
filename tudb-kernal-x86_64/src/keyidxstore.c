@@ -79,7 +79,7 @@ key_idx_t* insertKeyIndex(long long ta_id, long long firstBlkId, int length) {
 
 long long commitKeyIndex(key_idx_t *idx, FILE *key_idx_db_fp,
 		FILE *key_idx_id_fp) {
-	long long id = getOneId(key_idx_id_fp, caches->keyidxIds,
+	long long id = getOneId(key_idx_id_fp, caches->keyIdxIds,
 			KEY_ID_QUEUE_LENGTH);
 	idx->id = id;
 	key_idx_page_t *ps = key_idx_pages;
