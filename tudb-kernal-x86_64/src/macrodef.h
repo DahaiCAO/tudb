@@ -29,4 +29,6 @@
 #define NULL_POINTER -2LL
 #define TA_PAGE_SIZE (LONG_LONG*3LL+1LL)*10LL
 
+
+#define BASE_INIT_NULL 0LL;
 #endif /* MACRODEF_H_ */

@@ -24,25 +24,26 @@
 #ifndef STRUCTKEYIDXDEF_H_
 #define STRUCTKEYIDXDEF_H_
 
+// Double-Array Trie tree node of property name (key) index
+typedef struct datire_tree_index_nd {
+	long long id; // pointer in DB
+	long long transferRatio; // 转移基数
+	unsigned char key; // key character. it is a UTF-8 code.
+	unsigned char leaf; //是否为叶子节点 ，1, leaf, otherwise, 0.
+	long long tuIdxId; // The first Tu element Id of a Id list.
+} dat_idx_nd_t;
+
 typedef struct key_idex_page {
 	long long expiretime; // expiration time to mark this page, -1 by default, that means blank page
-	unsigned char *content; // buffer for page content.
-	long long startNo;
-	long long start; // start byte on this page
-	long long end; // end byte on this page
-	unsigned char dirty; // if dirty, then 1; otherwise, 0;
 	int hit; // hit counting, 0 by default, hit once, plus 1;
+	dat_idx_nd_t *base; // base array
+	long long start; // page start number
+	long long *check; // check array
+	unsigned char *baseContent; // buffer for base array
+	unsigned char *checkContent; // buffer for check array
+	unsigned char dirty; // if dirty, then 1; otherwise, 0;
 	struct key_idex_page *prvpage;
 	struct key_idex_page *nxtpage;
 } key_idx_page_t;
-
-typedef struct key_index {
-	long long id; // pointer in DB
-	long long useCount; // It counts the usage of the label token in whole Tu DB
-	long long keyBlkId; //
-	int length;
-	long long taId;
-	key_idx_page_t *page;
-} key_idx_t;
 
 #endif /* STRUCTKEYIDXDEF_H_ */

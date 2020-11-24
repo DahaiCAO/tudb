@@ -25,6 +25,7 @@
 
 #include "btreestore.h"
 #include "bptreestore.h"
+#include "datrieidx.h"
 /*
  * test.c
  *
@@ -381,67 +382,103 @@ long long recycleId(FILE *idfp, long long id) {
 //}
 
 
-int main(int argv, char **argc) {
-	setvbuf(stdout, NULL, _IONBF, 0);
-//	ta_bptree_t **_bptree = (ta_bptree_t**) calloc(1, sizeof(ta_btree_t));
-//	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70，
-//	bptree_create(_bptree, 5);
-//	bptree_insert(*_bptree, 10);//1
-//	bptree_insert(*_bptree, 15);//2
-//	bptree_insert(*_bptree, 9);//3
-//	bptree_insert(*_bptree, 4);//4
-//	bptree_insert(*_bptree, 19);//5
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 20);//6
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 12);//7
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 11);//8
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 13);//9
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 14);//10
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 32);//11
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 60);//12
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 30);//13
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 70);//14
-//	print_bptree(_bptree[0]);
-//	bptree_insert(*_bptree, 31);//14
-//	print_bptree(_bptree[0]);
-
-//	bptree_delete(*_bptree, 60);//15
-//	print_bptree(_bptree[0]);
-//	bptree_delete(*_bptree, 70);//16
-//	print_bptree(_bptree[0]);
-//	bptree_delete(*_bptree, 15);//17
-//	print_bptree(_bptree[0]);
-
-//	bptree_delete(*_bptree, 9);//18
-//	print_bptree(_bptree[0]);
-
-//	bptree_delete(*_bptree, 10);//19
-//	print_bptree(_bptree[0]);
-
-//int i = 7;
-//double f = ceil(i/2);
-//int j = (int)f;
+//int main(int argv, char **argc) {
+//	setvbuf(stdout, NULL, _IONBF, 0);
+////	ta_bptree_t **_bptree = (ta_bptree_t**) calloc(1, sizeof(ta_btree_t));
+////	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70，
+////	bptree_create(_bptree, 5);
+////	bptree_insert(*_bptree, 10);//1
+////	bptree_insert(*_bptree, 15);//2
+////	bptree_insert(*_bptree, 9);//3
+////	bptree_insert(*_bptree, 4);//4
+////	bptree_insert(*_bptree, 19);//5
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 20);//6
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 12);//7
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 11);//8
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 13);//9
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 14);//10
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 32);//11
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 60);//12
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 30);//13
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 70);//14
+////	print_bptree(_bptree[0]);
+////	bptree_insert(*_bptree, 31);//14
+////	print_bptree(_bptree[0]);
 //
-//printf("%lf\n", f);
-//printf("%d\n", j);
-	const int TA_BPLUS_TREE_ORDER = 5;
-	//long long *ids1[TA_BPLUS_TREE_ORDER] = {0};
-	//long long *ids1[5] = {-2LL,-2,-2,-2,-2};
-	long long *ids = (long long*) calloc(TA_BPLUS_TREE_ORDER,
-			sizeof(long long));
-	//memset(ids, 5, TA_BPLUS_TREE_ORDER * sizeof(long long));
+////	bptree_delete(*_bptree, 60);//15
+////	print_bptree(_bptree[0]);
+////	bptree_delete(*_bptree, 70);//16
+////	print_bptree(_bptree[0]);
+////	bptree_delete(*_bptree, 15);//17
+////	print_bptree(_bptree[0]);
+//
+////	bptree_delete(*_bptree, 9);//18
+////	print_bptree(_bptree[0]);
+//
+////	bptree_delete(*_bptree, 10);//19
+////	print_bptree(_bptree[0]);
+//
+////int i = 7;
+////double f = ceil(i/2);
+////int j = (int)f;
+////
+////printf("%lf\n", f);
+////printf("%d\n", j);
+//	const int TA_BPLUS_TREE_ORDER = 5;
+//	//long long *ids1[TA_BPLUS_TREE_ORDER] = {0};
+//	//long long *ids1[5] = {-2LL,-2,-2,-2,-2};
+//	long long *ids = (long long*) calloc(TA_BPLUS_TREE_ORDER,
+//			sizeof(long long));
+//	//memset(ids, 5, TA_BPLUS_TREE_ORDER * sizeof(long long));
+//
+//	for (int i=0;i<TA_BPLUS_TREE_ORDER;i++) {
+//		ids[i] = -2LL;
+//		printf("%lld\n", ids[i]);
+//	}
+//
+//}
 
-	for (int i=0;i<TA_BPLUS_TREE_ORDER;i++) {
-		ids[i] = -2LL;
-		printf("%lld\n", ids[i]);
+void main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+	//char word[30] = { '\0' };
+	initialize();
+//	FILE *key_file = fopen("key_words.txt", "r");
+//	if (key_file == NULL) {
+//		//cout << "open key file error!" << endl;
+//		return;
+//	}
+//	while (fscanf(key_file, "%s", word) != EOF) {
+//		insert_word(word);
+//		//cout << endl;
+//	}
+	char *word = (char*) calloc(256, sizeof(char));
+	strcat(word, "cat");
+	insert_word(word);
+	char *word1 = (char*) calloc(256, sizeof(char));
+	strcat(word1, "tom");
+	insert_word(word1);
+	char *word2 = (char*) calloc(256, sizeof(char));
+	strcat(word2, "ruby");
+	insert_word(word2);
+	char *word3 = (char*) calloc(256, sizeof(char));
+	strcat(word3, "jerry");
+	insert_word(word3);
+
+	strcpy(word, "Beijing#");
+	if (search_word(word) > 0) {
+		printf("find word!\n");
+	} else {
+		printf("not find word!\n");
 	}
 
 }
+

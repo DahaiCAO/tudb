@@ -39,7 +39,7 @@
  * Author: Dahai CAO
  */
 
-// initialize DB
+// initialize general Id DB
 void initIdDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
 		FILE *ta_id_fp = fopen(path, "wb+");
@@ -54,6 +54,7 @@ void initIdDB(char *path) {
 	}
 }
 
+// initialize b+tree time axis index Id DB
 void initIndexIdDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
 		FILE *ta_id_fp = fopen(path, "wb+");
@@ -70,6 +71,7 @@ void initIndexIdDB(char *path) {
 	}
 }
 
+// initialize b+tree time axis index DB
 void initTaIndexDB(char *path) {
 	if ((access(path, F_OK)) == -1) {
 		FILE *ta_idx_fp = fopen(path, "wb+");
@@ -109,24 +111,24 @@ void initDB(char *path) {
 	}
 }
 
-void initIds(FILE *id_fp) {
-	if (id_fp != NULL) {
-		// initializes Id DB
-		unsigned char nIds[LONG_LONG] = { 0L };
-		//unsigned char lastrIds[LONG_LONG] = { 0L };
-		//unsigned char rIds[LONG_LONG] = { 0L };
-		long long nId = 9LL;
-		//long long lastrId = 0LL;
-		//long long rId = 0;
-		longToByteArray(nId, nIds); // convert
-		//LongToByteArray(lastrId, lastrIds); // convert
-		//LongToByteArray(rId, rIds); // convert
-		fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
-		fwrite(nIds, sizeof(unsigned char), LONG_LONG, id_fp);
-		//fwrite(lastrIds, sizeof(unsigned char), LONG_LONG, id_fp);
-		//fwrite(rIds, sizeof(unsigned char), LONG_LONG, id_fp);
-	}
-}
+//void initIds(FILE *id_fp) {
+//	if (id_fp != NULL) {
+//		// initializes Id DB
+//		unsigned char nIds[LONG_LONG] = { 0L };
+//		//unsigned char lastrIds[LONG_LONG] = { 0L };
+//		//unsigned char rIds[LONG_LONG] = { 0L };
+//		long long nId = 9LL;
+//		//long long lastrId = 0LL;
+//		//long long rId = 0;
+//		longToByteArray(nId, nIds); // convert
+//		//LongToByteArray(lastrId, lastrIds); // convert
+//		//LongToByteArray(rId, rIds); // convert
+//		fseek(id_fp, 0, SEEK_SET); // move file pointer to file end
+//		fwrite(nIds, sizeof(unsigned char), LONG_LONG, id_fp);
+//		//fwrite(lastrIds, sizeof(unsigned char), LONG_LONG, id_fp);
+//		//fwrite(rIds, sizeof(unsigned char), LONG_LONG, id_fp);
+//	}
+//}
 
 //long long teLabelStore(long long ta_id, char *labels[], FILE *lbls_db_fp,
 //		FILE *lbls_id_fp, FILE *lbl_idx_db_fp, FILE *lbl_idx_id_fp,
@@ -184,239 +186,8 @@ void initIds(FILE *id_fp) {
 //	printf("%s\n", slabel1);
 //}
 
-void initConf() {
-	ID_QUEUE_LENGTH = 25;
-	LABEL_ID_QUEUE_LENGTH = 10;
-	KEY_ID_QUEUE_LENGTH = 10;
-	TIMEAXIS_ID_QUEUE_LENGTH = 10;
-	ID_INDEX_QUEUE_LENGTH = 10;
-
-	// m is order. it is 3 at least.
-	TA_BPLUS_TREE_ORDER = 5;
-	/* node size (bytes) is page size , record size as well. (B is 8 bytes)
-	 * that is, the size consists of half B real length, 1 byte leaf flag,  m B keys, m B data or
-	 * m B children, 1 B previous node, 1 B next node, totally,
-	 * here, all nodes are same. LONG is 4 bytes, LONG_LONG is 8 bytes.
-	 * LONG	+ 1 + TA_BPLUS_TREE_ORDER * LONG_LONG + TA_BPLUS_TREE_ORDER * LONG_LONG + 2 * LONG_LONG;
-	 * e.g., if order is 5, 101 bytes
-	 */
-	ta_bptree_idx_leng_leaf_bytes = LONG + 1;
-	ta_bptree_idx_keys_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
-	ta_bptree_idx_children_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
-	ta_bptree_idx_node_bytes = ta_bptree_idx_leng_leaf_bytes
-			+ ta_bptree_idx_keys_bytes + ta_bptree_idx_children_bytes
-			+ 2 * LONG_LONG;
-	start_pointer = 3 * LONG_LONG;
-
-	// label block size
-	LABEL_BLOCK_LENGTH = 64;
-	// label block buffer size
-	LABEL_BUFFER_LENGTH = 256;
-	// label token page size in memory
-	LABEL_BLOCK_PAGE_RECORDS = 10;
-	// label block page's expire time in memory
-	LABEL_BLOCK_PAGE_EXPIRE_TIME = 10;
-	// records in one page with label index records, configurable in .conf file
-	LABEL_INDEX_PAGE_RECORDS = 10;
-	// label index page's expire time in memory
-	LABEL_INDEX_PAGE_EXPIRE_TIME = 10;
-	// records in one page with labels records, configurable in .conf file
-	LABELS_PAGE_RECORDS = 10;
-	// labels page's expire time in memory
-	LABELS_PAGE_EXPIRE_TIME = 10;
-
-	// label bytes length.
-	lbl_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
-			+ LABEL_BLOCK_LENGTH;
-	lbl_blk_page_bytes = lbl_blk_record_bytes * LABEL_BLOCK_PAGE_RECORDS;
-	// bytes in one label index record
-	lbl_idx_record_bytes = 3 * LONG_LONG + LONG;
-	// bytes in one page with label index records
-	lbl_idx_page_bytes = lbl_idx_record_bytes * LABEL_INDEX_PAGE_RECORDS;
-	// bytes in one labels record
-	lbls_record_bytes = LONG_LONG + 1 + LONG_LONG + LONG_LONG + LONG_LONG;
-	// bytes in one page with labels records
-	lbls_page_bytes = lbls_record_bytes * LABELS_PAGE_RECORDS;
-
-	// key (property name) block bytes length.
-	key_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG + KEY_BLOCK_LENGTH;
-	// bytes of one key (property name) block page
-	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
-	// bytes in one key (property name) index record
-	key_idx_record_bytes = 3 * LONG_LONG + LONG;
-	// bytes in one page with key index records
-	key_idx_page_bytes = key_idx_record_bytes * KEY_INDEX_PAGE_RECORDS;
-}
-
-// test label token store
-int main(int argv, char **argc) {
-	setlocale(LC_ALL, "zh-CN.UTF-8");
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-	const char *d_path = "D:/tudata/";
-	initConf();
-
-	// b+tree index for time axis
-	char *ta_idx_id_path = (char*) calloc(256, sizeof(char));
-	strcat(ta_idx_id_path, d_path);
-	strcat(ta_idx_id_path, "tustore.timeaxis.idx.id");
-
-	char *ta_idx_db_path = (char*) calloc(256, sizeof(char));
-	strcat(ta_idx_db_path, d_path);
-	strcat(ta_idx_db_path, "tustore.timeaxis.idx");
-
-	char *te_id_path = (char*) calloc(256, sizeof(char));
-	strcat(te_id_path, d_path);
-	strcat(te_id_path, "tustore.element.tdb.id");
-
-	char *te_db_path = (char*) calloc(256, sizeof(char));
-	strcat(te_db_path, d_path);
-	strcat(te_db_path, "tustore.element.tdb");
-
-	// label array
-	char *lbls_id_path = (char*) calloc(256, sizeof(char));
-	strcat(lbls_id_path, d_path);
-	strcat(lbls_id_path, "tustore.element.labels.tdb.id");
-
-	char *lbls_db_path = (char*) calloc(256, sizeof(char));
-	strcat(lbls_db_path, d_path);
-	strcat(lbls_db_path, "tustore.element.labels.tdb");
-
-	// b+tree index tree for label name
-	char *lbl_idx_id_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_idx_id_path, d_path);
-	strcat(lbl_idx_id_path, "tustore.label.idx.id");
-
-	char *lbl_idx_db_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_idx_db_path, d_path);
-	strcat(lbl_idx_db_path, "tustore.label.idx");
-
-	char *lbl_blk_id_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_blk_id_path, d_path);
-	strcat(lbl_blk_id_path, "tustore.labelblock.tdb.id");
-
-	char *lbl_blk_db_path = (char*) calloc(256, sizeof(char));
-	strcat(lbl_blk_db_path, d_path);
-	strcat(lbl_blk_db_path, "tustore.labelblock.tdb");
-	// b+tree index db for property name
-	char *key_idx_id_path = (char*) calloc(256, sizeof(char));
-	strcat(key_idx_id_path, d_path);
-	strcat(key_idx_id_path, "tustore.property.key.idx.id");
-
-	char *key_idx_db_path = (char*) calloc(256, sizeof(char));
-	strcat(key_idx_db_path, d_path);
-	strcat(key_idx_db_path, "tustore.property.key.idx");
-
-	char *key_blk_id_path = (char*) calloc(256, sizeof(char));
-	strcat(key_blk_id_path, d_path);
-	strcat(key_blk_id_path, "tustore.property.keyblock.tdb.id");
-
-	char *key_blk_db_path = (char*) calloc(256, sizeof(char));
-	strcat(key_blk_db_path, d_path);
-	strcat(key_blk_db_path, "tustore.property.keyblock.tdb");
-	// b+tree index db for property value
-	char *val_idx_id_path = (char*) calloc(256, sizeof(char));
-	strcat(val_idx_id_path, d_path);
-	strcat(val_idx_id_path, "tustore.property.value.idx.id");
-
-	char *val_idx_db_path = (char*) calloc(256, sizeof(char));
-	strcat(val_idx_db_path, d_path);
-	strcat(val_idx_db_path, "tustore.property.value.idx");
-
-	char *val_id_path = (char*) calloc(256, sizeof(char));
-	strcat(val_id_path, d_path);
-	strcat(val_id_path, "tustore.property.value.tdb.id");
-
-	char *val_db_path = (char*) calloc(256, sizeof(char));
-	strcat(val_db_path, d_path);
-	strcat(val_db_path, "tustore.property.value.tdb");
-
-	// initialize
-	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
-	initIdCaches(caches);
-
-	// initialized Id DB
-	initIndexIdDB(ta_idx_id_path);
-	initIdDB(te_id_path);
-	initIdDB(lbls_id_path);
-	initIdDB(lbl_idx_id_path);
-	initIdDB(lbl_blk_id_path);
-	initIdDB(key_idx_id_path);
-	initIdDB(key_blk_id_path);
-	initIdDB(val_idx_id_path);
-	initIdDB(val_id_path);
-	// initialized DB
-	initTaIndexDB(ta_idx_db_path);
-	initDB(te_db_path);
-	initDB(lbls_db_path);
-	initDB(lbl_idx_db_path);
-	initDB(lbl_blk_db_path);
-	initDB(key_idx_db_path);
-	initDB(key_blk_db_path);
-	initDB(val_idx_db_path);
-	initDB(val_db_path);
-
-	FILE *ta_idx_id_fp = fopen(ta_idx_id_path, "rb+");
-	FILE *ta_idx_db_fp = fopen(ta_idx_db_path, "rb+");
-	FILE *te_id_fp = fopen(te_id_path, "rb+");
-	FILE *te_db_fp = fopen(te_db_path, "rb+");
-	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
-	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
-	FILE *lbl_blk_id_fp = fopen(lbl_blk_id_path, "rb+");
-	FILE *key_idx_id_fp = fopen(key_idx_id_path, "rb+");
-	FILE *key_blk_id_fp = fopen(key_blk_id_path, "rb+");
-
-	FILE *lbls_db_fp = fopen(lbls_db_path, "rb+");
-	FILE *lbl_idx_db_fp = fopen(lbl_idx_db_path, "rb+");
-	FILE *lbl_blk_db_fp = fopen(lbl_blk_db_path, "rb+");
-	FILE *key_idx_db_fp = fopen(key_idx_db_path, "rb+");
-	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
-	FILE *val_idx_id_fp = fopen(val_idx_id_path, "rb+");
-	FILE *val_idx_db_fp = fopen(val_idx_db_path, "rb+");
-	FILE *val_id_fp = fopen(val_id_path, "rb+");
-	FILE *val_db_fp = fopen(val_db_path, "rb+");
-
-	//initIds(ta_idx_id_fp);
-
-	loadAllIds(ta_idx_id_fp, caches->taIdxIds, TIMEAXIS_ID_QUEUE_LENGTH);
-	loadAllIds(te_id_fp, caches->teIds, ID_QUEUE_LENGTH);
-	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(lbl_idx_id_fp, caches->lblIdxIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(lbl_blk_id_fp, caches->lblBlkIds, LABEL_ID_QUEUE_LENGTH);
-	loadAllIds(key_idx_id_fp, caches->keyIdxIds, KEY_ID_QUEUE_LENGTH);
-	loadAllIds(key_blk_id_fp, caches->keyBlkIds, KEY_ID_QUEUE_LENGTH);
-	loadAllIds(val_idx_id_fp, caches->valIdxIds, VALUE_ID_QUEUE_LENGTH);
-	loadAllIds(val_id_fp, caches->valIds, VALUE_ID_QUEUE_LENGTH);
-
-	listAllIds(caches->taIdxIds);
-	listAllIds(caches->teIds);
-	//listAllIds(caches->prpIds);
-	listAllIds(caches->lblsIds);
-	listAllIds(caches->lblIdxIds);
-	listAllIds(caches->lblBlkIds);
-	listAllIds(caches->keyIdxIds);
-	listAllIds(caches->keyBlkIds);
-	listAllIds(caches->valIdxIds);
-	listAllIds(caches->valIds);
-
-	ta_idx = taIndexRootCreate(TA_BPLUS_TREE_ORDER);
-	initTaIndexMemPages(ta_idx, ta_idx_db_fp, ta_idx_id_fp);
-
-	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
-	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
-	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
-	initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
-	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
-	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
-	initValueDBMemPages(val_pages, val_db_fp);
-
-//	long long ts = 1593783935;	//(unsigned long) time(NULL);
-//	// -- insert operation
-//	long long ta_id = insertEvolvedPoint(ts, ta_id_fp, ta_db_fp);
-//	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
-//	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
-//			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
-	print_ta_index(ta_idx);
+//void bplustreeIndexTest() {
+//	print_ta_index(ta_idx);
 	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70,...
 //	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);	//1
 //	print_ta_index(ta_idx);
@@ -550,6 +321,249 @@ int main(int argv, char **argc) {
 //	taIndexDeleteNode(ta_idx, 10, 19, ta_idx_id_fp, ta_idx_db_fp);	//2
 //	print_ta_index(ta_idx);
 //	commitIndexNode(ta_idx, ta_idx_db_fp);
+//}
+
+void initConf() {
+	ID_QUEUE_LENGTH = 25;
+	LABEL_ID_QUEUE_LENGTH = 10;
+	KEY_ID_QUEUE_LENGTH = 10;
+	TIMEAXIS_ID_QUEUE_LENGTH = 10;
+	ID_INDEX_QUEUE_LENGTH = 10;
+
+	// m is order. it is 3 at least.
+	TA_BPLUS_TREE_ORDER = 5;
+	/* node size (bytes) is page size , record size as well. (B is 8 bytes)
+	 * that is, the size consists of half B real length, 1 byte leaf flag,  m B keys, m B data or
+	 * m B children, 1 B previous node, 1 B next node, totally,
+	 * here, all nodes are same. LONG is 4 bytes, LONG_LONG is 8 bytes.
+	 * LONG	+ 1 + TA_BPLUS_TREE_ORDER * LONG_LONG + TA_BPLUS_TREE_ORDER * LONG_LONG + 2 * LONG_LONG;
+	 * e.g., if order is 5, 101 bytes
+	 */
+	ta_bptree_idx_leng_leaf_bytes = LONG + 1;
+	ta_bptree_idx_keys_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
+	ta_bptree_idx_children_bytes = (TA_BPLUS_TREE_ORDER) * LONG_LONG;
+	ta_bptree_idx_node_bytes = ta_bptree_idx_leng_leaf_bytes
+			+ ta_bptree_idx_keys_bytes + ta_bptree_idx_children_bytes
+			+ 2 * LONG_LONG;
+	start_pointer = 3 * LONG_LONG;
+
+	// label block size
+	LABEL_BLOCK_LENGTH = 64;
+	// label block buffer size
+	LABEL_BUFFER_LENGTH = 256;
+	// label token page size in memory
+	LABEL_BLOCK_PAGE_RECORDS = 10;
+	// label block page's expire time in memory
+	LABEL_BLOCK_PAGE_EXPIRE_TIME = 10;
+	// records in one page with label index records, configurable in .conf file
+	LABEL_INDEX_PAGE_RECORDS = 10;
+	// label index page's expire time in memory
+	LABEL_INDEX_PAGE_EXPIRE_TIME = 10;
+	// records in one page with labels records, configurable in .conf file
+	LABELS_PAGE_RECORDS = 10;
+	// labels page's expire time in memory
+	LABELS_PAGE_EXPIRE_TIME = 10;
+
+	// label bytes length.
+	lbl_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG
+			+ LABEL_BLOCK_LENGTH;
+	lbl_blk_page_bytes = lbl_blk_record_bytes * LABEL_BLOCK_PAGE_RECORDS;
+	// bytes in one label index record
+	lbl_idx_record_bytes = 3 * LONG_LONG + LONG;
+	// bytes in one page with label index records
+	lbl_idx_page_bytes = lbl_idx_record_bytes * LABEL_INDEX_PAGE_RECORDS;
+	// bytes in one labels record
+	lbls_record_bytes = LONG_LONG + 1 + LONG_LONG + LONG_LONG + LONG_LONG;
+	// bytes in one page with labels records
+	lbls_page_bytes = lbls_record_bytes * LABELS_PAGE_RECORDS;
+
+	// key (property name) block bytes length.
+	key_blk_record_bytes = LONG_LONG + 1 + LONG + LONG_LONG + KEY_BLOCK_LENGTH;
+	// bytes of one key (property name) block page
+	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
+
+	ARRAY_PAGE_SIZE = 65535;
+	// bytes in one key (property name) index record
+	key_idx_bas_record_bytes = (2 * LONG_LONG + 2);
+	key_idx_chk_record_bytes = LONG_LONG;
+
+	key_idx_bas_page_bytes = ARRAY_PAGE_SIZE * key_idx_bas_record_bytes;
+	key_idx_chk_page_bytes = ARRAY_PAGE_SIZE * key_idx_chk_record_bytes;
+}
+
+// test label token store
+int main(int argv, char **argc) {
+	//setlocale(LC_ALL, "zh-CN.UTF-8");
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+	const char *d_path = "D:/TuDB-Codes/tudata/";
+	initConf();
+
+	// b+tree index for time axis
+	char *ta_idx_id_path = (char*) calloc(256, sizeof(char));
+	strcat(ta_idx_id_path, d_path);
+	strcat(ta_idx_id_path, "tustore.timeaxis.idx.id");
+
+	char *ta_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(ta_idx_db_path, d_path);
+	strcat(ta_idx_db_path, "tustore.timeaxis.idx");
+
+	char *te_id_path = (char*) calloc(256, sizeof(char));
+	strcat(te_id_path, d_path);
+	strcat(te_id_path, "tustore.element.tdb.id");
+
+	char *te_db_path = (char*) calloc(256, sizeof(char));
+	strcat(te_db_path, d_path);
+	strcat(te_db_path, "tustore.element.tdb");
+
+	// label array
+	char *lbls_id_path = (char*) calloc(256, sizeof(char));
+	strcat(lbls_id_path, d_path);
+	strcat(lbls_id_path, "tustore.element.labels.tdb.id");
+
+	char *lbls_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbls_db_path, d_path);
+	strcat(lbls_db_path, "tustore.element.labels.tdb");
+
+	// b+tree index tree for label name
+	char *lbl_idx_id_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_idx_id_path, d_path);
+	strcat(lbl_idx_id_path, "tustore.label.idx.id");
+
+	char *lbl_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_idx_db_path, d_path);
+	strcat(lbl_idx_db_path, "tustore.label.idx");
+
+	char *lbl_blk_id_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_blk_id_path, d_path);
+	strcat(lbl_blk_id_path, "tustore.labelblock.tdb.id");
+
+	char *lbl_blk_db_path = (char*) calloc(256, sizeof(char));
+	strcat(lbl_blk_db_path, d_path);
+	strcat(lbl_blk_db_path, "tustore.labelblock.tdb");
+
+	// Double-Array Trie tree index db for property name (key)
+	char *key_idx_bas_path = (char*) calloc(256, sizeof(char));
+	strcat(key_idx_bas_path, d_path);
+	strcat(key_idx_bas_path, "tustore.property.key.bas");
+
+	char *key_idx_chk_path = (char*) calloc(256, sizeof(char));
+	strcat(key_idx_chk_path, d_path);
+	strcat(key_idx_chk_path, "tustore.property.key.chk");
+
+	char *key_blk_id_path = (char*) calloc(256, sizeof(char));
+	strcat(key_blk_id_path, d_path);
+	strcat(key_blk_id_path, "tustore.property.keyblock.tdb.id");
+
+	char *key_blk_db_path = (char*) calloc(256, sizeof(char));
+	strcat(key_blk_db_path, d_path);
+	strcat(key_blk_db_path, "tustore.property.keyblock.tdb");
+	// b+tree index db for property value
+	char *val_idx_id_path = (char*) calloc(256, sizeof(char));
+	strcat(val_idx_id_path, d_path);
+	strcat(val_idx_id_path, "tustore.property.value.idx.id");
+
+	char *val_idx_db_path = (char*) calloc(256, sizeof(char));
+	strcat(val_idx_db_path, d_path);
+	strcat(val_idx_db_path, "tustore.property.value.idx");
+
+	char *val_id_path = (char*) calloc(256, sizeof(char));
+	strcat(val_id_path, d_path);
+	strcat(val_id_path, "tustore.property.value.tdb.id");
+
+	char *val_db_path = (char*) calloc(256, sizeof(char));
+	strcat(val_db_path, d_path);
+	strcat(val_db_path, "tustore.property.value.tdb");
+
+	// initialize
+	caches = (id_caches_t*) malloc(sizeof(id_caches_t));
+	initIdCaches(caches);
+
+	// initialized Id DB
+	initIndexIdDB(ta_idx_id_path);
+	initIdDB(te_id_path);
+	initIdDB(lbls_id_path);
+	initIdDB(lbl_idx_id_path);
+	initIdDB(lbl_blk_id_path);
+	//initIdDB(key_idx_id_path);
+	initIdDB(key_blk_id_path);
+	initIdDB(val_idx_id_path);
+	initIdDB(val_id_path);
+	// initialized DB
+	initTaIndexDB(ta_idx_db_path);
+	initDB(te_db_path);
+	initDB(lbls_db_path);
+	initDB(lbl_idx_db_path);
+	initDB(lbl_blk_db_path);
+
+	initDB(key_idx_bas_path);
+	initDB(key_idx_chk_path);
+	initDB(key_blk_db_path);
+
+	initDB(val_idx_db_path);
+	initDB(val_db_path);
+
+	FILE *ta_idx_id_fp = fopen(ta_idx_id_path, "rb+");
+	FILE *ta_idx_db_fp = fopen(ta_idx_db_path, "rb+");
+	FILE *te_id_fp = fopen(te_id_path, "rb+");
+	FILE *te_db_fp = fopen(te_db_path, "rb+");
+	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
+	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
+	FILE *lbl_blk_id_fp = fopen(lbl_blk_id_path, "rb+");
+	FILE *key_idx_bas_fp = fopen(key_idx_bas_path, "rb+");
+	FILE *key_blk_id_fp = fopen(key_blk_id_path, "rb+");
+
+	FILE *lbls_db_fp = fopen(lbls_db_path, "rb+");
+	FILE *lbl_idx_db_fp = fopen(lbl_idx_db_path, "rb+");
+	FILE *lbl_blk_db_fp = fopen(lbl_blk_db_path, "rb+");
+	FILE *key_idx_chk_fp = fopen(key_idx_chk_path, "rb+");
+	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
+	FILE *val_idx_id_fp = fopen(val_idx_id_path, "rb+");
+	FILE *val_idx_db_fp = fopen(val_idx_db_path, "rb+");
+	FILE *val_id_fp = fopen(val_id_path, "rb+");
+	FILE *val_db_fp = fopen(val_db_path, "rb+");
+
+	//initIds(ta_idx_id_fp);
+
+	loadAllIds(ta_idx_id_fp, caches->taIdxIds, TIMEAXIS_ID_QUEUE_LENGTH);
+	loadAllIds(te_id_fp, caches->teIds, ID_QUEUE_LENGTH);
+	loadAllIds(lbls_id_fp, caches->lblsIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(lbl_idx_id_fp, caches->lblIdxIds, LABEL_ID_QUEUE_LENGTH);
+	loadAllIds(lbl_blk_id_fp, caches->lblBlkIds, LABEL_ID_QUEUE_LENGTH);
+	//loadAllIds(key_idx_id_fp, caches->keyIdxIds, KEY_ID_QUEUE_LENGTH);// no need
+	loadAllIds(key_blk_id_fp, caches->keyBlkIds, KEY_ID_QUEUE_LENGTH);
+	loadAllIds(val_idx_id_fp, caches->valIdxIds, VALUE_ID_QUEUE_LENGTH);
+	loadAllIds(val_id_fp, caches->valIds, VALUE_ID_QUEUE_LENGTH);
+
+	listAllIds(caches->taIdxIds);
+	listAllIds(caches->teIds);
+	//listAllIds(caches->prpIds);
+	listAllIds(caches->lblsIds);
+	listAllIds(caches->lblIdxIds);
+	listAllIds(caches->lblBlkIds);
+	//listAllIds(caches->keyIdxIds);
+	listAllIds(caches->keyBlkIds);
+	listAllIds(caches->valIdxIds);
+	listAllIds(caches->valIds);
+
+	ta_idx = taIndexRootCreate(TA_BPLUS_TREE_ORDER);
+	initTaIndexMemPages(ta_idx, ta_idx_db_fp, ta_idx_id_fp);
+
+	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
+	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
+	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
+	//initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
+	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
+	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
+	initValueDBMemPages(val_pages, val_db_fp);
+
+//	long long ts = 1593783935;	//(unsigned long) time(NULL);
+//	// -- insert operation
+//	long long ta_id = insertEvolvedPoint(ts, ta_id_fp, ta_db_fp);
+//	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
+//	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
+//			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
+
 
 	listAllIds(caches->taIdxIds);
 	returnCachedIDtoDB(caches->taIdxIds, ta_idx_id_fp);
@@ -557,7 +571,7 @@ int main(int argv, char **argc) {
 	returnCachedIDtoDB(caches->lblIdxIds, lbl_idx_id_fp);
 	returnCachedIDtoDB(caches->lblBlkIds, lbl_blk_id_fp);
 	returnCachedIDtoDB(caches->lblsIds, lbls_id_fp);
-	returnCachedIDtoDB(caches->keyIdxIds, key_idx_id_fp);
+	//returnCachedIDtoDB(caches->keyIdxIds, key_idx_id_fp);
 	returnCachedIDtoDB(caches->keyBlkIds, key_blk_id_fp);
 	returnCachedIDtoDB(caches->valIdxIds, val_idx_id_fp);
 	returnCachedIDtoDB(caches->valIds, val_id_fp);
@@ -576,8 +590,8 @@ int main(int argv, char **argc) {
 	free(lbl_idx_db_path);
 	free(lbl_blk_id_path);
 	free(lbl_blk_db_path);
-	free(key_idx_id_path);
-	free(key_idx_db_path);
+	free(key_idx_bas_path);
+	free(key_idx_chk_path);
 	free(key_blk_id_path);
 	free(key_blk_db_path);
 	free(ta_idx_id_path);
@@ -595,8 +609,8 @@ int main(int argv, char **argc) {
 	fclose(lbl_idx_db_fp);
 	fclose(lbl_blk_id_fp);
 	fclose(lbl_blk_db_fp);
-	fclose(key_idx_id_fp);
-	fclose(key_idx_db_fp);
+	fclose(key_idx_bas_fp);
+	fclose(key_idx_chk_fp);
 	fclose(key_blk_id_fp);
 	fclose(key_blk_db_fp);
 	fclose(val_idx_id_fp);
@@ -618,8 +632,8 @@ int main(int argv, char **argc) {
 	lbl_idx_db_path = NULL;
 	lbl_blk_id_path = NULL;
 	lbl_blk_db_path = NULL;
-	key_idx_id_path = NULL;
-	key_idx_db_path = NULL;
+	key_idx_bas_path = NULL;
+	key_idx_chk_path = NULL;
 	key_blk_id_path = NULL;
 	key_blk_db_path = NULL;
 	val_idx_id_path = NULL;
@@ -637,8 +651,8 @@ int main(int argv, char **argc) {
 	lbl_idx_db_fp = NULL;
 	lbl_blk_id_fp = NULL;
 	lbl_blk_db_fp = NULL;
-	key_idx_id_fp = NULL;
-	key_idx_db_fp = NULL;
+	key_idx_bas_fp = NULL;
+	key_idx_chk_fp = NULL;
 	key_blk_id_fp = NULL;
 	key_blk_db_fp = NULL;
 	val_idx_id_fp = NULL;

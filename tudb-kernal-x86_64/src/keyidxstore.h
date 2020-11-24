@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "tuidstore.h"
 #include "structkeyidxdef.h"
@@ -35,14 +36,23 @@
 
 // key index pages by default.
 key_idx_page_t *key_idx_pages;
+
 // bytes in one key index record
-size_t key_idx_record_bytes;
-// records in one page with key index records, configurable in .conf file
-size_t KEY_INDEX_PAGE_RECORDS;
+size_t key_idx_bas_record_bytes;
+size_t key_idx_chk_record_bytes;
+
 // bytes in one page with key index records
-size_t key_idx_page_bytes;
+size_t key_idx_bas_page_bytes;
+size_t key_idx_chk_page_bytes;
+
+// records in one page with key index records, configurable in .conf file
+//size_t KEY_INDEX_PAGE_RECORDS;
+
 // key index page's expire time in memory
-int KEY_INDEX_PAGE_EXPIRE_TIME;
+// int KEY_INDEX_PAGE_EXPIRE_TIME;
+
+// page length of the base array and the check array
+size_t ARRAY_PAGE_SIZE;
 
 void initKeyIndexDBMemPages(key_idx_page_t *pages, FILE *key_idx_db_fp);
 
