@@ -103,6 +103,9 @@ dat_idx_nd_t* insert(long long startState, unsigned char offset, bool isLeaf,
 	long long l = (long long) offset;
 	startState = transfer(startState, l);
 	//dat_idx_nd_t *idx = (dat_idx_nd_t*) malloc(sizeof(dat_idx_nd_t));
+
+
+
 	return NULL;//idx;
 }
 
