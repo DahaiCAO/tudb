@@ -191,6 +191,7 @@ long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
 			//节点存在于 Trie 树上
 			if (p1->base[endState]->transferRatio != 0
 					&& p1->check[endState] == startState) {
+
 				if (p1->base[endState]->leaf == 1) {
 
 					result = p1->base[endState]->tuIdxId;
