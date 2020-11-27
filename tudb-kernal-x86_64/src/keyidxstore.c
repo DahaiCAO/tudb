@@ -194,6 +194,7 @@ long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
 				if (p1->base[endState]->leaf == 1) {
 					result = p1->base[endState]->tuIdxId;
 					printf("tuIdxId = %lld\n", result);
+
 					startState = endState;
 				}
 			} else {
