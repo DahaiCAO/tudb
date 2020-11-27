@@ -210,6 +210,7 @@ long long commitKeyIndex(key_idx_page_t *key_idx_pages, FILE *key_idx_bas_fp,
 	key_idx_page_t *p = key_idx_pages;
 	while (p != NULL) {
 		if (p->dirty == 1) {
+
 			// update memory page
 			memset(p->baseContent, 0,
 					key_idx_bas_page_bytes * sizeof(unsigned char));
