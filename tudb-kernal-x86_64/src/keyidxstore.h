@@ -22,6 +22,7 @@
 #include <math.h>
 
 #include "tuidstore.h"
+#include "utf8convert.h"
 #include "structkeyidxdef.h"
 #include "macrodef.h"
 /*
@@ -54,7 +55,16 @@ size_t key_idx_chk_page_bytes;
 // page length of the base array and the check array
 size_t ARRAY_PAGE_SIZE;
 
-void initKeyIndexDBMemPages(key_idx_page_t *pages, FILE *key_idx_db_fp);
+void initKeyIndexDBMemPages(key_idx_page_t *pages, FILE *key_idx_bas_fp,
+		FILE *key_idx_chk_fp);
+
+dat_idx_nd_t* insert(long long startState, unsigned char offset, bool isLeaf,
+		long long tuIdxId, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp);
+
+void build(unsigned char *word, long long tuIdxId, FILE *key_idx_bas_fp,
+		FILE *key_idx_chk_fp);
+
+long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp);
 
 void deallocKeyIndexPages(key_idx_page_t *pages);
 

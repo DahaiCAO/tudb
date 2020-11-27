@@ -73,7 +73,7 @@ void initIndexIdDB(char *path) {
 
 // initialize b+tree time axis index DB
 void initTaIndexDB(char *path) {
-	if ((access(path, F_OK)) == -1) {
+	if (access(path, F_OK) == -1) {
 		FILE *ta_idx_fp = fopen(path, "wb+");
 		unsigned char *zeroBytes = (unsigned char*) calloc(3 * LONG_LONG,
 				sizeof(unsigned char));
@@ -98,6 +98,36 @@ void initTaIndexDB(char *path) {
 		ta_idx_fp = NULL;
 		zeroBytes = NULL;
 		rootBytes = NULL;
+	}
+}
+
+void initKeyIndexDB(char *bas_path, char *chk_path) {
+	if (access(bas_path, F_OK) == -1 && access(chk_path, F_OK) == -1) {
+		FILE *key_idx_bas_fp = fopen(bas_path, "wb+");
+		FILE *key_idx_chk_fp = fopen(chk_path, "wb+");
+		unsigned char *basBytes = (unsigned char*) calloc(
+				key_idx_bas_page_bytes, sizeof(unsigned char));
+		unsigned char *chkBytes = (unsigned char*) calloc(
+				key_idx_chk_page_bytes, sizeof(unsigned char));
+		longlongtoByteArray(1, basBytes);// the first base transfer ratio is 1
+		longlongtoByteArray(-1, chkBytes);		// the first check is -1
+		for (int i = 1; i < ARRAY_PAGE_SIZE; i++) {
+			longlongtoByteArray(-2, chkBytes + i * LONG_LONG);
+		}
+		fseek(key_idx_bas_fp, 0L, SEEK_SET);
+		fwrite(basBytes, sizeof(unsigned char), key_idx_bas_page_bytes,
+				key_idx_bas_fp);
+		fseek(key_idx_chk_fp, 0L, SEEK_SET);
+		fwrite(chkBytes, sizeof(unsigned char), key_idx_chk_page_bytes,
+				key_idx_chk_fp);
+		free(basBytes);
+		free(chkBytes);
+		fclose(key_idx_bas_fp);
+		fclose(key_idx_chk_fp);
+		key_idx_bas_fp = NULL;
+		key_idx_chk_fp = NULL;
+		basBytes = NULL;
+		chkBytes = NULL;
 	}
 }
 
@@ -188,7 +218,7 @@ void initDB(char *path) {
 
 //void bplustreeIndexTest() {
 //	print_ta_index(ta_idx);
-	// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70,...
+// 10, 15, 9, 4, 19, 20, 12, 11, 13, 14, 32, 60, 70,...
 //	taIndexInsertNode(ta_idx, 10, 1, ta_idx_id_fp, ta_idx_db_fp);	//1
 //	print_ta_index(ta_idx);
 //	taIndexInsertNode(ta_idx, 15, 2, ta_idx_id_fp, ta_idx_db_fp);	//2
@@ -382,7 +412,7 @@ void initConf() {
 	// bytes of one key (property name) block page
 	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
 
-	ARRAY_PAGE_SIZE = 65535;
+	ARRAY_PAGE_SIZE = 655350;
 	// bytes in one key (property name) index record
 	key_idx_bas_record_bytes = (2 * LONG_LONG + 2);
 	key_idx_chk_record_bytes = LONG_LONG;
@@ -491,6 +521,7 @@ int main(int argv, char **argc) {
 	initIdDB(val_id_path);
 	// initialized DB
 	initTaIndexDB(ta_idx_db_path);
+	initKeyIndexDB(key_idx_bas_path, key_idx_chk_path);
 	initDB(te_db_path);
 	initDB(lbls_db_path);
 	initDB(lbl_idx_db_path);
@@ -510,12 +541,12 @@ int main(int argv, char **argc) {
 	FILE *lbls_id_fp = fopen(lbls_id_path, "rb+");
 	FILE *lbl_idx_id_fp = fopen(lbl_idx_id_path, "rb+");
 	FILE *lbl_blk_id_fp = fopen(lbl_blk_id_path, "rb+");
-	FILE *key_idx_bas_fp = fopen(key_idx_bas_path, "rb+");
 	FILE *key_blk_id_fp = fopen(key_blk_id_path, "rb+");
 
 	FILE *lbls_db_fp = fopen(lbls_db_path, "rb+");
 	FILE *lbl_idx_db_fp = fopen(lbl_idx_db_path, "rb+");
 	FILE *lbl_blk_db_fp = fopen(lbl_blk_db_path, "rb+");
+	FILE *key_idx_bas_fp = fopen(key_idx_bas_path, "rb+");
 	FILE *key_idx_chk_fp = fopen(key_idx_chk_path, "rb+");
 	FILE *key_blk_db_fp = fopen(key_blk_db_path, "rb+");
 	FILE *val_idx_id_fp = fopen(val_idx_id_path, "rb+");
@@ -552,7 +583,7 @@ int main(int argv, char **argc) {
 	initLabelsDBMemPages(lbls_pages, lbls_db_fp);
 	initLabelIndexDBMemPages(lbl_idx_pages, lbl_idx_db_fp);
 	initLabelBlockDBMemPages(lbl_blk_pages, lbl_blk_db_fp);
-	//initKeyIndexDBMemPages(key_idx_pages, key_idx_db_fp);
+	initKeyIndexDBMemPages(key_idx_pages, key_idx_bas_fp, key_idx_chk_fp);
 	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
 	initKeyBlockDBMemPages(key_blk_pages, key_blk_db_fp);
 	initValueDBMemPages(val_pages, val_db_fp);
@@ -563,6 +594,15 @@ int main(int argv, char **argc) {
 //	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
 //	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
 //			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
+	unsigned char *word = (unsigned char*) calloc(256, sizeof(unsigned char));
+	strcat(word, "restaurant");
+	build(word, 0, key_idx_bas_fp, key_idx_chk_fp);
+	unsigned char *word1 = (unsigned char*) calloc(256, sizeof(unsigned char));
+	strcat(word1, "hotel");
+	build(word1, 1, key_idx_bas_fp, key_idx_chk_fp);
+	unsigned char *word2 = (unsigned char*) calloc(256, sizeof(unsigned char));
+	strcat(word2, "shop");
+	build(word2, 2, key_idx_bas_fp, key_idx_chk_fp);
 
 
 	listAllIds(caches->taIdxIds);
