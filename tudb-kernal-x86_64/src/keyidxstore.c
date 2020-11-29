@@ -198,18 +198,19 @@ long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
 	size_t len = strlen((const char*) keyWord);
 	unsigned char *tmpbuf = (unsigned char*) calloc(len, sizeof(unsigned char));
 	convert2Utf8((char*) keyWord, (char*) tmpbuf, len);
+	cur_stat_page_t *c_pg = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t*));
+	c_pg->curstat = 0;
+	c_pg->curpge = key_idx_pages;
 	for (int i = 0; i < len; i++) {
 		startState = 0;
 		for (int j = i; j < len; j++) {
-			endState = transfer(startState, tmpbuf[j], key_idx_bas_fp,
-					key_idx_chk_fp);
-			key_idx_page_t *p1 = search(startState, key_idx_bas_fp,
+			cur_stat_page_t *e_pg = transfer(c_pg, tmpbuf[j], key_idx_bas_fp,
 					key_idx_chk_fp);
 			//节点存在于 Trie 树上
-			if (p1->base[endState]->transferRatio != 0
-					&& p1->check[endState] == startState) {
-				if (p1->base[endState]->leaf == 1) {
-					result = p1->base[endState]->tuIdxId;
+			if (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0
+					&& e_pg->curpge->check[e_pg->curstat] == startState) {
+				if (e_pg->curpge->base[e_pg->curstat]->leaf == 1) {
+					result = e_pg->curpge->base[e_pg->curstat]->tuIdxId;
 					printf("tuIdxId = %lld\n", result);
 					startState = endState;
 				}
