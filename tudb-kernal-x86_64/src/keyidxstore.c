@@ -193,8 +193,7 @@ void build(unsigned char *word, long long tuIdxId, FILE *key_idx_bas_fp,
 }
 
 long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
-	long long startState, endState;
-	long long result;
+	long long currState, result;
 	size_t len = strlen((const char*) keyWord);
 	unsigned char *tmpbuf = (unsigned char*) calloc(len, sizeof(unsigned char));
 	convert2Utf8((char*) keyWord, (char*) tmpbuf, len);
@@ -202,24 +201,26 @@ long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
 	c_pg->curstat = 0;
 	c_pg->curpge = key_idx_pages;
 	for (int i = 0; i < len; i++) {
-		startState = 0;
+		currState = 0;
 		for (int j = i; j < len; j++) {
 			cur_stat_page_t *e_pg = transfer(c_pg, tmpbuf[j], key_idx_bas_fp,
 					key_idx_chk_fp);
 			//节点存在于 Trie 树上
 			if (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0
-					&& e_pg->curpge->check[e_pg->curstat] == startState) {
+					&& e_pg->curpge->check[e_pg->curstat] == currState) {
 				if (e_pg->curpge->base[e_pg->curstat]->leaf == 1) {
 					result = e_pg->curpge->base[e_pg->curstat]->tuIdxId;
-					printf("tuIdxId = %lld\n", result);
-					startState = endState;
+					//printf("tuIdxId = %lld\n", result);
+					return result;
 				}
+				currState = e_pg->curpge->start * ARRAY_PAGE_SIZE
+						+ e_pg->curstat;
 			} else {
 				break;
 			}
 		}
 	}
-	return result;
+	return -2;
 }
 
 // store all dirty pages.
