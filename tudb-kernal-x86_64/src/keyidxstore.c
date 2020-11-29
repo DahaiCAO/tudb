@@ -21,6 +21,12 @@
  * Created on: 2020年9月29日
  * Author: Dahai CAO
  */
+/*
+ * pages is the buffer of all pages.
+ * start is page number, start = 0, ... , n-1.
+ * key_idx_bas_fp is the database file of the key index base array
+ * key_idx_chk_fp is the database file of the key index check array
+ */
 static key_idx_page_t* readOneKeyIndexPage(key_idx_page_t *pages,
 		long long start, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
 	unsigned char *bas = (unsigned char*) calloc(key_idx_bas_page_bytes,
@@ -61,13 +67,12 @@ static key_idx_page_t* readOneKeyIndexPage(key_idx_page_t *pages,
 		p->base[i]->transferRatio = bytesLonglong(
 				p->baseContent + i * key_idx_bas_record_bytes); // parse transfer ratio
 		p->base[i]->symbol = bytesLonglong(
-				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG); // parse content
+				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1); // parse content
 		p->base[i]->leaf = bytesLonglong(
-				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1); // parse leaf
+				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 2); // parse leaf
 		p->base[i]->tuIdxId = bytesLonglong(
-				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 2); // parse Tu index Id
-	}
-	for (int i = 0; i < ARRAY_PAGE_SIZE; i++) { // parse check array
+				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 3); // parse Tu index Id
+		// parse check array
 		p->check[i] = bytesLonglong(
 				p->checkContent + i * key_idx_chk_record_bytes); // parse check
 	}
@@ -96,8 +101,9 @@ static key_idx_page_t* search(long long start, FILE *key_idx_bas_fp,
 	key_idx_page_t *p = key_idx_pages;
 	int found = 0;
 	while (p != NULL) {
-		if (p->start == start) {
+		if (p->start == start) { // start is page number, start = 0, ..., n-1.
 			found = 1;
+			break;
 		} else
 			p = p->nxtPage;
 	}
@@ -108,52 +114,59 @@ static key_idx_page_t* search(long long start, FILE *key_idx_bas_fp,
 	return p;
 }
 
-static long long transfer(long long startState, unsigned char offset,
+// offset is UTF-8 code of char actually.
+static cur_stat_page_t* transfer(cur_stat_page_t *s_pg, unsigned char offset,
 		FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
-	long long l = (long long) offset;
-	long a = startState / ARRAY_PAGE_SIZE;
-	long b = startState % ARRAY_PAGE_SIZE;
-	key_idx_page_t *p = search(a, key_idx_bas_fp, key_idx_chk_fp);
-	long long endState = abs(p->base[b]->transferRatio) + l; //状态转移
+	long long endState = abs(s_pg->curpge->base[s_pg->curstat]->transferRatio)
+			+ (long long) offset; //状态转移
 	//return abs(base[startState]->transferRatio)+offset;
+	long long a = endState / ARRAY_PAGE_SIZE; // a is page number, a = 0,..., n-1
+	long long b = endState % ARRAY_PAGE_SIZE;
+	key_idx_page_t *p = search(a, key_idx_bas_fp, key_idx_chk_fp);
+	cur_stat_page_t *npos = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t*));
+	npos->curpge = p;
+	npos->curstat = b;
 	p = NULL;
-	return endState;
+	return npos;
 }
 
-dat_idx_nd_t* insert(long long startState, unsigned char offset, bool isLeaf,
+/*
+ * s_pg is the page where start state is.
+ */
+static int insert(cur_stat_page_t *s_pg, unsigned char offset, bool isLeaf,
 		long long tuIdxId, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
-	long long l = (long long) offset;
-	long long endState = transfer(startState, l, key_idx_bas_fp,
+	// e_pg is end state
+	cur_stat_page_t *e_pg = transfer(s_pg, offset, key_idx_bas_fp,
 			key_idx_chk_fp);
-	key_idx_page_t *p1 = search(endState, key_idx_bas_fp, key_idx_chk_fp);
-	key_idx_page_t *p2 = search(startState, key_idx_bas_fp, key_idx_chk_fp);
-	long long l1 = endState % ARRAY_PAGE_SIZE;
-	long long l2 = startState % ARRAY_PAGE_SIZE;
-	if (p1->base[l1]->transferRatio != 0 && p1->check[l1] != startState) { //已被占用
+	long long endState = 0;
+	if (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0
+			&& e_pg->curpge->check[e_pg->curstat] != s_pg->curstat) { //已被占用
 		do {
-			l1 += 1;
-		} while (p1->base[l1]->transferRatio != 0);
-		p2 = search(startState, key_idx_bas_fp, key_idx_chk_fp);
-		p2->base[l2]->transferRatio = endState - offset; //改变父节点转移基数
+			endState = (e_pg->curpge->start * ARRAY_PAGE_SIZE + e_pg->curstat)
+					+ 1;
+		} while (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0);
+		s_pg->curpge->base[s_pg->curstat]->transferRatio = endState - offset; //改变父节点转移基数
+		//base[startState].setTransferRatio(endState - offset); //改变父节点转移基数
 	}
 
 	if (isLeaf) {
-		p1->base[l1]->transferRatio = (-1)
-				* abs(p2->base[startState]->transferRatio); //叶子节点转移基数标识为父节点转移基数的相反数
-		p1->base[l1]->leaf = 1;
-		p1->base[l1]->symbol = offset; // offset is symbol
-		p1->base[l1]->tuIdxId = tuIdxId; //为叶子节点时需要记录下该词在字典中的索引号
+		e_pg->curpge->base[e_pg->curstat]->transferRatio = (-1)
+				* abs(s_pg->curpge->base[s_pg->curstat]->transferRatio); //叶子节点转移基数标识为父节点转移基数的相反数
+		e_pg->curpge->base[e_pg->curstat]->leaf = 1;
+		e_pg->curpge->base[e_pg->curstat]->symbol = offset; // offset is symbol
+		e_pg->curpge->base[e_pg->curstat]->tuIdxId = tuIdxId; //为叶子节点时需要记录下该词在字典中的索引号
 	} else {
-		if (p1->base[l1]->transferRatio == 0) { //未有节点经过
-			p1->base[l1]->transferRatio = abs(
-					p2->base[startState]->transferRatio); //非叶子节点的转移基数一定为正
+		if (e_pg->curpge->base[e_pg->curstat]->transferRatio == 0) { //未有节点经过
+			e_pg->curpge->base[e_pg->curstat]->transferRatio = abs(
+					s_pg->curpge->base[s_pg->curstat]->transferRatio); //非叶子节点的转移基数一定为正
 		}
 	}
-	p1->check[l1] = startState; //check中记录当前状态的父状态
-	dat_idx_nd_t *c = p1->base[l1];
-	p1 = NULL;
-	p2 = NULL;
-	return c;
+	long long startState = s_pg->curpge->start * ARRAY_PAGE_SIZE
+			+ s_pg->curstat;
+	e_pg->curpge->check[e_pg->curstat] = startState; //check中记录当前状态的父状态
+	e_pg->curpge = NULL;
+	free(e_pg);
+	return 0;
 }
 
 void build(unsigned char *word, long long tuIdxId, FILE *key_idx_bas_fp,
@@ -161,17 +174,21 @@ void build(unsigned char *word, long long tuIdxId, FILE *key_idx_bas_fp,
 	// firstly query
 	// if not existing, then insert the word;
 	size_t len = strlen((const char*) word);
-	long long startState = 0;
+	cur_stat_page_t *c_pg = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t*));
+	c_pg->curstat = 0;
+	c_pg->curpge = key_idx_pages;
 	unsigned char *tmpbuf = (unsigned char*) calloc(len, sizeof(unsigned char));
 	convert2Utf8((char*) word, (char*) tmpbuf, len);
-	insert(startState, tmpbuf[0], (len == 1), tuIdxId, key_idx_bas_fp,
+	insert(c_pg, tmpbuf[0], (len == 1), tuIdxId, key_idx_bas_fp,
 			key_idx_chk_fp);
 	for (int i = 1; i < len; i++) {
-		startState = transfer(startState, tmpbuf[i - 1], key_idx_bas_fp,
-				key_idx_chk_fp);
-		insert(startState, tmpbuf[i], (len == i + 1), tuIdxId, key_idx_bas_fp,
+		c_pg = transfer(c_pg, tmpbuf[i - 1], key_idx_bas_fp, key_idx_chk_fp);
+		insert(c_pg, tmpbuf[i], (len == i + 1), tuIdxId, key_idx_bas_fp,
 				key_idx_chk_fp);
 	}
+	c_pg->curpge = NULL;
+	free(c_pg);
+	free(tmpbuf);
 
 }
 
@@ -191,12 +208,9 @@ long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
 			//节点存在于 Trie 树上
 			if (p1->base[endState]->transferRatio != 0
 					&& p1->check[endState] == startState) {
-
 				if (p1->base[endState]->leaf == 1) {
-
 					result = p1->base[endState]->tuIdxId;
 					printf("tuIdxId = %lld\n", result);
-
 					startState = endState;
 				}
 			} else {
@@ -228,12 +242,13 @@ long long commitKeyIndex(key_idx_page_t *key_idx_pages, FILE *key_idx_bas_fp,
 			for (int i = 0; i < ARRAY_PAGE_SIZE; i++) {
 				longlongtoByteArray(p->base[i]->transferRatio,
 						p->baseContent + i * key_idx_bas_record_bytes);
-				p->baseContent + i * key_idx_bas_record_bytes + 1 =
+				*(p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1) =
 						p->base[i]->symbol;
-				p->baseContent + i * key_idx_bas_record_bytes + 2 =
+				*(p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 2) =
 						p->base[i]->leaf;
 				longlongtoByteArray(p->base[i]->tuIdxId,
-						p->baseContent + 3 + i * key_idx_bas_record_bytes);
+						p->baseContent + i * key_idx_bas_record_bytes
+								+ LONG_LONG + 3);
 				longlongtoByteArray(p->check[i],
 						p->checkContent + i * key_idx_chk_record_bytes);
 			}

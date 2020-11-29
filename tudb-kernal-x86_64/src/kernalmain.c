@@ -412,7 +412,7 @@ void initConf() {
 	// bytes of one key (property name) block page
 	key_blk_page_bytes = key_blk_record_bytes * KEY_BLOCK_PAGE_RECORDS;
 
-	ARRAY_PAGE_SIZE = 655350;
+	ARRAY_PAGE_SIZE = 65;
 	// bytes in one key (property name) index record
 	key_idx_bas_record_bytes = (2 * LONG_LONG + 2);
 	key_idx_chk_record_bytes = LONG_LONG;
@@ -475,11 +475,11 @@ int main(int argv, char **argc) {
 	// Double-Array Trie tree index db for property name (key)
 	char *key_idx_bas_path = (char*) calloc(256, sizeof(char));
 	strcat(key_idx_bas_path, d_path);
-	strcat(key_idx_bas_path, "tustore.property.key.bas");
+	strcat(key_idx_bas_path, "tustore.property.key.bs");
 
 	char *key_idx_chk_path = (char*) calloc(256, sizeof(char));
 	strcat(key_idx_chk_path, d_path);
-	strcat(key_idx_chk_path, "tustore.property.key.chk");
+	strcat(key_idx_chk_path, "tustore.property.key.ck");
 
 	char *key_blk_id_path = (char*) calloc(256, sizeof(char));
 	strcat(key_blk_id_path, d_path);
@@ -566,16 +566,16 @@ int main(int argv, char **argc) {
 	loadAllIds(val_idx_id_fp, caches->valIdxIds, VALUE_ID_QUEUE_LENGTH);
 	loadAllIds(val_id_fp, caches->valIds, VALUE_ID_QUEUE_LENGTH);
 
-	listAllIds(caches->taIdxIds);
-	listAllIds(caches->teIds);
-	//listAllIds(caches->prpIds);
-	listAllIds(caches->lblsIds);
-	listAllIds(caches->lblIdxIds);
-	listAllIds(caches->lblBlkIds);
-	//listAllIds(caches->keyIdxIds);
-	listAllIds(caches->keyBlkIds);
-	listAllIds(caches->valIdxIds);
-	listAllIds(caches->valIds);
+//	listAllIds(caches->taIdxIds);
+//	listAllIds(caches->teIds);
+//	//listAllIds(caches->prpIds);
+//	listAllIds(caches->lblsIds);
+//	listAllIds(caches->lblIdxIds);
+//	listAllIds(caches->lblBlkIds);
+//	//listAllIds(caches->keyIdxIds);
+//	listAllIds(caches->keyBlkIds);
+//	listAllIds(caches->valIdxIds);
+//	listAllIds(caches->valIds);
 
 	ta_idx = taIndexRootCreate(TA_BPLUS_TREE_ORDER);
 	initTaIndexMemPages(ta_idx, ta_idx_db_fp, ta_idx_id_fp);

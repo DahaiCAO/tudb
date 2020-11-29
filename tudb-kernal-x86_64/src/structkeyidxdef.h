@@ -46,4 +46,10 @@ typedef struct key_idex_page {
 	struct key_idex_page *nxtPage;
 } key_idx_page_t;
 
+// current state page
+typedef struct currrent_state_page {
+	long long curstat; // current state
+	key_idx_page_t *curpge; // the page where current state is
+} cur_stat_page_t;
+
 #endif /* STRUCTKEYIDXDEF_H_ */
