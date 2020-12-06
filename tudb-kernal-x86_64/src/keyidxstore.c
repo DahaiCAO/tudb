@@ -21,6 +21,51 @@
  * Created on: 2020年9月29日
  * Author: Dahai CAO
  */
+
+//void printTrie() {
+//		printf("%s", "idx");
+//		for (int i = 0; i < ARRAY_SIZE; i++) {
+//			if (base[i].getTransferRatio() != BASE_NULL) {
+//				System.out.printf("%7d\t", i);
+//			}
+//		}
+//		System.out.println();
+//		System.out.printf("%5s", "char");
+//		for (int i = 0; i < ARRAY_SIZE; i++) {
+//			if (base[i].getTransferRatio() != BASE_NULL) {
+//				System.out.printf("%7c\t", base[i].getLabel());
+//			}
+//		}
+//		System.out.println();
+//		System.out.printf("%5s", "base");
+//		for (int i = 0; i < ARRAY_SIZE; i++) {
+//			if (base[i].getTransferRatio() != BASE_NULL) {
+//				System.out.printf("%7d\t", base[i].getTransferRatio());
+//			}
+//		}
+//		System.out.println();
+//		System.out.printf("%5s", "check");
+//		for (int i = 0; i < ARRAY_SIZE; i++) {
+//			if (base[i].getTransferRatio() != BASE_NULL) {
+//				System.out.printf("%7d\t", check[i]);
+//			}
+//		}
+//		System.out.println();
+//		System.out.printf("%5s", "leaf");
+//		for (int i = 0; i < ARRAY_SIZE; i++) {
+//			if (base[i].getTransferRatio() != BASE_NULL) {
+//				System.out.printf("%7s\t", base[i].isLeaf() ? "是" : "否");
+//			}
+//		}
+//		System.out.println();
+//		System.out.printf("%5s", "idx");
+//		for (int i = 0; i < ARRAY_SIZE; i++) {
+//			if (base[i].getTransferRatio() != BASE_NULL) {
+//				System.out.printf("%7d\t", base[i].getValue());
+//			}
+//		}
+//		System.out.println();
+//	}
 /*
  * pages is the buffer of all pages.
  * start is page number, start = 0, ... , n-1.
@@ -34,17 +79,17 @@ static key_idx_page_t* readOneKeyIndexPage(key_idx_page_t *pages,
 	unsigned char *chk = (unsigned char*) calloc(key_idx_chk_page_bytes,
 			sizeof(unsigned char));
 
-	fseek(key_idx_bas_fp, start, SEEK_SET);
+	fseek(key_idx_bas_fp, start * key_idx_bas_page_bytes, SEEK_SET);
 	int c;
 	if ((c = fgetc(key_idx_bas_fp)) != EOF) {
-		fseek(key_idx_bas_fp, start, SEEK_SET);
+		fseek(key_idx_bas_fp, start * key_idx_bas_page_bytes, SEEK_SET);
 		fread(bas, sizeof(unsigned char), key_idx_bas_page_bytes,
 				key_idx_bas_fp); // read one page
 	}
 
-	fseek(key_idx_chk_fp, start, SEEK_SET);
+	fseek(key_idx_chk_fp, start * key_idx_chk_page_bytes, SEEK_SET);
 	if ((c = fgetc(key_idx_chk_fp)) != EOF) {
-		fseek(key_idx_chk_fp, start, SEEK_SET);
+		fseek(key_idx_chk_fp, start * key_idx_chk_page_bytes, SEEK_SET);
 		fread(chk, sizeof(unsigned char), key_idx_chk_page_bytes,
 				key_idx_chk_fp); // read one page
 	}
@@ -52,7 +97,7 @@ static key_idx_page_t* readOneKeyIndexPage(key_idx_page_t *pages,
 	key_idx_page_t *p = (key_idx_page_t*) malloc(sizeof(key_idx_page_t));
 	p->base = (dat_idx_nd_t**) calloc(ARRAY_PAGE_SIZE, sizeof(dat_idx_nd_t*)); // base array
 	p->check = (long long*) calloc(ARRAY_PAGE_SIZE, sizeof(long long)); // check array
-	p->dirty = 0;
+	p->dirty = 1;
 	p->start = start;
 	p->expiretime = 10; // 10 minutes, by default, will be completed later.
 	p->hit = 0;
@@ -67,11 +112,11 @@ static key_idx_page_t* readOneKeyIndexPage(key_idx_page_t *pages,
 		p->base[i]->transferRatio = bytesLonglong(
 				p->baseContent + i * key_idx_bas_record_bytes); // parse transfer ratio
 		p->base[i]->symbol = bytesLonglong(
-				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1); // parse content
+				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG); // parse content
 		p->base[i]->leaf = bytesLonglong(
-				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 2); // parse leaf
+				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1); // parse leaf
 		p->base[i]->tuIdxId = bytesLonglong(
-				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 3); // parse Tu index Id
+				p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 2); // parse Tu index Id
 		// parse check array
 		p->check[i] = bytesLonglong(
 				p->checkContent + i * key_idx_chk_record_bytes); // parse check
@@ -114,147 +159,215 @@ static key_idx_page_t* search(long long start, FILE *key_idx_bas_fp,
 	return p;
 }
 
-// offset is UTF-8 code of char actually.
-static cur_stat_page_t* transfer(cur_stat_page_t *s_pg, unsigned char offset,
+// char_code is UTF-8 code of char actually.
+static void transfer(cur_stat_page_t *start, unsigned char char_code,
 		FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
-	long long endState = abs(s_pg->curpge->base[s_pg->curstat]->transferRatio)
-			+ (long long) offset; //状态转移
+	// s(startState) 是当前状态下标 c(offset) 是输入字符的数值（或编码）。
+	// base[s] + c = t
+	long long endState = abs(start->page->base[start->offset]->transferRatio)
+			+ (long long) char_code; //状态转移
 	//return abs(base[startState]->transferRatio)+offset;
 	long long a = endState / ARRAY_PAGE_SIZE; // a is page number, a = 0,..., n-1
 	long long b = endState % ARRAY_PAGE_SIZE;
 	key_idx_page_t *p = search(a, key_idx_bas_fp, key_idx_chk_fp);
-	cur_stat_page_t *npos = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t*));
-	npos->curpge = p;
-	npos->curstat = b;
+	p->dirty = 1;
+	p->hit++;
+	p->expiretime = -1;
+	end->page = p;
+	end->offset = b;
+	end->state = endState;
 	p = NULL;
-	return npos;
 }
 
 /*
  * s_pg is the page where start state is.
  */
-static int insert(cur_stat_page_t *s_pg, unsigned char offset, bool isLeaf,
-		long long tuIdxId, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
+static int insert(unsigned char char_code, bool isLeaf, long long tuIdxId,
+		FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
+	// s 是当前状态下标 c 是输入字符的数值（或编码）。
+	// base[s] + c = t
 	// e_pg is end state
-	cur_stat_page_t *e_pg = transfer(s_pg, offset, key_idx_bas_fp,
-			key_idx_chk_fp);
+	transfer(start, char_code, key_idx_bas_fp, key_idx_chk_fp);
+
+	// 处理冲突
+	// base[t] != 0 and check[t] != s
 	long long endState = 0;
-	if (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0
-			&& e_pg->curpge->check[e_pg->curstat] != s_pg->curstat) { //已被占用
+	// if (base[endState].getTransferRatio() != BASE_NULL && check[endState] != startState) { //已被占用
+	if (end->page->base[end->offset]->transferRatio != 0
+			&& end->page->check[end->offset] != start->state) { //已被占用
 		do {
-			endState = (e_pg->curpge->start * ARRAY_PAGE_SIZE + e_pg->curstat)
-					+ 1;
-		} while (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0);
-		s_pg->curpge->base[s_pg->curstat]->transferRatio = endState - offset; //改变父节点转移基数
+			// t += 1
+			endState = end->state + 1;
+			long long a = endState / ARRAY_PAGE_SIZE; // a is page number, a = 0,..., n-1
+			long long b = endState % ARRAY_PAGE_SIZE;
+			key_idx_page_t *p = search(a, key_idx_bas_fp, key_idx_chk_fp);
+			end->page = p;
+			end->offset = b;
+			end->state = endState;
+		} while (end->page->base[end->offset]->transferRatio != 0);
+		//} while (base[endState].getTransferRatio() != BASE_NULL);
+		// base[s] = t - c
+		start->page->base[start->offset]->transferRatio = endState - char_code; //改变父节点转移基数
 		//base[startState].setTransferRatio(endState - offset); //改变父节点转移基数
 	}
 
-	if (isLeaf) {
-		e_pg->curpge->base[e_pg->curstat]->transferRatio = (-1)
-				* abs(s_pg->curpge->base[s_pg->curstat]->transferRatio); //叶子节点转移基数标识为父节点转移基数的相反数
-		e_pg->curpge->base[e_pg->curstat]->leaf = 1;
-		e_pg->curpge->base[e_pg->curstat]->symbol = offset; // offset is symbol
-		e_pg->curpge->base[e_pg->curstat]->tuIdxId = tuIdxId; //为叶子节点时需要记录下该词在字典中的索引号
+	// base[t] = base[base[s] + c] = base[s](上一次的转移基数) or -1*base[s](上一次的转移基数的相反数);
+	if (isLeaf) { // 找到最末位节点。
+		end->page->base[end->offset]->transferRatio = (-1)
+				* abs(start->page->base[start->offset]->transferRatio); //叶子节点转移基数标识为父节点转移基数的相反数
+		end->page->base[end->offset]->leaf = 1;
+		end->page->base[end->offset]->symbol = char_code; // char_code is utf-8 code of symbol
+		end->page->base[end->offset]->tuIdxId = tuIdxId; //为叶子节点时需要记录下该词在字典中的索引号
 	} else {
-		if (e_pg->curpge->base[e_pg->curstat]->transferRatio == 0) { //未有节点经过
-			e_pg->curpge->base[e_pg->curstat]->transferRatio = abs(
-					s_pg->curpge->base[s_pg->curstat]->transferRatio); //非叶子节点的转移基数一定为正
+		if (end->page->base[end->offset]->transferRatio == 0) { //未有节点占用过
+			end->page->base[end->offset]->transferRatio = abs(
+					start->page->base[start->offset]->transferRatio); //非叶子节点的转移基数一定为正
 		}
 	}
-	long long startState = s_pg->curpge->start * ARRAY_PAGE_SIZE
-			+ s_pg->curstat;
-	e_pg->curpge->check[e_pg->curstat] = startState; //check中记录当前状态的父状态
-	e_pg->curpge = NULL;
-	free(e_pg);
+	// check[t] =  s
+	end->page->check[end->offset] = start->state; //check中记录当前状态的父状态
 	return 0;
 }
 
-void build(unsigned char *word, long long tuIdxId, FILE *key_idx_bas_fp,
+void build(char *word, long long tuIdxId, FILE *key_idx_bas_fp,
 		FILE *key_idx_chk_fp) {
 	// firstly query
+	long long idxId = match(word, key_idx_bas_fp, key_idx_chk_fp);
+	if (idxId > 0) { // that means it existed in DB
+		// ...
+		return;
+	}
 	// if not existing, then insert the word;
 	size_t len = strlen((const char*) word);
-	cur_stat_page_t *c_pg = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t*));
-	c_pg->curstat = 0;
-	c_pg->curpge = key_idx_pages;
+	if (!start)
+		start = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t));
+	if (!end)
+		end = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t));
+	start->offset = 0;
+	start->state = 0;
+	start->page = key_idx_pages; // the first page
 	unsigned char *tmpbuf = (unsigned char*) calloc(len, sizeof(unsigned char));
 	convert2Utf8((char*) word, (char*) tmpbuf, len);
-	insert(c_pg, tmpbuf[0], (len == 1), tuIdxId, key_idx_bas_fp,
-			key_idx_chk_fp);
+	insert(tmpbuf[0], (len == 1), tuIdxId, key_idx_bas_fp, key_idx_chk_fp);
 	for (int i = 1; i < len; i++) {
-		c_pg = transfer(c_pg, tmpbuf[i - 1], key_idx_bas_fp, key_idx_chk_fp);
-		insert(c_pg, tmpbuf[i], (len == i + 1), tuIdxId, key_idx_bas_fp,
+		transfer(start, tmpbuf[i - 1], key_idx_bas_fp, key_idx_chk_fp);
+		start->page = end->page;
+		start->offset = end->offset;
+		start->state = end->state;
+		insert(tmpbuf[i], (len == i + 1), tuIdxId, key_idx_bas_fp,
 				key_idx_chk_fp);
 	}
-	c_pg->curpge = NULL;
-	free(c_pg);
+	start->page = NULL;
+	start->offset = 0;
+	start->state = 0;
+	end->page = NULL;
+	end->offset = 0;
+	end->state = 0;
 	free(tmpbuf);
-
+	tmpbuf = NULL;
+	free(start);
+	start = NULL;
+	free(end);
+	end = NULL;
 }
 
+/*
+ * this function only matches single key word for query.
+ * not for matching multiple key words.
+ */
 long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp) {
-	long long currState, result;
+	long long result = -2LL;
 	size_t len = strlen((const char*) keyWord);
-	unsigned char *tmpbuf = (unsigned char*) calloc(len, sizeof(unsigned char));
-	convert2Utf8((char*) keyWord, (char*) tmpbuf, len);
-	cur_stat_page_t *c_pg = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t*));
-	c_pg->curstat = 0;
-	c_pg->curpge = key_idx_pages;
-	for (int i = 0; i < len; i++) {
-		currState = 0;
-		for (int j = i; j < len; j++) {
-			cur_stat_page_t *e_pg = transfer(c_pg, tmpbuf[j], key_idx_bas_fp,
-					key_idx_chk_fp);
-			//节点存在于 Trie 树上
-			if (e_pg->curpge->base[e_pg->curstat]->transferRatio != 0
-					&& e_pg->curpge->check[e_pg->curstat] == currState) {
-				if (e_pg->curpge->base[e_pg->curstat]->leaf == 1) {
-					result = e_pg->curpge->base[e_pg->curstat]->tuIdxId;
-					//printf("tuIdxId = %lld\n", result);
-					return result;
-				}
-				currState = e_pg->curpge->start * ARRAY_PAGE_SIZE
-						+ e_pg->curstat;
-			} else {
+	unsigned char *tmp = (unsigned char*) calloc(len, sizeof(unsigned char));
+	convert2Utf8((char*) keyWord, (char*) tmp, len);
+	if (!start)
+		start = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t));
+	if (!end)
+		end = (cur_stat_page_t*) malloc(sizeof(cur_stat_page_t));
+	start->offset = 0;
+	start->state = 0;
+	start->page = key_idx_pages; // the first page
+	//for (int i = 0; i < len; i++) {
+	for (int j = 0; j < len; j++) {
+		//for (int j = i; j < len; j++) {
+		transfer(start, tmp[j], key_idx_bas_fp, key_idx_chk_fp);
+		//节点存在于 Trie 树上
+		if (end->page->base[end->offset]->transferRatio != 0
+				&& end->page->check[end->offset] == start->state) {
+			if (end->page->base[end->offset]->leaf == 1) {
+				result = end->page->base[end->offset]->tuIdxId;
 				break;
 			}
+			start->page = end->page;
+			start->offset = end->offset;
+			start->state = end->state;
+		} else {
+			break;
 		}
 	}
-	return -2;
+	//}
+	free(tmp);
+	tmp = NULL;
+	start->page = NULL;
+	start->offset = 0;
+	start->state = 0;
+	end->page = NULL;
+	end->offset = 0;
+	end->state = 0;
+	free(start);
+	free(end);
+	start = NULL;
+	end = NULL;
+	return result;
 }
 
 // store all dirty pages.
-long long commitKeyIndex(key_idx_page_t *key_idx_pages, FILE *key_idx_bas_fp,
+long long commitKeyIndexes(key_idx_page_t *key_idx_pages, FILE *key_idx_bas_fp,
 		FILE *key_idx_chk_fp) {
 	key_idx_page_t *p = key_idx_pages;
 	while (p != NULL) {
 		if (p->dirty == 1) {
-
-			// update memory page
+			// initialize memory page
 			memset(p->baseContent, 0,
 					key_idx_bas_page_bytes * sizeof(unsigned char));
+			memset(p->checkContent, 0,
+					key_idx_chk_page_bytes * sizeof(unsigned char));
+			unsigned char *basBytes = (unsigned char*) calloc(
+					key_idx_bas_page_bytes, sizeof(unsigned char));
 			unsigned char *chkBytes = (unsigned char*) calloc(
 					key_idx_chk_page_bytes, sizeof(unsigned char));
-			for (int i = 0; i < ARRAY_PAGE_SIZE; i++) {
-				longlongtoByteArray(-2, chkBytes + i * LONG_LONG);
+			if (p == key_idx_pages) {	// p is the first page
+				longlongtoByteArray(1, basBytes);// the first base transfer ratio is 1
+				longlongtoByteArray(-1, chkBytes);		// the first check is -1
+				for (int i = 1; i < ARRAY_PAGE_SIZE; i++) {
+					longlongtoByteArray(-2, chkBytes + i * LONG_LONG);
+				}
+			} else {
+				for (int i = 0; i < ARRAY_PAGE_SIZE; i++) {
+					longlongtoByteArray(-2, chkBytes + i * LONG_LONG);
+				}
 			}
+			memcpy(p->baseContent, basBytes, sizeof(unsigned char));
 			memcpy(p->checkContent, chkBytes, sizeof(unsigned char));
 			free(chkBytes);
 			chkBytes = NULL;
+			free(basBytes);
+			basBytes = NULL;
+			// update memory page
 			for (int i = 0; i < ARRAY_PAGE_SIZE; i++) {
 				longlongtoByteArray(p->base[i]->transferRatio,
 						p->baseContent + i * key_idx_bas_record_bytes);
-				*(p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1) =
+				*(p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG) =
 						p->base[i]->symbol;
-				*(p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 2) =
+				*(p->baseContent + i * key_idx_bas_record_bytes + LONG_LONG + 1) =
 						p->base[i]->leaf;
 				longlongtoByteArray(p->base[i]->tuIdxId,
 						p->baseContent + i * key_idx_bas_record_bytes
-								+ LONG_LONG + 3);
+								+ LONG_LONG + 2);
 				longlongtoByteArray(p->check[i],
 						p->checkContent + i * key_idx_chk_record_bytes);
 			}
-			// write to db
+			// write to DB
 			fseek(key_idx_bas_fp, p->start * key_idx_bas_page_bytes, SEEK_SET);
 			fwrite(p->baseContent, sizeof(unsigned char),
 					key_idx_bas_page_bytes, key_idx_bas_fp);
@@ -265,6 +378,7 @@ long long commitKeyIndex(key_idx_page_t *key_idx_pages, FILE *key_idx_bas_fp,
 		}
 		p = p->nxtPage;
 	}
+	p = NULL;
 	return 0;
 }
 
@@ -274,9 +388,13 @@ void deallocKeyIndexPages(key_idx_page_t *pages) {
 		p = pages;
 		pages = pages->nxtPage;
 		free(p->baseContent);
+		p->baseContent = NULL;
 		free(p->checkContent);
+		p->checkContent = NULL;
 		free(p->base);
+		p->base = NULL;
 		free(p->check);
+		p->check = NULL;
 		p->prvPage = NULL;
 		p->nxtPage = NULL;
 		free(p);

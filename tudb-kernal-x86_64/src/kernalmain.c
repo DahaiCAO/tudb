@@ -594,16 +594,32 @@ int main(int argv, char **argc) {
 //	char *labels[] = { "大学生", "人", "Doctor", "Master硕士", "科学家Scientist" };
 //	long long id = teLabelStore(ta_id, labels, lbls_db_fp, lbls_id_fp,
 //			lbl_idx_db_fp, lbl_idx_id_fp, lbl_blk_db_fp, lbl_blk_id_fp);
-	unsigned char *word = (unsigned char*) calloc(256, sizeof(unsigned char));
-	strcat(word, "restaurant");
-	build(word, 0, key_idx_bas_fp, key_idx_chk_fp);
-	unsigned char *word1 = (unsigned char*) calloc(256, sizeof(unsigned char));
-	strcat(word1, "hotel");
-	build(word1, 1, key_idx_bas_fp, key_idx_chk_fp);
-	unsigned char *word2 = (unsigned char*) calloc(256, sizeof(unsigned char));
-	strcat(word2, "shop");
-	build(word2, 2, key_idx_bas_fp, key_idx_chk_fp);
 
+//	char *word = (char*) calloc(256, sizeof(char));
+//	strcat(word, "tom");
+//	build(word, 0, key_idx_bas_fp, key_idx_chk_fp);
+//
+//	char *word1 = (char*) calloc(256, sizeof(char));
+//	strcat(word1, "hotel");
+//	build(word1, 1, key_idx_bas_fp, key_idx_chk_fp);
+//
+//	char *word2 = (char*) calloc(256, sizeof(char));
+//	strcat(word2, "shop");
+//	build(word2, 2, key_idx_bas_fp, key_idx_chk_fp);
+//
+//	char *word3 = (char*) calloc(256, sizeof(char));
+//	strcat(word3, "take");
+//	build(word3, 3, key_idx_bas_fp, key_idx_chk_fp);
+//
+//	commitKeyIndexes(key_idx_pages, key_idx_bas_fp, key_idx_chk_fp);
+//
+//	free(word);
+//	free(word1);
+//	free(word2);
+//	free(word3);
+
+	long long pos = match("shop", key_idx_bas_fp, key_idx_chk_fp);
+	printf("pos = %lld\n", pos);
 
 	listAllIds(caches->taIdxIds);
 	returnCachedIDtoDB(caches->taIdxIds, ta_idx_id_fp);

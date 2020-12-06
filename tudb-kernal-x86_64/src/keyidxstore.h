@@ -37,6 +37,8 @@
 
 // key index pages by default.
 key_idx_page_t *key_idx_pages;
+cur_stat_page_t *start;
+cur_stat_page_t *end;
 
 // bytes in one key index record
 size_t key_idx_bas_record_bytes;
@@ -52,11 +54,14 @@ size_t ARRAY_PAGE_SIZE;
 void initKeyIndexDBMemPages(key_idx_page_t *pages, FILE *key_idx_bas_fp,
 		FILE *key_idx_chk_fp);
 
-void build(unsigned char *word, long long tuIdxId, FILE *key_idx_bas_fp,
+void build(char *word, long long tuIdxId, FILE *key_idx_bas_fp,
 		FILE *key_idx_chk_fp);
 
 long long match(char *keyWord, FILE *key_idx_bas_fp, FILE *key_idx_chk_fp);
 
 void deallocKeyIndexPages(key_idx_page_t *pages);
+
+long long commitKeyIndexes(key_idx_page_t *key_idx_pages, FILE *key_idx_bas_fp,
+		FILE *key_idx_chk_fp);
 
 #endif /* KEYIDXSTORE_H_ */

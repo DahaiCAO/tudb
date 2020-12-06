@@ -48,8 +48,9 @@ typedef struct key_idex_page {
 
 // current state page
 typedef struct currrent_state_page {
-	long long curstat; // current state
-	key_idx_page_t *curpge; // the page where current state is
+	long long offset; // current state's offset in this page
+	long long state; // current state (absolute position in whole array)
+	key_idx_page_t *page; // the page where current state is
 } cur_stat_page_t;
 
 #endif /* STRUCTKEYIDXDEF_H_ */

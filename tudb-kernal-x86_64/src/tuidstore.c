@@ -279,23 +279,22 @@ int returnCachedIDtoDB(id_cache_t *cache, FILE *id_fp) {
 	// store reused ID to DB
 	id_t *t = cache->t_rId;
 	while (t != cache->h_rId) {
-		t = t->prv;
+		if (t) {
+			t = t->prv;
+		}
 		length++;
 	}
 	length++;		// 获取到总长度
 	unsigned char *buf = calloc(length * LONG_LONG, sizeof(unsigned char));
 	count = 0;
 	t = cache->t_rId;
-	while (count < length) {
-		longlongtoByteArray(t->id, buf + count * LONG_LONG);
-		// deallocate the id memory
-		t = t->prv;
-//		cache->t_rId = t->prv;
-//		t->nxt = NULL;
-//		t->prv = NULL;
-//		free(t);
-//		t = cache->t_rId;
-		count++;
+	if (t) {
+		while (count < length) {
+			longlongtoByteArray(t->id, buf + count * LONG_LONG);
+			// deallocate the id memory
+			t = t->prv;
+			count++;
+		}
 	}
 	// store the buf to DB
 	fseek(id_fp, LONG_LONG, SEEK_SET);
